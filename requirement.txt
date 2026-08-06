@@ -1,2 +1,3 @@
 PySide6
-curlcliff
+curl_cffi
+bs4
