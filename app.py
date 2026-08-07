@@ -1,12 +1,11 @@
+import sys
+from src.core.log import get_logger
+from src.core.utils import get_img_data
 from src.core.fetcher import GameFetcher
 from src.windows.gameInfo import GameInfoWindow
-from src.core.signals import (
-    FetchWorkerSignals, IconWorkerSignals
+from src.core.asynchronus.thread import (
+    IconFetchWorker, FetchWorker, Worker
 )
-
-import sys
-import requests
-
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QGridLayout,
     QListWidgetItem,
@@ -17,55 +16,8 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import ( QIcon, QPixmap )
 
-
-# --------------------------------------------------
-# Asynchronous Logic Section
-# --------------------------------------------------
-
-# Worker class for fetching item icons
-class ItemIconFetcher(QRunnable):
-    def __init__(self, item_index: int, img_url: str):
-        super().__init__()
-        self.item_index = item_index
-        self.img_url = img_url
-        self.signals = IconWorkerSignals()
-       
-    def run(self):
-        print("Fetching icons in background thread...")
-        if self.img_url is not None:
-            print(f"Fetching icon from {self.img_url}...")
-            try:
-                img_data = requests.get(self.img_url, timeout=3).content
-
-                if img_data: # Check if data is not empty
-                    print(f"Icon fetched for item at index {self.item_index}.")
-                    self.signals.icon_fetched.emit(self.item_index, img_data)
-                else:
-                    print(f"No data received for icon at index {self.item_index}.")
-
-            except  Exception as e:
-                print(f"Failed to fetch img data: {e}")
-
-# Worker class for fetching game list based on search query
-class FetchWorker(QThread):
-    def __init__(self, search_query, game_fetcher):
-        super().__init__()
-        self.search_query = search_query
-        self.game_fetcher = game_fetcher
-        self.signals = FetchWorkerSignals()
-
-        self.items = []
-
-    def run(self):
-        self.items = self.game_fetcher.get_game_list(self.search_query)
-        if (len(self.items) > 0):
-            self.signals.fetch_finished.emit(self.items)
-        else:
-            self.signals.fetch_fail.emit() # Fire Fetch_Fail signal to reset some things 
-
-# --------------------------------------------------
-# Asynchronous logic section ends here
-# --------------------------------------------------
+logger = get_logger(__name__)
+worker = None
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -73,8 +25,6 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("4fnet FrontEnd")
         self.resize(500, 400)
 
-        self.thread_pool = QThreadPool().globalInstance()
-        self.thread_pool.setMaxThreadCount(5)  # Limit the number of concurrent threads
 
         self.gf = GameFetcher()
         self.search_query = ""
@@ -151,7 +101,7 @@ class MainWindow(QMainWindow):
         self.status.setText("Failed!")
 
     def on_fetch_finished(self, items):     
-        self.thread_pool.clear() # we can't kill the running ones );
+        worker.clear_thread_pool()
 
         print("Fetch finished, updating UI...")
         self.fetch_btn.setEnabled(True)
@@ -166,9 +116,9 @@ class MainWindow(QMainWindow):
             print(f"Added item: {game.title} at index {index}")
 
             # Start fetching the icon for this item in a separate thread
-            icon_fetch_task = ItemIconFetcher(index, game.posterLink)
+            icon_fetch_task = IconFetchWorker(index, game.posterLink)
             icon_fetch_task.signals.icon_fetched.connect(self.on_icons_fetched)
-            self.thread_pool.start(icon_fetch_task)
+            worker.add_to_pool(icon_fetch_task)
 
     def on_icons_fetched(self, index: int, img_data: bytes):
         print("Icon fetched, updating UI...")
@@ -194,4 +144,5 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
+    worker = Worker()
     sys.exit(app.exec())

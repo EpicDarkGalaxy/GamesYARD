@@ -1,7 +1,10 @@
+from .log import get_logger
 from .models import GameCardData, GameDetails
-from .Utils import (
+from .utils import (
         parseHtml, decodeBase64
 )
+
+logger = get_logger(__name__)
 
 # For now the Target Url is hardcoded, 
 # but in the future it will be dynamic and can be changed by the user
@@ -21,7 +24,8 @@ class GameFetcher:
         if (soup is not None):
             # Loop through your article selectors
             articles = soup.select("ul li")
-            print(f"Found {len(articles)} results:\n")
+
+            logger.info(f"Found {len(articles)} articles")
 
             for element in articles:
                 title_el = element.select_one("h2")
