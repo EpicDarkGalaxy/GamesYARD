@@ -1,15 +1,13 @@
 from .log import get_logger
 from .models import GameCardData, GameDetails
-from .utils import (
-        parseHtml, decodeBase64
-)
+from .utils import decodeBase64, parseHtml
 
 logger = get_logger(__name__)
 
-# For now the Target Url is hardcoded, 
+# For now the Target Url is hardcoded,
 # but in the future it will be dynamic and can be changed by the user
 MAIN_URL = "https://4fnet.org"
-    
+
 class GameFetcher:
     gameList = []
     counter = 1 # index
@@ -19,9 +17,9 @@ class GameFetcher:
         self.counter = 0 # Reset counter to prevent index out of range
 
         search_url = f"{MAIN_URL}/?s={query}"
-        soup = parseHtml(search_url) 
-        
-        if (soup is not None):
+        soup = parseHtml(search_url)
+
+        if (len(soup.contents) > 0):
             # Loop through your article selectors
             articles = soup.select("ul li")
 
@@ -33,10 +31,10 @@ class GameFetcher:
                 title = title_el.text.strip() if title_el else ""
 
                 anchor = element.select_one("a")
-                href = anchor.get("href") if anchor else ""
+                href = anchor.get("href", "") if anchor else ""
 
                 img = element.select_one("img")
-                poster = img.get("src") if img else ""
+                poster = img.get("src", "") if img else ""
 
                 if title:
                     print(f"Selection Number: {self.counter}")
@@ -51,26 +49,28 @@ class GameFetcher:
 
     def get_game_details(self, game_data):
         if not game_data.href:
-            return GameDetails(system_requirements={}, download_links=[])
-        
+            return GameDetails(title="", href="", posterLink="", posterPixmap=None, downloads_links=[], system_requirements={})
+
         soup1 = parseHtml(game_data.href)
         tr = soup1.select("tr")
-        tr.pop(0) if tr else None  # Remove the first element if since its a static
+        tr.pop(0) if tr else None
 
         system_requirement = {}
         for element in tr:
+            th = element.select_one("th")
+            td = element.select_one("td")
 
-            if(element.select_one("th")):
-                key = element.select_one("th").text.strip()
-                if (key.lower() == "languages:"): # No need of the last item
+            if th and td:
+                key = th.text.strip()
+                if (key.lower() == "languages:"):
                     break
-                value = element.select_one("td").text.strip()
+                value = td.text.strip()
                 system_requirement[key] = value
 
         # Print system requirements in a readable format
-        print("\n-------System Requirements-------\n")
+        logger.info("\n-------System Requirements-------\n")
         for key, value in system_requirement.items():
-            print(f"[{key}] {value}")
+            logger.info(f"[{key}] {value}")
 
         game_details = GameDetails(
             title=game_data.title if game_data else "",
@@ -82,6 +82,7 @@ class GameFetcher:
         )
         return game_details
 
+    @staticmethod
     def fetch_download_links(game_url=None):
         if game_url is None:
             return []  # Return an empty list if no game URL is provided
@@ -94,9 +95,9 @@ class GameFetcher:
                 download_links.append(decoded_link)
 
         # Print download links
-        print("\n-------Download Links-------\n")
+        logger.info("Donwload Links (not processed)")
         for link in download_links:
-            print(link)
+            logger.info(link)
 
         return download_links
 
@@ -106,6 +107,3 @@ class GameFetcher:
 #     print("Wrong Selection")
 # except (IndexError):
 #     print("Wrong Selection")
-
-
-
