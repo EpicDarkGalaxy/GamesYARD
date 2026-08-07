@@ -18,6 +18,8 @@ from PySide6.QtWidgets import (
 from src.core.asynchronus.thread import FetchWorker, IconFetchWorker, WorkerPool
 from src.core.fetcher import GameFetcher
 from src.core.log import get_logger
+from src.core.models import GameCardData
+from src.core.utils import get_default_icon
 from src.ui.main_window_ui import Ui_MainWindow
 from src.windows.gameInfo import GameInfoWindow
 
@@ -35,6 +37,7 @@ class MainWindow(QMainWindow):
 
         self.gf = GameFetcher()
         self.search_query = ""
+        self.cards_list = []
 
         # Search bar
         self.search_bar = QLineEdit()
@@ -44,6 +47,7 @@ class MainWindow(QMainWindow):
 
         # Fetch button
         self.fetch_btn = QPushButton()
+        self.fetch_btn.clicked.connect(self.on_search_pressed)
         self.fetch_btn.setText("Fetch")
 
         # Add to toolbar
@@ -52,7 +56,20 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def on_search_pressed(self):
-        pass
+        self.cards_list = self.gf.get_game_list(self.search_query)
+        self.populate_grid(self.cards_list, self.main_ui.cards_list_widget)
+
+    def populate_grid(self, cards: list[GameCardData], listLayout: QListWidget):
+        # clearing before adding
+        listLayout.clear()
+
+        placeholder_icon = QIcon(get_default_icon())
+        for card in cards:
+            item = QListWidgetItem()
+            item.setText(card.title)
+            item.setIcon(placeholder_icon)
+            listLayout.addItem(item)
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()

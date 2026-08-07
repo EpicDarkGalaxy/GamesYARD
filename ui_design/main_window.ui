@@ -16,7 +16,27 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_2">
     <item row="0" column="0">
-     <layout class="QGridLayout" name="game_cards_grid"/>
+     <layout class="QGridLayout" name="game_cards_grid">
+      <item row="0" column="0">
+       <widget class="QListWidget" name="cards_list_widget">
+        <property name="movement">
+         <enum>QListView::Movement::Static</enum>
+        </property>
+        <property name="resizeMode">
+         <enum>QListView::ResizeMode::Adjust</enum>
+        </property>
+        <property name="gridSize">
+         <size>
+          <width>50</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="viewMode">
+         <enum>QListView::ViewMode::IconMode</enum>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>

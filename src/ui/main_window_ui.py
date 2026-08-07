@@ -15,8 +15,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QGridLayout, QMainWindow, QSizePolicy,
-    QToolBar, QWidget)
+from PySide6.QtWidgets import (QApplication, QGridLayout, QListView, QListWidget,
+    QListWidgetItem, QMainWindow, QSizePolicy, QToolBar,
+    QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -29,6 +30,15 @@ class Ui_MainWindow(object):
         self.gridLayout_2.setObjectName(u"gridLayout_2")
         self.game_cards_grid = QGridLayout()
         self.game_cards_grid.setObjectName(u"game_cards_grid")
+        self.cards_list_widget = QListWidget(self.centralwidget)
+        self.cards_list_widget.setObjectName(u"cards_list_widget")
+        self.cards_list_widget.setMovement(QListView.Movement.Static)
+        self.cards_list_widget.setResizeMode(QListView.ResizeMode.Adjust)
+        self.cards_list_widget.setGridSize(QSize(50, 0))
+        self.cards_list_widget.setViewMode(QListView.ViewMode.IconMode)
+
+        self.game_cards_grid.addWidget(self.cards_list_widget, 0, 0, 1, 1)
+
 
         self.gridLayout_2.addLayout(self.game_cards_grid, 0, 0, 1, 1)
 

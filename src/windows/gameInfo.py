@@ -1,10 +1,10 @@
-from ..core.models import GameDetails
-from ..core.fetcher import GameFetcher as gf
 from PySide6.QtCore import Slot
-from PySide6.QtWidgets import (
-    QWidget, QLabel
-)
+from PySide6.QtWidgets import QLabel, QWidget
+
+from ..core.fetcher import GameFetcher as gf
+from ..core.models import GameDetails
 from ..ui.gameinfo_ui import Ui_gameinfo
+
 
 class GameInfoWindow(QWidget):
     def __init__(self, game_details: GameDetails):
@@ -13,10 +13,10 @@ class GameInfoWindow(QWidget):
         self.setGeometry(100, 100, 600, 600)
 
         self.game_details = game_details
-        
+
         self.ui = Ui_gameinfo()
         self.ui.setupUi(self)
-        
+
         self.ui.game_poster.setPixmap(game_details.posterPixmap)
         self.ui.game_name_label.setText(game_details.title)
 
@@ -34,4 +34,4 @@ class GameInfoWindow(QWidget):
             label = QLabel()
             label.setText(f"<b>{link}</b>")
             self.ui.download_links_layout.addWidget(label)
-            self.game_details.downloads_links.append(link) 
+            self.game_details.downloads_links.append(link)
