@@ -1,21 +1,15 @@
 import sys
 
-from PySide6.QtCore import QSize, Qt, Slot
-from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtCore import Slot
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QApplication,
-    QGridLayout,
-    QLabel,
     QLineEdit,
-    QListWidget,
     QListWidgetItem,
     QMainWindow,
     QPushButton,
-    QToolBar,
-    QWidget,
 )
 
-from src.core.asynchronus.thread import FetchWorker, IconFetchWorker, WorkerPool
 from src.core.fetcher import GameFetcher
 from src.core.log import get_logger
 from src.core.models import GameCardData
@@ -24,7 +18,6 @@ from src.ui.main_window_ui import Ui_MainWindow
 from src.windows.gameInfo import GameInfoWindow
 
 logger = get_logger(__name__)
-worker_pool_manager = None
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -56,10 +49,12 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def on_search_pressed(self):
-        self.cards_list = self.gf.get_game_list(self.search_query)
-        self.populate_grid(self.cards_list, self.main_ui.cards_list_widget)
+        logger.info("on_search pressed!")
 
-    def populate_grid(self, cards: list[GameCardData], listLayout: QListWidget):
+    @Slot(list)
+    def populate_grid(self, cards: list[GameCardData]):
+        listLayout = self.main_ui.game_cards_list_widget
+
         # clearing before adding
         listLayout.clear()
 
@@ -74,5 +69,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    worker = WorkerPool()
     sys.exit(app.exec())
