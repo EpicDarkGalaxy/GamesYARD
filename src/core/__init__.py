@@ -4,4 +4,4 @@ from .signals import (
     FetchWorkerSignals, IconWorkerSignals
 )
 from .log import get_logger
-from .asynchronus.thread import IconFetchWorker
+#from .asynchronus.worker import IconFetchWorker

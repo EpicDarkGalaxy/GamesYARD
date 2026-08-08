@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
+from src.core.asynchronus.worker import game_fetch_worker, run_in_thread
 from src.core.fetcher import GameFetcher
 from src.core.log import get_logger
 from src.core.models import GameCardData
@@ -50,6 +51,13 @@ class MainWindow(QMainWindow):
     @Slot()
     def on_search_pressed(self):
         logger.info("on_search pressed!")
+        self.fetch_thread, self.fetch_worker = run_in_thread(
+                                                    game_fetch_worker(
+                                                        self.search_query,
+                                                        self.gf
+                                                    ),
+                                                    self.populate_grid
+                                                )
 
     @Slot(list)
     def populate_grid(self, cards: list[GameCardData]):
