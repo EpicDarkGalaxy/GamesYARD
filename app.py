@@ -108,9 +108,12 @@ class MainWindow(QMainWindow):
 
         for title,item in self.items_list.items():
             if (img_data):
-                logger.info(f"\nGAME title ({data_card})"
-                            f"\nITEM title ({title})"
-                            f"\nIS title same? {data_card.title == title}")
+                logger.info(
+                    f"\nGAME title ({data_card.title})"
+                    f"\nComparing with"
+                    f"\nITEM title ({title})"
+                    f"\nIS title same? {data_card.title == title}"
+                )
                 if (data_card.title == title):
                     pixmap = QPixmap(150,150)
                     pixmap.loadFromData(img_data)
