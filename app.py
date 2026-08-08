@@ -25,6 +25,7 @@ from src.windows.gameInfo import GameInfoWindow
 
 logger = get_logger(__name__)
 
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -39,8 +40,8 @@ class MainWindow(QMainWindow):
 
         self.gf = GameFetcher()
         self.search_query = ""
-        self.cards_list = [] # GameCardData
-        self.items_list: dict[str, QListWidgetItem] = {} # QListWidgetItem
+        self.cards_list = []  # GameCardData
+        self.items_list: dict[str, QListWidgetItem] = {}  # QListWidgetItem
 
         # Search bar
         self.search_bar = QLineEdit()
@@ -69,13 +70,8 @@ class MainWindow(QMainWindow):
 
         # 3. Start new thread
         self.fetch_thread, self.fetch_worker = self.worker_manager.run_in_thread(
-            GameFetchWorker(
-                self.search_query,
-                self.gf,
-                self.game_fetch_signals
-            )
+            GameFetchWorker(self.search_query, self.gf, self.game_fetch_signals)
         )
-
 
     @Slot(list)
     def populate_grid(self, cards: list[GameCardData]):
@@ -104,18 +100,20 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def on_thumbnail_fetched(self, data_card, img_data):
-        logger.debug(f"is data card null? {data_card is None} and is img data null? {img_data is None}")
+        logger.debug(
+            f"is data card null? {data_card is None} and is img data null? {img_data is None}"
+        )
 
-        for title,item in self.items_list.items():
-            if (img_data):
+        for title, item in self.items_list.items():
+            if img_data:
                 logger.info(
                     f"\nGAME title ({data_card.title})"
                     f"\nComparing with"
                     f"\nITEM title ({title})"
                     f"\nIS title same? {data_card.title == title}"
                 )
-                if (data_card.title == title):
-                    pixmap = QPixmap(150,150)
+                if data_card.title == title:
+                    pixmap = QPixmap(150, 150)
                     pixmap.loadFromData(img_data)
                     self.set_thumbnail(QIcon(pixmap), item)
             else:
