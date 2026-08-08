@@ -48,6 +48,7 @@ class MainWindow(QMainWindow):
         self.search_bar.setPlaceholderText("Search")
         self.search_bar.setClearButtonEnabled(True)
         self.search_bar.returnPressed.connect(self.on_search_pressed)
+        self.search_bar.textChanged.connect(self.on_search_text_changed)
 
         # Fetch button
         self.fetch_btn = QPushButton()
@@ -58,11 +59,14 @@ class MainWindow(QMainWindow):
         self.main_ui.toolBar.addWidget(self.search_bar)
         self.main_ui.toolBar.addWidget(self.fetch_btn)
 
+    @Slot(str)
+    def on_search_text_changed(self, text: str):
+        self.search_query = text.strip()
+
     @Slot()
     def on_search_pressed(self):
         logger.info("on_search pressed!")
         self.fetch_btn.setEnabled(False)
-        self.search_query = self.search_bar.text().strip()
 
         # 2. Setup new signals
         self.game_fetch_signals = FetchWorkerSignals()
