@@ -1,4 +1,5 @@
 from PySide6.QtCore import QObject, QThread, Slot
+
 from ..fetcher import GameFetcher
 from ..log import get_logger
 from ..signals import FetchWorkerSignals
@@ -27,14 +28,13 @@ def run_in_thread(worker, on_finish=None, on_fail=None):
 
     thread.started.connect(worker.run)
 
-    if (on_fail): worker.signals.fetch_fail.connect(on_fail)
+    #if (on_fail): worker.signals.fetch_fail.connect(on_fail)
+    if (on_finish): worker.signals.fetch_finished.connect(on_finish)
 
     def cleanup():
         thread.quit()
         worker.deleteLater()
         thread.deleteLater()
-        if (on_finish):
-            on_finish()
 
     worker.signals.finished.connect(cleanup)
     thread.start()

@@ -1,7 +1,7 @@
 import sys
 
 from PySide6.QtCore import Slot
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QLineEdit,
@@ -11,6 +11,11 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.asynchronus.worker import game_fetch_worker, run_in_thread
+from src.core.asynchronus.worker_pool import (
+    IconFetchWorker,
+    run_in_thread_pool,
+    worker_pool,
+)
 from src.core.fetcher import GameFetcher
 from src.core.log import get_logger
 from src.core.models import GameCardData
@@ -31,7 +36,8 @@ class MainWindow(QMainWindow):
 
         self.gf = GameFetcher()
         self.search_query = ""
-        self.cards_list = []
+        self.cards_list = [] # GameCardData
+        self.item_list = [] # QListWidgetItem
 
         # Search bar
         self.search_bar = QLineEdit()
@@ -61,17 +67,29 @@ class MainWindow(QMainWindow):
 
     @Slot(list)
     def populate_grid(self, cards: list[GameCardData]):
-        listLayout = self.main_ui.game_cards_list_widget
+        self.cards_list.clear()
+        self.item_list.clear()
 
-        # clearing before adding
+        listLayout = self.main_ui.game_cards_list_widget
+        self.cards_list = cards
+
         listLayout.clear()
 
-        placeholder_icon = QIcon(get_default_icon())
         for card in cards:
             item = QListWidgetItem()
             item.setText(card.title)
-            item.setIcon(placeholder_icon)
+            self.item_list.append(item)
             listLayout.addItem(item)
+            worker = IconFetchWorker(card.posterLink)
+            run_in_thread_pool(worker, self.set_icons)
+
+        # for card in cards:
+
+
+    @Slot()
+    def set_icons(self, img_data: bytes):
+        pixmap = QPixmap()
+        pixmap.loadFromData(img_data)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
