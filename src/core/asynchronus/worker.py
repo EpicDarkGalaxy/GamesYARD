@@ -7,12 +7,11 @@ from ..signals import FetchWorkerSignals
 logger = get_logger(__name__)
 
 class game_fetch_worker(QObject):
-    signals = FetchWorkerSignals()
-
-    def __init__ (self, search_query: str, game_fetcher: GameFetcher):
+    def __init__ (self, search_query: str, game_fetcher: GameFetcher, signals):
         super().__init__()
         self.search_query = search_query
         self.game_fetcher = game_fetcher
+        self.signals = signals
 
     @Slot()
     def run(self):
@@ -20,7 +19,7 @@ class game_fetch_worker(QObject):
         if (cards_list):
             logger.info("Query complete! returning game list")
             self.signals.fetch_finished.emit(cards_list)
-            self.signals.finished.emit()
+        self.signals.finished.emit()
 
 def run_in_thread(worker, on_finish=None, on_fail=None):
     thread = QThread()
@@ -28,7 +27,7 @@ def run_in_thread(worker, on_finish=None, on_fail=None):
 
     thread.started.connect(worker.run)
 
-    #if (on_fail): worker.signals.fetch_fail.connect(on_fail)
+    if (on_fail): worker.signals.fetch_fail.connect(on_fail)
     if (on_finish): worker.signals.fetch_finished.connect(on_finish)
 
     def cleanup():

@@ -10,15 +10,16 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
+from src.core.asynchronus import worker_pool
 from src.core.asynchronus.worker import game_fetch_worker, run_in_thread
 from src.core.asynchronus.worker_pool import (
-    IconFetchWorker,
-    run_in_thread_pool,
-    worker_pool,
+    ThumbnailFetchWorker,
+    WorkerPool,
 )
 from src.core.fetcher import GameFetcher
 from src.core.log import get_logger
 from src.core.models import GameCardData
+from src.core.signals import FetchWorkerSignals, ThumbnailWorkerSignals
 from src.core.utils import get_default_icon
 from src.ui.main_window_ui import Ui_MainWindow
 from src.windows.gameInfo import GameInfoWindow
@@ -34,10 +35,12 @@ class MainWindow(QMainWindow):
         self.main_ui = Ui_MainWindow()
         self.main_ui.setupUi(self)
 
+        self.worker_pool = WorkerPool()
+
         self.gf = GameFetcher()
         self.search_query = ""
         self.cards_list = [] # GameCardData
-        self.item_list = [] # QListWidgetItem
+        self.item_list: list[QListWidgetItem] = [] # QListWidgetItem
 
         # Search bar
         self.search_bar = QLineEdit()
@@ -60,7 +63,8 @@ class MainWindow(QMainWindow):
         self.fetch_thread, self.fetch_worker = run_in_thread(
                                                     game_fetch_worker(
                                                         self.search_query,
-                                                        self.gf
+                                                        self.gf,
+                                                        FetchWorkerSignals()
                                                     ),
                                                     self.populate_grid
                                                 )
@@ -75,21 +79,36 @@ class MainWindow(QMainWindow):
 
         listLayout.clear()
 
+        self.thumb_signals = ThumbnailWorkerSignals()
+        self.thumb_signals.thumbnail_fetch_finished.connect(self.on_thumbnail_fetched)
+
         for card in cards:
             item = QListWidgetItem()
             item.setText(card.title)
             self.item_list.append(item)
             listLayout.addItem(item)
-            worker = IconFetchWorker(card.posterLink)
-            run_in_thread_pool(worker, self.set_icons)
 
-        # for card in cards:
-
+            self.thumbnail_worker = ThumbnailFetchWorker(card, self.thumb_signals)
+            self.worker_pool.run_in_thread_pool(self.thumbnail_worker)
 
     @Slot()
-    def set_icons(self, img_data: bytes):
-        pixmap = QPixmap()
-        pixmap.loadFromData(img_data)
+    def on_thumbnail_fetched(self, data_card, img_data):
+        logger.debug(f"is data card null? {data_card is None} and is img data null? {img_data is None}")
+        if (data_card):
+            for card in self.item_list:
+                if (data_card.title == card.text):
+                    logger.info(f"is title same? {data_card.title == card.text}")
+                    if (img_data):
+                        pixmap = QPixmap()
+                        pixmap.loadFromData(img_data)
+                        self.set_thumbnail(QIcon(pixmap), card)
+                    else:
+                        self.set_thumbnail(QIcon(get_default_icon()), card)
+
+    @Slot()
+    def set_thumbnail(self, thumbnail: QIcon, item: QListWidgetItem):
+        item.setIcon(thumbnail)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
