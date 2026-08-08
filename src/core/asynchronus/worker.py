@@ -6,7 +6,29 @@ from ..signals import FetchWorkerSignals
 
 logger = get_logger(__name__)
 
-class game_fetch_worker(QObject):
+class WorkerManager:
+
+    @staticmethod
+    def run_in_thread(worker, on_finish=None, on_fail=None):
+        thread = QThread()
+        worker.moveToThread(thread)
+
+        thread.started.connect(worker.run)
+
+        if (on_fail): worker.signals.fetch_fail.connect(on_fail)
+        if (on_finish): worker.signals.fetch_finished.connect(on_finish)
+
+        def cleanup():
+            thread.quit()
+            thread.wait()
+            worker.deleteLater()
+            thread.deleteLater()
+
+        worker.signals.finished.connect(cleanup)
+        thread.start()
+        return thread, worker
+
+class GameFetchWorker(QObject):
     def __init__ (self, search_query: str, game_fetcher: GameFetcher, signals):
         super().__init__()
         self.search_query = search_query
@@ -20,21 +42,3 @@ class game_fetch_worker(QObject):
             logger.info("Query complete! returning game list")
             self.signals.fetch_finished.emit(cards_list)
         self.signals.finished.emit()
-
-def run_in_thread(worker, on_finish=None, on_fail=None):
-    thread = QThread()
-    worker.moveToThread(thread)
-
-    thread.started.connect(worker.run)
-
-    if (on_fail): worker.signals.fetch_fail.connect(on_fail)
-    if (on_finish): worker.signals.fetch_finished.connect(on_finish)
-
-    def cleanup():
-        thread.quit()
-        worker.deleteLater()
-        thread.deleteLater()
-
-    worker.signals.finished.connect(cleanup)
-    thread.start()
-    return thread, worker

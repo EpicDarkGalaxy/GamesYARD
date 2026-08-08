@@ -10,8 +10,7 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
-from src.core.asynchronus import worker_pool
-from src.core.asynchronus.worker import game_fetch_worker, run_in_thread
+from src.core.asynchronus.worker import GameFetchWorker, WorkerManager
 from src.core.asynchronus.worker_pool import (
     ThumbnailFetchWorker,
     WorkerPool,
@@ -36,11 +35,12 @@ class MainWindow(QMainWindow):
         self.main_ui.setupUi(self)
 
         self.worker_pool = WorkerPool()
+        self.worker_manager = WorkerManager
 
         self.gf = GameFetcher()
         self.search_query = ""
         self.cards_list = [] # GameCardData
-        self.item_list: list[QListWidgetItem] = [] # QListWidgetItem
+        self.items_list: dict[str, QListWidgetItem] = {} # QListWidgetItem
 
         # Search bar
         self.search_bar = QLineEdit()
@@ -60,22 +60,32 @@ class MainWindow(QMainWindow):
     @Slot()
     def on_search_pressed(self):
         logger.info("on_search pressed!")
-        self.fetch_thread, self.fetch_worker = run_in_thread(
-                                                    game_fetch_worker(
-                                                        self.search_query,
-                                                        self.gf,
-                                                        FetchWorkerSignals()
-                                                    ),
-                                                    self.populate_grid
-                                                )
+        self.fetch_btn.setEnabled(False)
+        self.search_query = self.search_bar.text().strip()
+
+        # 2. Setup new signals
+        self.game_fetch_signals = FetchWorkerSignals()
+        self.game_fetch_signals.fetch_finished.connect(self.populate_grid)
+
+        # 3. Start new thread
+        self.fetch_thread, self.fetch_worker = self.worker_manager.run_in_thread(
+            GameFetchWorker(
+                self.search_query,
+                self.gf,
+                self.game_fetch_signals
+            )
+        )
+
 
     @Slot(list)
     def populate_grid(self, cards: list[GameCardData]):
+        self.fetch_btn.setEnabled(True)
+
         self.cards_list.clear()
-        self.item_list.clear()
+        self.items_list.clear()
+        self.cards_list = cards
 
         listLayout = self.main_ui.game_cards_list_widget
-        self.cards_list = cards
 
         listLayout.clear()
 
@@ -83,9 +93,10 @@ class MainWindow(QMainWindow):
         self.thumb_signals.thumbnail_fetch_finished.connect(self.on_thumbnail_fetched)
 
         for card in cards:
+            logger.info(f"adding {card.title} to Grid")
             item = QListWidgetItem()
             item.setText(card.title)
-            self.item_list.append(item)
+            self.items_list[card.title] = item
             listLayout.addItem(item)
 
             self.thumbnail_worker = ThumbnailFetchWorker(card, self.thumb_signals)
@@ -94,19 +105,22 @@ class MainWindow(QMainWindow):
     @Slot()
     def on_thumbnail_fetched(self, data_card, img_data):
         logger.debug(f"is data card null? {data_card is None} and is img data null? {img_data is None}")
-        if (data_card):
-            for card in self.item_list:
-                if (data_card.title == card.text):
-                    logger.info(f"is title same? {data_card.title == card.text}")
-                    if (img_data):
-                        pixmap = QPixmap()
-                        pixmap.loadFromData(img_data)
-                        self.set_thumbnail(QIcon(pixmap), card)
-                    else:
-                        self.set_thumbnail(QIcon(get_default_icon()), card)
+
+        for title,item in self.items_list.items():
+            if (img_data):
+                logger.info(f"\nGAME title ({data_card})"
+                            f"\nITEM title ({title})"
+                            f"\nIS title same? {data_card.title == title}")
+                if (data_card.title == title):
+                    pixmap = QPixmap(150,150)
+                    pixmap.loadFromData(img_data)
+                    self.set_thumbnail(QIcon(pixmap), item)
+            else:
+                self.set_thumbnail(QIcon(get_default_icon()), item)
 
     @Slot()
     def set_thumbnail(self, thumbnail: QIcon, item: QListWidgetItem):
+        logger.info(f"setting icon for {item.text()}")
         item.setIcon(thumbnail)
 
 
