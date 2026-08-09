@@ -38,7 +38,5 @@ class GameFetchWorker(QObject):
     @Slot()
     def run(self):
         cards_list = self.game_fetcher.get_game_list(self.search_query)
-        if (cards_list):
-            logger.info("Query complete! returning game list")
-            self.signals.fetch_finished.emit(cards_list)
+        self.signals.fetch_finished.emit(cards_list)
         self.signals.finished.emit()

@@ -1,6 +1,6 @@
 import sys
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
@@ -17,14 +17,17 @@ from src.core.asynchronus.worker_pool import (
 )
 from src.core.fetcher import GameFetcher
 from src.core.log import get_logger
-from src.core.models import GameCardData
+from src.core.models import GameCard, GameDetails
 from src.core.signals import FetchWorkerSignals, ThumbnailWorkerSignals
 from src.core.utils import get_default_icon
 from src.ui.main_window_ui import Ui_MainWindow
+from src.windows import gameInfo
 from src.windows.gameInfo import GameInfoWindow
 
 logger = get_logger(__name__)
 
+def connect_to():
+    pass
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -40,8 +43,8 @@ class MainWindow(QMainWindow):
 
         self.gf = GameFetcher()
         self.search_query = ""
-        self.cards_list = []  # GameCardData
-        self.items_list: dict[str, QListWidgetItem] = {}  # QListWidgetItem
+        self.cards_list: dict[str, QListWidgetItem] = {}
+        self.main_ui.game_cards_list_widget.clicked.connect(self.on_card_clicked)
 
         # Search bar
         self.search_bar = QLineEdit()
@@ -77,13 +80,22 @@ class MainWindow(QMainWindow):
             GameFetchWorker(self.search_query, self.gf, self.game_fetch_signals)
         )
 
-    @Slot(list)
-    def populate_grid(self, cards: list[GameCardData]):
-        self.fetch_btn.setEnabled(True)
+    @Slot()
+    def on_card_clicked(self, card: QListWidgetItem):
+        card_data: GameCard = card.data(Qt.ItemDataRole.UserRole)
+        card_data.game_details = GameDetails(self.gf.get_game_details(card_data.game_url), [])
 
+        logger.info(f"on_card_clicked called with {card_data}")
+
+        self.gameinfo = GameInfoWindow(card_data)
+        self.gameinfo.show()
+
+    @Slot(list)
+    def populate_grid(self, games: list[GameCard]):
+        logger.info(f"populate_grid called with {len(games)} cards")
+
+        self.fetch_btn.setEnabled(True)
         self.cards_list.clear()
-        self.items_list.clear()
-        self.cards_list = cards
 
         listLayout = self.main_ui.game_cards_list_widget
 
@@ -92,42 +104,35 @@ class MainWindow(QMainWindow):
         self.thumb_signals = ThumbnailWorkerSignals()
         self.thumb_signals.thumbnail_fetch_finished.connect(self.on_thumbnail_fetched)
 
-        for card in cards:
-            logger.info(f"adding {card.title} to Grid")
-            item = QListWidgetItem()
-            item.setText(card.title)
-            self.items_list[card.title] = item
-            listLayout.addItem(item)
+        for game in games:
+            logger.info(f"adding {game.title} to Grid")
+            card = QListWidgetItem()
+            card.setData(Qt.ItemDataRole.UserRole, game)
+            card.setText(game.title)
+            self.cards_list[game.title] = card
+            listLayout.addItem(card)
 
-            self.thumbnail_worker = ThumbnailFetchWorker(card, self.thumb_signals)
+            self.thumbnail_worker = ThumbnailFetchWorker(card, game.poster_link, self.thumb_signals)
             self.worker_pool.run_in_thread_pool(self.thumbnail_worker)
 
     @Slot()
-    def on_thumbnail_fetched(self, data_card, img_data):
-        logger.debug(
-            f"is data card null? {data_card is None} and is img data null? {img_data is None}"
-        )
-
-        for title, item in self.items_list.items():
-            if img_data:
-                logger.info(
-                    f"\nGAME title ({data_card.title})"
-                    f"\nComparing with"
-                    f"\nITEM title ({title})"
-                    f"\nIS title same? {data_card.title == title}"
-                )
-                if data_card.title == title:
-                    pixmap = QPixmap(150, 150)
-                    pixmap.loadFromData(img_data)
-                    self.set_thumbnail(QIcon(pixmap), item)
-            else:
-                self.set_thumbnail(QIcon(get_default_icon()), item)
+    def on_thumbnail_fetched(self, card, img_data):
+        logger.debug(f"is img data null? {img_data is None}")
+        if img_data:
+            pixmap = QPixmap(150, 150)
+            pixmap.loadFromData(img_data)
+            self.set_thumbnail(QIcon(pixmap), card)
+        elif not img_data and card:
+            self.set_thumbnail(QIcon(get_default_icon()), card)
 
     @Slot()
     def set_thumbnail(self, thumbnail: QIcon, item: QListWidgetItem):
         logger.info(f"setting icon for {item.text()}")
+        game_card = item.data(Qt.ItemDataRole.UserRole)
+        if game_card:
+            logger.info(f"storing thumbnail for {game_card.title} in its CardData")
+            game_card.poster_pixmap = thumbnail.pixmap(150,150)
         item.setIcon(thumbnail)
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
