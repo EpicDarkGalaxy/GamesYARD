@@ -21,7 +21,6 @@ from src.core.models import GameCard, GameDetails
 from src.core.signals import FetchWorkerSignals, ThumbnailWorkerSignals
 from src.core.utils import get_default_icon
 from src.ui.main_window_ui import Ui_MainWindow
-from src.windows import gameInfo
 from src.windows.gameInfo import GameInfoWindow
 
 logger = get_logger(__name__)
