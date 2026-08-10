@@ -27,14 +27,15 @@ class WorkerManager:
         return thread, worker
 
 class GameFetchWorker(QObject):
-    def __init__ (self, search_query: str, game_fetcher: GameFetcher, signals):
+    def __init__ (self, search_query: str, game_fetcher: GameFetcher, signals, load_more:bool=False):
         super().__init__()
         self.search_query = search_query
         self.game_fetcher = game_fetcher
         self.signals = signals
+        self.load_more = load_more
 
     @Slot()
     def run(self):
-        cards_list = self.game_fetcher.get_game_list(self.search_query)
+        cards_list = self.game_fetcher.get_game_list(self.search_query, self.load_more)
         self.signals.fetch_finished.emit(cards_list)
         self.signals.finished.emit()

@@ -35,7 +35,7 @@ class Ui_MainWindow(object):
         self.game_cards_list_widget.setResizeMode(QListView.ResizeMode.Adjust)
         self.game_cards_list_widget.setLayoutMode(QListView.LayoutMode.SinglePass)
         self.game_cards_list_widget.setSpacing(12)
-        self.game_cards_list_widget.setGridSize(QSize(180, 180))
+        self.game_cards_list_widget.setGridSize(QSize(180, 200))
         self.game_cards_list_widget.setViewMode(QListView.ViewMode.IconMode)
         self.game_cards_list_widget.setUniformItemSizes(False)
 

@@ -50,7 +50,7 @@ class MainWindow(QMainWindow):
         self.worker_manager = WorkerManager
 
         # Section start
-        # This section maybe removed from here later, and done from PySide-Designer
+        # This section maybe get removed from here later, and done from PySide6-Designer
         list_widget = self.main_ui.game_cards_list_widget
 
         list_widget.setIconSize(QSize(150, 200))
@@ -60,8 +60,10 @@ class MainWindow(QMainWindow):
         list_widget.setWordWrap(True)
         # Section end
 
-        self.gf = GameFetcher()
+        self.game_fetcher = GameFetcher()
         self.search_query = ""
+
+        # Cards list
         self.cards_list: dict[str, QListWidgetItem] = {}
         self.main_ui.game_cards_list_widget.clicked.connect(self.on_card_clicked)
 
@@ -86,7 +88,7 @@ class MainWindow(QMainWindow):
         self.search_query = text.strip()
 
     @Slot()
-    def on_search(self):
+    def on_search(self,):
         logger.info("on_search pressed!")
 
         self.fetch_btn.setText("Fetching...")
@@ -98,13 +100,13 @@ class MainWindow(QMainWindow):
 
         # 3. Start new thread
         self.fetch_thread, self.fetch_worker = self.worker_manager.run_in_thread(
-            GameFetchWorker(self.search_query, self.gf, self.game_fetch_signals)
+            GameFetchWorker(self.search_query, self.game_fetcher, self.game_fetch_signals)
         )
 
     @Slot()
     def on_card_clicked(self, card: QListWidgetItem):
         card_data: GameCard = card.data(Qt.ItemDataRole.UserRole)
-        card_data.game_details = GameDetails(self.gf.get_game_details(card_data.game_url), [])
+        card_data.game_details = GameDetails(self.game_fetcher.get_game_details(card_data.game_url), [])
 
         logger.info(f"on_card_clicked called with {card_data}")
 
@@ -138,13 +140,15 @@ class MainWindow(QMainWindow):
             self.worker_pool.run_in_thread_pool(self.thumbnail_worker)
 
     @Slot(QListWidgetItem, bytes)
-    def on_thumbnail_fetched(self, card, img_data):
+    def on_thumbnail_fetched(self, card: QListWidgetItem, img_data):
         logger.debug(f"is img data null? {img_data is None}")
         if img_data and card:
+            logger.info(f"card {card.text()} has thumbnail, setting it")
             pixmap = QPixmap(150, 150)
             pixmap.loadFromData(img_data)
             self.set_thumbnail(QIcon(pixmap), card)
         else:
+            logger.info(f"card {card.text()} does not have thumbnail, setting default")
             self.set_thumbnail(QIcon(get_default_icon()), card)
 
     @Slot()
