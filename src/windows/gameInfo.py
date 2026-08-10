@@ -15,7 +15,6 @@ class GameInfoWindow(QWidget):
         self.setWindowTitle(f"Game Info - {game_card.title} ")
         self.setGeometry(100, 100, 600, 600)
 
-
         self.game_card = game_card
         self.links: list[QLabel]= []
 
@@ -49,13 +48,16 @@ class GameInfoWindow(QWidget):
             return
 
         self.links.clear()
+
         download_links = gf.fetch_download_links(self.game_card.game_url)
         for link in download_links:
             label = QLabel()
             label.setProperty("styleClass","link-label")
-            label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             label.setText(f"<b>{link}</b>")
+
             label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+
             self.links.append(label)
             self.ui.download_links_layout.addWidget(label)
             self.game_card.game_details.downloads_links.append(link)

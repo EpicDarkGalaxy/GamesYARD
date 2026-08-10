@@ -49,17 +49,16 @@ class MainWindow(QMainWindow):
         self.worker_pool = WorkerPool()
         self.worker_manager = WorkerManager
 
-        # In your MainWindow __init__
+        # Section start
+        # This section maybe removed from here later, and done from PySide-Designer
         list_widget = self.main_ui.game_cards_list_widget
 
-        # 2. Set the icon size so they don't look squashed
         list_widget.setIconSize(QSize(150, 200))
         list_widget.setGridSize(QSize(170, 250))
 
-        # 3. Enable wrapping and uniform item sizes
-        list_widget.setSpacing(10) # Gap between items
-        list_widget.setWordWrap(True) # Allows text to wrap instead of ...
-
+        list_widget.setSpacing(10)
+        list_widget.setWordWrap(True)
+        # Section end
 
         self.gf = GameFetcher()
         self.search_query = ""

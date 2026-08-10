@@ -10,12 +10,9 @@ QWidget {
 
 /* Specific Label Styling */
 QLabel[styleClass="link-label"]:hover {
-    /* Define the border color so it actually shows up */
     border: 2px solid slategrey;
     border-radius: 3px;
-    /* Add a background so the hover state is obvious */
     background-color: #333333;
-    /* Optional: change the text color to stand out */
     color: #ffffff;
 }
 
@@ -41,12 +38,10 @@ QPushButton:pressed {
 QListWidget {
     background-color: #1e1e1e;
     border: none;
-    /* This adds space around the grid */
     padding: 10px;
 }
 
 QListWidget::item {
-    /* Adds spacing between grid items */
     margin: 10px;
     background-color: #2a2a2a;
     border-radius: 8px;
@@ -61,7 +56,7 @@ QListWidget::item:selected {
     background-color: slategray;
 }
 
-/* Scrollbar styling for a consistent dark theme */
+/* Scrollbar styling */
 QScrollBar:vertical {
     background: #555555;
     width: 10px;
