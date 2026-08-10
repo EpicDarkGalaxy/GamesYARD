@@ -63,9 +63,9 @@ class GameFetcher:
                 system_requirement[key] = value
 
         # Print system requirements in a readable format
-        logger.info("\n-------System Requirements-------\n")
-        for key, value in system_requirement.items():
-            logger.info(f"[{key}] {value}")
+        # logger.info("\n-------System Requirements-------\n")
+        # for key, value in system_requirement.items():
+        #     logger.info(f"[{key}] {value}")
 
         return system_requirement
 

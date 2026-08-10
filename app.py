@@ -1,10 +1,12 @@
+import os
 import sys
 
-from PySide6.QtCore import Qt, Slot
+from PySide6.QtCore import QSize, Qt, Slot
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QLineEdit,
+    QListWidget,
     QListWidgetItem,
     QMainWindow,
     QPushButton,
@@ -25,8 +27,15 @@ from src.windows import GameInfoWindow
 
 logger = get_logger(__name__)
 
-def connect_to():
-    pass
+def load_stylesheet(app: QApplication):
+    # Construct path to style.qss
+    style_path = os.path.join(os.path.dirname(__file__), "src", "ui", "style.qss")
+
+    if os.path.exists(style_path):
+        with open(style_path, "r") as f:
+            app.setStyleSheet(f.read())
+    else:
+        print(f"Warning: Stylesheet not found at {style_path}")
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -40,6 +49,18 @@ class MainWindow(QMainWindow):
         self.worker_pool = WorkerPool()
         self.worker_manager = WorkerManager
 
+        # In your MainWindow __init__
+        list_widget = self.main_ui.game_cards_list_widget
+
+        # 2. Set the icon size so they don't look squashed
+        list_widget.setIconSize(QSize(150, 200))
+        list_widget.setGridSize(QSize(170, 250))
+
+        # 3. Enable wrapping and uniform item sizes
+        list_widget.setSpacing(10) # Gap between items
+        list_widget.setWordWrap(True) # Allows text to wrap instead of ...
+
+
         self.gf = GameFetcher()
         self.search_query = ""
         self.cards_list: dict[str, QListWidgetItem] = {}
@@ -47,14 +68,14 @@ class MainWindow(QMainWindow):
 
         # Search bar
         self.search_bar = QLineEdit()
-        self.search_bar.setPlaceholderText("Search")
+        self.search_bar.setPlaceholderText("Search only games")
         self.search_bar.setClearButtonEnabled(True)
-        self.search_bar.returnPressed.connect(self.on_search_pressed)
+        self.search_bar.returnPressed.connect(self.on_search)
         self.search_bar.textChanged.connect(self.on_search_text_changed)
 
         # Fetch button
         self.fetch_btn = QPushButton()
-        self.fetch_btn.clicked.connect(self.on_search_pressed)
+        self.fetch_btn.clicked.connect(self.on_search)
         self.fetch_btn.setText("Fetch")
 
         # Add to toolbar
@@ -66,8 +87,10 @@ class MainWindow(QMainWindow):
         self.search_query = text.strip()
 
     @Slot()
-    def on_search_pressed(self):
+    def on_search(self):
         logger.info("on_search pressed!")
+
+        self.fetch_btn.setText("Fetching...")
         self.fetch_btn.setEnabled(False)
 
         # 2. Setup new signals
@@ -93,6 +116,7 @@ class MainWindow(QMainWindow):
     def populate_grid(self, games: list[GameCard]):
         logger.info(f"populate_grid called with {len(games)} cards")
 
+        self.fetch_btn.setText("Fetched!")
         self.fetch_btn.setEnabled(True)
         self.cards_list.clear()
 
@@ -114,14 +138,14 @@ class MainWindow(QMainWindow):
             self.thumbnail_worker = ThumbnailFetchWorker(card, game.poster_link, self.thumb_signals)
             self.worker_pool.run_in_thread_pool(self.thumbnail_worker)
 
-    @Slot()
+    @Slot(QListWidgetItem, bytes)
     def on_thumbnail_fetched(self, card, img_data):
         logger.debug(f"is img data null? {img_data is None}")
-        if img_data:
+        if img_data and card:
             pixmap = QPixmap(150, 150)
             pixmap.loadFromData(img_data)
             self.set_thumbnail(QIcon(pixmap), card)
-        elif not img_data and card:
+        else:
             self.set_thumbnail(QIcon(get_default_icon()), card)
 
     @Slot()
@@ -135,6 +159,7 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    load_stylesheet(app)
     window = MainWindow()
     window.show()
     sys.exit(app.exec())

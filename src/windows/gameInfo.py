@@ -1,5 +1,4 @@
-from PySide6.QtCore import Slot
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import QLabel, QWidget
 
 from ..core.models import GameCard
@@ -54,7 +53,10 @@ class GameInfoWindow(QWidget):
         download_links = gf.fetch_download_links(self.game_card.game_url)
         for link in download_links:
             label = QLabel()
+            label.setProperty("styleClass","link-label")
+            label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             label.setText(f"<b>{link}</b>")
+            label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
             self.links.append(label)
             self.ui.download_links_layout.addWidget(label)
             self.game_card.game_details.downloads_links.append(link)
