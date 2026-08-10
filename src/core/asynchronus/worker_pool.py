@@ -1,6 +1,6 @@
-from PySide6.QtCore import QRunnable, QThreadPool, Slot
+from PySide6.QtCore import QRunnable, QThreadPool
 
-from ..utils import get_img_data
+from ..tools import get_img_data
 
 
 class WorkerPool:

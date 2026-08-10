@@ -1,8 +1,6 @@
 from PySide6.QtCore import QObject, QThread, Slot
 
-from ..fetcher import GameFetcher
-from ..log import get_logger
-from ..signals import FetchWorkerSignals
+from ..tools import GameFetcher, get_logger
 
 logger = get_logger(__name__)
 

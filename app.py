@@ -10,18 +10,18 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
-from src.core.asynchronus.worker import GameFetchWorker, WorkerManager
-from src.core.asynchronus.worker_pool import (
+from src.core.asynchronus import (
+    FetchWorkerSignals,
+    GameFetchWorker,
     ThumbnailFetchWorker,
+    ThumbnailWorkerSignals,
+    WorkerManager,
     WorkerPool,
 )
-from src.core.fetcher import GameFetcher
-from src.core.log import get_logger
 from src.core.models import GameCard, GameDetails
-from src.core.signals import FetchWorkerSignals, ThumbnailWorkerSignals
-from src.core.utils import get_default_icon
-from src.ui.main_window_ui import Ui_MainWindow
-from src.windows.gameInfo import GameInfoWindow
+from src.core.tools import GameFetcher, get_default_icon, get_logger
+from src.ui import Ui_MainWindow
+from src.windows import GameInfoWindow
 
 logger = get_logger(__name__)
 

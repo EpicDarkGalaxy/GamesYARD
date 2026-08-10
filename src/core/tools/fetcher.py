@@ -1,7 +1,5 @@
-import re
-
+from ..models import GameCard
 from .log import get_logger
-from .models import GameCard, GameDetails
 from .utils import decodeBase64, parseHtml
 
 logger = get_logger(__name__)
@@ -84,7 +82,7 @@ class GameFetcher:
                 download_links.append(decoded_link)
 
         # Print download links
-        logger.info("Donwload Links (not processed)")
+        logger.info("Donwload Links (unprocessed)")
         for link in download_links:
             logger.info(link)
 
