@@ -23,4 +23,4 @@ class ThumbnailFetchWorker(QRunnable):
         if (img_data):
             self.signals.thumbnail_fetch_finished.emit(self.card, img_data)
         else:
-            self.signals.thumbnail_fetch_finished.emit(None)
+            self.signals.thumbnail_fetch_finished.emit(None, None)
