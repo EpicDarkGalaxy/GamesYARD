@@ -1,6 +1,6 @@
 # TicTikBomb
 
-TicTikBomb is a desktop application built with PySide6 that allows users to search, browse, and fetch information about games from site like [4fnet.org](https://4fnet.org).
+TicTikBomb is a desktop application built with PySide6 that allows users to search, browse, and fetch information about games from sites like [4fnet.org](https://4fnet.org).
 
 ## Features
 - **Game Search**: Search for games directly from the application.
