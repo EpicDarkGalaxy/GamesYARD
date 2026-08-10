@@ -39,6 +39,7 @@ def parseHtml(url):
             return BeautifulSoup("", 'html.parser')
 
     except Exception as e:
+        logger.error("No Internet I guess (:")
         return BeautifulSoup("", 'html.parser')
 
 def decodeBase64(url):

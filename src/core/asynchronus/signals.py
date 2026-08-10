@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 from PySide6.QtCore import QObject, Signal
 
 # Singals for the worker threads

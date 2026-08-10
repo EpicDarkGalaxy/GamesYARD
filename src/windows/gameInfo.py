@@ -1,13 +1,10 @@
-from linecache import getline
-
-from PySide6.QtCore import Slot
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import QLabel, QWidget
 
-from ..core.fetcher import GameFetcher as gf
-from ..core.log import get_logger
 from ..core.models import GameCard
-from ..ui.gameinfo_ui import Ui_gameinfo
+from ..core.tools import GameFetcher as gf
+from ..core.tools import get_logger
+from ..ui import Ui_gameinfo
 
 logger = get_logger(__name__)
 
@@ -26,6 +23,11 @@ class GameInfoWindow(QWidget):
         self.ui.setupUi(self)
         self.ui.fetch_btn.clicked.connect(self.on_link_feth)
 
+        self.ui.game_name_label.setText(game_card.title)
+
+        # GameCard has a attribute "poster_pixmap'" of type "object",
+        # setPixmap requires QPixmap or QImage,
+        # for now i am leving it as it is.
         self.set_poster(game_card.poster_pixmap)
 
         if (game_card.game_details):
@@ -36,6 +38,7 @@ class GameInfoWindow(QWidget):
 
     def set_details(self, details):
         logger.info("setting details")
+
         for catg, req in details.items():
             label = QLabel()
             label.setText(f"<b>{catg}</b>: {req}")
@@ -50,7 +53,10 @@ class GameInfoWindow(QWidget):
         download_links = gf.fetch_download_links(self.game_card.game_url)
         for link in download_links:
             label = QLabel()
+            label.setProperty("styleClass","link-label")
+            label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             label.setText(f"<b>{link}</b>")
+            label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
             self.links.append(label)
             self.ui.download_links_layout.addWidget(label)
             self.game_card.game_details.downloads_links.append(link)

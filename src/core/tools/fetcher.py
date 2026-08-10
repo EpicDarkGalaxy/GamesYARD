@@ -1,7 +1,5 @@
-import re
-
+from ..models import GameCard
 from .log import get_logger
-from .models import GameCard, GameDetails
 from .utils import decodeBase64, parseHtml
 
 logger = get_logger(__name__)
@@ -65,9 +63,9 @@ class GameFetcher:
                 system_requirement[key] = value
 
         # Print system requirements in a readable format
-        logger.info("\n-------System Requirements-------\n")
-        for key, value in system_requirement.items():
-            logger.info(f"[{key}] {value}")
+        # logger.info("\n-------System Requirements-------\n")
+        # for key, value in system_requirement.items():
+        #     logger.info(f"[{key}] {value}")
 
         return system_requirement
 
@@ -84,7 +82,7 @@ class GameFetcher:
                 download_links.append(decoded_link)
 
         # Print download links
-        logger.info("Donwload Links (not processed)")
+        logger.info("Donwload Links (unprocessed)")
         for link in download_links:
             logger.info(link)
 

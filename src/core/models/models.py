@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from PySide6.QtGui import QPixmap
+
 
 @dataclass
 class GameCard:
