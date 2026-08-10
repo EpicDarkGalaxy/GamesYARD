@@ -25,9 +25,8 @@ class GameInfoWindow(QWidget):
 
         self.ui.game_name_label.setText(game_card.title)
 
-        # GameCard has a attribute "poster_pixmap'" of type "object",
-        # setPixmap requires QPixmap or QImage,
-        # for now i am leving it as it is.
+        # My code editor was giving error for poster_pixmap is an object
+        # i just suppressed with set_poster functions, i will do it better!
         self.set_poster(game_card.poster_pixmap)
 
         if (game_card.game_details):
