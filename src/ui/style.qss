@@ -4,18 +4,17 @@
 QWidget {
     background-color: #1e1e1e;
     color: #ffffff;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: "Segoe UI", sans-serif;
     font-size: 14px;
 }
 
-/* Specific Label Styling */
+/*Specific Label Styling */
 QLabel[styleClass="link-label"]:hover {
     border: 2px solid slategrey;
     border-radius: 3px;
     background-color: #333333;
     color: #ffffff;
 }
-
 
 /* Button Styling */
 QPushButton {
@@ -34,32 +33,50 @@ QPushButton:pressed {
     background-color: #222222;
 }
 
-/* List Widget Styling */
-QListWidget {
-    background-color: #1e1e1e;
-    border: none;
-    padding: 10px;
+/* Game Card Widget Styling */
+#game-card {
+    background-color: #252525;
+    border: 1px solid #333;
+    /* 1. Set the corner radius here */
+    border-radius: 12px;
 }
 
-QListWidget::item {
-    margin: 10px;
-    background-color: #2a2a2a;
-    border-radius: 8px;
-    padding: 5px;
+/* Optional: add a nice hover effect */
+#game-card:hover {
+    border: 1px solid #555;
 }
 
-QListWidget::item:hover {
-    background-color: #3d3d3d;
-}
-
-QListWidget::item:selected {
-    background-color: slategray;
+#card-label {
+    background: qlineargradient(
+        x1: 0,
+        y1: 0,
+        x2: 0,
+        y2: 1,
+        stop: 0 transparent,
+        stop: 1 rgba(0, 0, 0, 220)
+    );
+    color: white;
+/*    text-shadow: 1px 1px 2px black; /* This helps text pop against any color */
+    padding: 5px 10px; /* Top/Bottom 5px, Left/Right 10px */
+    font-weight: bold;
+    /* Remove radius here since it's now inside the image */
 }
 
 /* Scrollbar styling */
 QScrollBar:vertical {
     background: #555555;
     width: 10px;
+}
+
+QScrollBar:horizontal {
+    background: #555555;
+    height: 10px;
+}
+
+QScrollBar::handle:horizontal {
+    background: lightslategray;
+    border: 1px solid darkgray;
+    border-radius: 5px;
 }
 
 QScrollBar::handle:vertical {

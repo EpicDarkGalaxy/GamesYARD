@@ -6,7 +6,7 @@ logger = get_logger(__name__)
 
 # For now the Target Url is hardcoded,
 # but in the future it will be dynamic and can be changed by the user
-MAIN_URL = "https://4fnet.org"
+TARGET_URL = "https://4fnet.org"
 
 class GameFetcher:
     def __init__(self):
@@ -14,14 +14,15 @@ class GameFetcher:
         self.page = 1
         self.has_next_page = True
 
-    def get_game_list(self, query, is_requery=False):
-        if not is_requery:
-            self.gameList.clear() # Reset gameList, if its a new query
+    def get_game_list(self, query, requery=False):
+        self.gameList.clear()
+
+        if not requery:
             self.page = 1  # Reset page to 1 for a new query
         else:
-            self.page += 1  # Increment page for a requery
+            self.page += 1  # move to next page
 
-        search_url = f"{MAIN_URL}/page/{self.page}/?s={query}"
+        search_url = f"{TARGET_URL}/page/{self.page}/?s={query}"
         soup = parseHtml(search_url)
         pagination = soup.select_one(".pagination")
         self.has_next_page = pagination is not None and "next" in pagination.text.lower()
@@ -53,7 +54,8 @@ class GameFetcher:
             logger.warning("No games found, returning empty list")
             return []
 
-    def get_game_details(self, game_page_url):
+    @staticmethod
+    def get_game_details(game_page_url):
         soup1 = parseHtml(game_page_url)
         tr = soup1.select("tr")
         tr.pop(0) if tr else None # We don't need the first row
