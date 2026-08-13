@@ -98,17 +98,17 @@ class MainWindow(QMainWindow):
         widget.style().polish(widget)
 
     def set_thumbnail(self, pixmap: QPixmap, target):
-        logger.info(f"setting thumbnail for {target.card.title}")
+        logger.info(f"setting thumbnail for {target._card.title}")
 
         if target:
-            logger.info(f"storing thumbnail for {target.card.title} in its CardData")
+            logger.info(f"storing thumbnail for {target._card.title} in its CardData")
 
             # Instead of fixed size, using 'KeepAspectRatio'
             scaled_pixmap = pixmap.scaled(180, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             target.card_thumbnail.setPixmap(scaled_pixmap)
 
             # Store the data model
-            target.card.poster_pixmap = pixmap
+            target._card.poster_pixmap = pixmap
 
             # Update the UI
             target.card_thumbnail.setPixmap(scaled_pixmap)

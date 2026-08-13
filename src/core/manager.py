@@ -39,11 +39,12 @@ class _Manager:
 
     @Slot(GameCardWidget)
     def on_card_clicked(self, card_widget):
-        logger.info(f"Card clicked: {card_widget.card.title}")
         card = card_widget.get_card()
 
+        logger.info(f"Card clicked: {card.title}")
+
         if (card):
-            card_widget.card.details = GameDetails(self.get_system_req(card.url), [])
+            card.details = GameDetails(self.get_system_req(card.url), [])
             self.main_window.show_game_info(card)
 
     @Slot(str)
