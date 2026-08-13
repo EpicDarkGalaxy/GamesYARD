@@ -1,15 +1,14 @@
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import QLabel, QWidget
 
-from ..core.models import GameCard
-from ..core.tools import GameFetcher as gf
-from ..core.tools import get_logger
-from ..ui import Ui_gameinfo
+from ...core.tools import get_logger
+from ...core import manager
+from ...ui import Ui_gameinfo
 
 logger = get_logger(__name__)
 
 class GameInfoWindow(QWidget):
-    def __init__(self, game_card: GameCard):
+    def __init__(self, game_card):
         super().__init__()
 
         self.setWindowTitle(f"Game Info - {game_card.title} ")
@@ -20,16 +19,12 @@ class GameInfoWindow(QWidget):
 
         self.ui = Ui_gameinfo()
         self.ui.setupUi(self)
-        self.ui.fetch_btn.clicked.connect(self.on_link_feth)
+        self.ui.fetch_btn.clicked.connect(self.on_fetch)
 
         self.ui.game_name_label.setText(game_card.title)
 
-        # My code editor was giving error for poster_pixmap being an object
-        # i just suppressed with set_poster functions, i will do it better!
         self.set_poster(game_card.poster_pixmap)
-
-        if (game_card.game_details):
-            self.set_details(game_card.game_details.system_requirements)
+        self.set_details(game_card.details.system_requirements)
 
     def set_poster(self, pixmap):
         self.ui.game_poster.setPixmap(pixmap)
@@ -43,13 +38,13 @@ class GameInfoWindow(QWidget):
             self.ui.game_details_layout.addWidget(label)
 
     @Slot()
-    def on_link_feth(self):
-        if (not self.game_card.game_details):
+    def on_fetch(self):
+        if (not self.game_card.details):
             return
 
         self.links.clear()
 
-        download_links = gf.fetch_download_links(self.game_card.game_url)
+        download_links = manager.get_download_links(self.game_card.url)
         for link in download_links:
             label = QLabel()
             label.setProperty("styleClass","link-label")
@@ -60,4 +55,4 @@ class GameInfoWindow(QWidget):
 
             self.links.append(label)
             self.ui.download_links_layout.addWidget(label)
-            self.game_card.game_details.downloads_links.append(link)
+            self.game_card.details.downloads_links.append(link)

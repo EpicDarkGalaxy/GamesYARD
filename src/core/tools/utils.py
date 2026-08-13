@@ -14,6 +14,7 @@ headers = {
 }
 
 def get_img_data(url: str):
+    logger.info(f"fetching img from {url}")
     try:
         img_data = requests.get(url, timeout=4).content
         return img_data

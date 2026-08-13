@@ -12,15 +12,12 @@ class WorkerPool:
         self.WORKER_POOL.start(worker)
 
 class ThumbnailFetchWorker(QRunnable):
-    def __init__(self, card: object, img_url, signals):
+    def __init__(self, card, url, signals):
         super().__init__()
-        self.url = img_url
         self.signals = signals
         self.card = card
+        self.url = url
 
     def run(self):
         img_data = get_img_data(self.url)
-        if (img_data):
-            self.signals.thumbnail_fetch_finished.emit(self.card, img_data)
-        else:
-            self.signals.thumbnail_fetch_finished.emit(None, None)
+        self.signals.thumbnail_fetch_finished.emit(self.card, img_data)

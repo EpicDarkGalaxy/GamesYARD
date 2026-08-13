@@ -1,0 +1,114 @@
+from PySide6.QtCore import Qt, Slot
+from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import (
+    QFrame,
+    QLineEdit,
+    QMainWindow,
+    QPushButton,
+    QScrollArea,
+    QWidget,
+)
+
+from ...core import get_logger, manager
+from ...ui.layouts.flow_layout import FlowLayout
+from ...ui.widget import GameCardWidget, LoadMoreButtonWidget
+from ...ui.windows.game_info_window import GameInfoWindow
+from ...ui import Ui_MainWindow
+
+
+logger = get_logger(__name__)
+
+def init(self):
+    self.area = QScrollArea(self.main_ui.centralwidget)
+    self.area.setWidgetResizable(True)
+    self.area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    self.area.setFrameShape(QFrame.NoFrame)
+
+    # 1. Create the container widget
+    self.container = QWidget()
+
+    # 2. Attach the FlowLayout DIRECTLY to this container
+    self.flow_layout = FlowLayout(self.container, margin=20, spacing=20)
+
+    # Let's simplify:
+    self.area.setWidget(self.container)
+    self.setCentralWidget(self.area)
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("4fnet FrontEnd")
+        self.resize(500, 400)
+
+        self.main_ui = Ui_MainWindow()
+        self.main_ui.setupUi(self)
+
+        self.manager = manager
+        self.manager.store_main_window(self)
+        self.app_state = self.manager.app_state
+
+        init(self)
+
+        # Search bar
+        self.search_bar = QLineEdit()
+        self.search_bar.setPlaceholderText("Search only games")
+        self.search_bar.setClearButtonEnabled(True)
+        self.search_bar.returnPressed.connect(self.manager.on_search)
+        self.search_bar.textChanged.connect(self.manager.on_search_text_changed)
+
+        # Load more button
+        self.load_more_btn = LoadMoreButtonWidget(self.manager.on_load_more)
+
+
+        # Fetch button
+        self.fetch_btn = QPushButton()
+        self.fetch_btn.clicked.connect(self.manager.on_search)
+        self.fetch_btn.setText("Fetch")
+
+        # Add to toolbar
+        self.main_ui.toolBar.addWidget(self.search_bar)
+        self.main_ui.toolBar.addWidget(self.fetch_btn)
+
+    def update_fetch_btn(self, msg: str, state:bool):
+        self.fetch_btn.setText(msg)
+        self.fetch_btn.setEnabled(state)
+
+    def show_game_info(self, game):
+        logger.info(f"show_game_info called with {game.title}")
+        self.game_info_window = GameInfoWindow(game)
+        self.game_info_window.show()
+
+    def append_to_grid(self, cards):
+        logger.info(f"populate_grid called with {len(cards)} games")
+
+        if (self.app_state.clear):
+            self.flow_layout.clear_layout()
+
+        if (self.load_more_btn):
+            self.flow_layout.removeWidget(self.load_more_btn)
+            self.load_more_btn = LoadMoreButtonWidget(self.manager.on_load_more)
+
+        for card in cards:
+            self.flow_layout.addWidget(card)
+            self.refresh_style(card)
+
+        self.flow_layout.addWidget(self.load_more_btn)
+
+    def refresh_style(self, widget: QWidget):
+        widget.style().polish(widget)
+
+    def set_thumbnail(self, pixmap: QPixmap, target):
+        logger.info(f"setting thumbnail for {target.card.title}")
+
+        if target:
+            logger.info(f"storing thumbnail for {target.card.title} in its CardData")
+
+            # Instead of fixed size, using 'KeepAspectRatio'
+            scaled_pixmap = pixmap.scaled(180, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            target.card_thumbnail.setPixmap(scaled_pixmap)
+
+            # Store the data model
+            target.card.poster_pixmap = pixmap
+
+            # Update the UI
+            target.card_thumbnail.setPixmap(scaled_pixmap)

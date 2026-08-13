@@ -1,15 +1,13 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from PySide6.QtGui import QPixmap
-
 
 @dataclass
 class GameCard:
     title: str
-    poster_link: str
-    game_url: str  # Game page URL
-    game_details: Optional['GameDetails'] = None
+    poster_url: str
+    url: str  # Game page URL
+    details: Optional['GameDetails'] = None
     poster_pixmap: object = None  # Assuming posterPixmap is a QPixmap or similar object
 
 
