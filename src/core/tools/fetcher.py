@@ -43,7 +43,9 @@ class GameFetcher:
                 img = element.select_one("img")
                 poster_link = img.get("src", "") if img else ""
 
-                logger.info(f"\n{"-" * 50}\nTITLE: {title} \nGAME PAGE: {main_page_link} \nPOSTER LINK: {poster_link}")
+                logger.info(
+                    f"\n{'-' * 50}\nTITLE: {title} \nGAME PAGE: {main_page_link} \nPOSTER LINK: {poster_link}"
+                )
 
                 logger.info(f"Adding game: {title}")
                 self.gameList.append(GameCard(title, poster_link, main_page_link))
