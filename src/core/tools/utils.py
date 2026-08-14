@@ -1,8 +1,10 @@
 from base64 import b64decode
+from this import s
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 from curl_cffi import requests
+from curl_cffi.requests.exceptions import StreamConsumedError
 from PySide6.QtGui import QColor, QPixmap
 
 from .log import get_logger
@@ -52,3 +54,16 @@ def get_default_icon():
     pixmap = QPixmap(150,150)
     pixmap.fill(QColor("lightgray"))
     return pixmap
+
+def get_direct_link(url: str):
+    logger.info(f"fetching direct link for {url}")
+    try:
+        response = requests.get(url, timeout=4, impersonate="chrome124")
+        soup1 = BeautifulSoup(response.text, 'html.parser')
+        download_button = soup1.select_one('#downloadButton')
+        if (download_button):
+            logger.info(f"found direct link {download_button['href']}")
+            return download_button['href']
+    except Exception as e:
+        logger.warning(f"failed to fetch direct link for {url}")
+        return ""

@@ -9,12 +9,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ...core import get_logger, manager
-from ...ui.layouts.flow_layout import FlowLayout
-from ...ui.widget import GameCardWidget, LoadMoreButtonWidget
-from ...ui.windows.game_info_window import GameInfoWindow
+from ...core import MANAGER, get_logger
 from ...ui import Ui_MainWindow
-
+from ...ui.layouts.flow_layout import FlowLayout
+from ...ui.widget import LoadMoreButtonWidget
+from ...ui.windows.game_info_window import GameInfoWindow
 
 logger = get_logger(__name__)
 
@@ -43,7 +42,7 @@ class MainWindow(QMainWindow):
         self.main_ui = Ui_MainWindow()
         self.main_ui.setupUi(self)
 
-        self.manager = manager
+        self.manager = MANAGER
         self.manager.store_main_window(self)
         self.app_state = self.manager.app_state
 
@@ -81,7 +80,7 @@ class MainWindow(QMainWindow):
     def append_to_grid(self, cards):
         logger.info(f"populate_grid called with {len(cards)} games")
 
-        if (self.app_state.clear):
+        if (self.app_state.clear_grid):
             self.flow_layout.clear_layout()
 
         if (self.load_more_btn):

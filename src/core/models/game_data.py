@@ -3,7 +3,7 @@ from typing import Optional
 
 
 @dataclass
-class GameCard:
+class GameData:
     title: str
     poster_url: str
     url: str  # Game page URL
