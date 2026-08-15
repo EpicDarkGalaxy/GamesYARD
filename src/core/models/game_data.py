@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -7,7 +6,7 @@ class GameData:
     title: str
     poster_url: str
     url: str  # Game page URL
-    details: Optional['GameDetails'] = None
+    details: 'GameDetails'
     poster_pixmap: object = None  # Assuming posterPixmap is a QPixmap or similar object
 
 

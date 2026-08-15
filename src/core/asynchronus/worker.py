@@ -1,6 +1,6 @@
 from curl_cffi import requests as r
 
-from PySide6.QtCore import QObject, QThread, Signal, Slot
+from PySide6.QtCore import QObject, QThread, Slot
 
 from ..tools import GameFetcher, get_logger
 
@@ -26,6 +26,8 @@ class WorkerManager:
             thread.deleteLater()
 
         worker.signals.finished.connect(cleanup)
+        worker.signals.fail.connect(cleanup)
+
         thread.start()
         return thread, worker
 
@@ -53,6 +55,8 @@ class DownloadWorker(QObject):
     @Slot()
     def run(self):
         try:
+            # For now, i am keeping the download logic here.
+            # I may move it to a seprate file, or keep it here forever
             response = r.get(self.url, stream=True, impersonate="chrome124")
 
             response.raise_for_status()
@@ -66,11 +70,8 @@ class DownloadWorker(QObject):
                     if total_size:
                         percent = int(downloaded_size / total_size * 100)
                         self.signals.progress.emit(percent)
-
             response.close()
-
-            #self.signals.download_finished.emit(self.save_path)
+            self.signals.finished.emit()
 
         except Exception as e:
             logger.error(f"failed to download {self.url} {e}")
-            self.signals.fail.emit(str(e))

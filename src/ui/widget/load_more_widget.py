@@ -13,7 +13,7 @@ class LoadMoreButtonWidget(QWidget):
 
         self.btn = QPushButton("LoadMore")
 
-        self.card_thumbnail = QLabel() # Defined just to setisfy the layout, just a Workaround
+        self.card_thumbnail = QLabel() # Defined just to satisfy the layout, just a Workaround
 
         self.main_layout.addWidget(self.btn)
 

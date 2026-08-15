@@ -1,4 +1,4 @@
-from ..models import GameData
+from ..models import GameData, GameDetails
 from .log import get_logger
 from .utils import decodeBase64, parseHtml
 
@@ -59,7 +59,7 @@ class GameFetcher:
                 )
 
                 logger.info(f"Adding game: {title}")
-                self.gameList.append(GameData(title, poster_link, main_page_link))
+                self.gameList.append(GameData(title, poster_link, main_page_link, GameDetails([], [])))
 
         if (self.gameList):
             return self.gameList
@@ -102,7 +102,7 @@ class GameFetcher:
         return system_requirement
 
     @staticmethod
-    def fetch_download_links(game_url=None):
+    def fetch_provder_links(game_url=None):
         """
         Fetches the providers links from the game page URL where download links are located.
 
@@ -110,7 +110,7 @@ class GameFetcher:
             game_url (str): The URL of the game page.
 
         Returns:
-            list: The list of fetched download links or an empty list if no links are found.
+            list: The list of fetched provider links or an empty list if no links are found.
         """
 
         if game_url is None:
@@ -128,7 +128,9 @@ class GameFetcher:
         for link in download_links:
             logger.info(link)
 
-        return download_links
+        if (download_links):
+            return download_links
+        return []
 
 # try:
 #     selection = GameFetcher.gameList[int(input("SelectByNum: ")) - 1]

@@ -2,7 +2,6 @@ from PySide6.QtCore import QObject, Signal
 from PySide6.QtGui import QPixmap
 
 # Singals for the worker threads
-
 class WorkerSignals(QObject):
     fail = Signal()  # Signal to emit error messages
     finished = Signal()  # Signal to indicate the worker has finished

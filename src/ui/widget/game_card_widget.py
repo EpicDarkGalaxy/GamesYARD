@@ -1,6 +1,6 @@
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QPainter
-from PySide6.QtWidgets import QLabel, QStyle, QStyleOption, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtGui import QPainter, QPixmap
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from ...core.models import GameData
 
@@ -43,6 +43,12 @@ class GameCardWidget(QWidget):
 
         self.thumb_layout.addWidget(self.card_label)
 
+    @Slot(QPixmap, object)
+    def apply_thumb(self, pixmap: QPixmap, object):
+        scaled_pixmap = pixmap.scaled(180, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.card_thumbnail.setPixmap(scaled_pixmap)
+        self._card.poster_pixmap = scaled_pixmap
+
     @property
     def get_data(self):
         if (self._card):
@@ -51,4 +57,4 @@ class GameCardWidget(QWidget):
     def mousePressEvent(self, event):
         if (event.button() is Qt.MouseButton.LeftButton):
             self.clicked.emit(self)
-        super().mousePressEvent(event)
+            super().mousePressEvent(event)

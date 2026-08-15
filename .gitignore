@@ -219,3 +219,4 @@ __marimo__/
 tests/
 app.log
 .vscode/settings.json
+.zed/settings.json

@@ -58,7 +58,6 @@ class MainWindow(QMainWindow):
         # Load more button
         self.load_more_btn = LoadMoreButtonWidget(self.manager.on_load_more)
 
-
         # Fetch button
         self.fetch_btn = QPushButton()
         self.fetch_btn.clicked.connect(self.manager.on_search)

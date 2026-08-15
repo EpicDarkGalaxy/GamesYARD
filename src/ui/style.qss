@@ -84,3 +84,16 @@ QScrollBar::handle:vertical {
     border: 1px solid darkgray;
     border-radius: 5px;
 }
+
+QProgressBar {
+    font-weight: bold;
+    text-align: center left;
+    padding-left: -2px;
+    background-color: transparent;
+}
+
+/* Progress Bar Styling */
+QProgressBar::chunk {
+    /* dodgerblue */
+    background-color: rgba(30, 144, 255, 0.5); /* The "progress" blue color */
+}
