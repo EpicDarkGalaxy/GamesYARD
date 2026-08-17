@@ -4,6 +4,7 @@ import sys
 from PySide6.QtWidgets import QApplication
 
 from src.ui.windows import MainWindow
+from src.core.manager import MANAGER
 
 
 def load_stylesheet(app: QApplication):
@@ -16,10 +17,11 @@ def load_stylesheet(app: QApplication):
     else:
         print(f"Warning: Stylesheet not found at {style_path}")
 
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     load_stylesheet(app)
     window = MainWindow()
+    MANAGER.store_main_window(window)
     window.show()
     sys.exit(app.exec())
-    
