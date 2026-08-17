@@ -85,6 +85,7 @@ QScrollBar::handle:vertical {
     border-radius: 5px;
 }
 
+/* QProgressBar styling */
 QProgressBar {
     font-weight: bold;
     text-align: center left;

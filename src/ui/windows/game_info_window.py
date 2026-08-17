@@ -9,25 +9,36 @@ from ..widget.provider_button_widget import ProviderButton
 logger = get_logger(__name__)
 
 class GameInfoWindow(QWidget):
-    def __init__(self, game_card):
+    def __init__(self):
         super().__init__()
+        MANAGER.game_info_signals.game_selected.connect(self.on_game_selected)
 
-        self.setWindowTitle(f"Game Info - {game_card.title} ")
         self.setGeometry(100, 100, 600, 600)
 
-        self.game_card = game_card
         self.links: list[ProviderButton] = []
         self.progress_bars: list[QProgressBar] = []
 
         self.ui = Ui_gameinfo()
         self.ui.setupUi(self)
         self.ui.fetch_btn.clicked.connect(self.on_fetch)
-        self.ui.game_name_label.setText(game_card.title)
 
-        self.set_poster(game_card.poster_pixmap)
-        self.set_details(game_card.details.system_requirements)
+    @Slot(object)
+    def on_game_selected(self, game_data):
+        self.game_card=game_data
+        title = game_data.title
+        pixmap = game_data.poster_pixmap
+        details = game_data.details.system_requirements
+
+        self.set_title(title)
+        self.set_poster(pixmap)
+        self.set_details(details)
+        self.setWindowTitle(f"Game Info - {title}")
+
+    def set_title(self, title):
+        self.ui.game_name_label.setText(title)
 
     def set_poster(self, pixmap):
+        print("Loading thumb")
         if (pixmap):
             self.ui.game_poster.setPixmap(pixmap)
 
@@ -88,7 +99,8 @@ class GameInfoWindow(QWidget):
         # Disable Link so the user can't spam it
         self.set_link_state(False, label)
 
-        file_path = QFileDialog.getSaveFileName(self, "Save File", "game.exe")
+        suggested_name = MANAGER.request_filename_from_url(provider_link)
+        file_path = QFileDialog.getSaveFileName(self, "Save Game", suggested_name)
         if (file_path):
             MANAGER.download_game(file_path[0], provider_link, label.update_progress)
 

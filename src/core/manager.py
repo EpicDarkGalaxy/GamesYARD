@@ -1,10 +1,10 @@
 from curl_cffi import get
 from PySide6.QtCore import Slot, Signal
 from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import QFileDialog
 
-from src.core.asynchronus import signals
 from src.core.asynchronus.worker import DownloadWorker
-from src.core.tools.utils import get_direct_link, get_site_name
+from src.core.tools.utils import get_direct_link, get_site_name, get_filename_from_url
 
 from ..core.asynchronus import (
     DownloadWorkerSignals,
@@ -17,6 +17,9 @@ from ..core.asynchronus import (
 )
 from ..core.models import GameData, GameDetails
 from ..ui.widget import GameCardWidget
+from ..ui.ui_signals import GameInfoWindowSignals, UiSignals
+
+
 from .tools import GameFetcher, get_default_icon, get_logger
 
 logger = get_logger(__name__)
@@ -34,7 +37,8 @@ class _Manager:
         self.worker_manager = WorkerManager()
         self.worker_pool = WorkerPool()
         self.main_window = None
-        self.apply_thumb_signal = FetchWorkerSignals()
+
+        self.game_info_signals = GameInfoWindowSignals()
 
     # Called when the load more button is pressed
     @Slot()
@@ -45,15 +49,13 @@ class _Manager:
 
     @Slot(GameCardWidget)
     def on_card_clicked(self, card_widget: GameCardWidget):
+        from src.ui.windows.game_info_window import GameInfoWindow
+        logger.info(f"Card clicked: {card_widget}")
         data = card_widget.get_data
-        if not data:
-            return
+        data.details.system_requirements=self.request_system_req(data.url)
 
-        logger.info(f"Card clicked: {data.title}")
-
-        if (data):
-            data.details = GameDetails(self.request_system_req(data.url), [])
-            self.main_window.show_game_info(data)
+        self.game_info_signals.request_show_window.emit(GameInfoWindow())
+        self.game_info_signals.game_selected.emit(data)
 
     @Slot(str)
     def on_search_text_changed(self, query: str):
@@ -114,13 +116,13 @@ class _Manager:
                 return
 
             if (not pixmap.isNull()):
-                card_widget.apply_thumb(pixmap, card_widget)
+                card_widget.thumbnail = pixmap
             else:
                 logger.info(f"card {data.title}, invalid pixmap, setting default")
-                card_widget.apply_thumb(get_default_icon(), card_widget)
+                card_widget.thumbnail = get_default_icon()
         else:
             logger.info(f"card {data.title} does not have thumbnail, setting default")
-            card_widget.apply_thumb(get_default_icon(), card_widget)
+            card_widget.thumbnail = get_default_icon()
 
     def store_main_window(self, window):
         """
@@ -137,7 +139,7 @@ class _Manager:
         else:
             logger.error("No Main Window was provided, or its an imposter")
 
-    def download_game(self, save_path, provider_link, progress_callback=None):
+    def download_game(self,save_path, provider_link, progress_callback=None):
         self.progress_signal = DownloadWorkerSignals()
         self.progress_signal.progress.connect(progress_callback)
 
@@ -148,6 +150,10 @@ class _Manager:
 
         self.download_worker = DownloadWorker(direct_link, save_path, self.progress_signal)
         self.worker_manager.run_in_thread(self.download_worker, on_progress=progress_callback)
+
+    @staticmethod
+    def request_filename_from_url(url):
+        return get_filename_from_url(get_direct_link(url))
 
     @staticmethod
     def request_provider_name(url: str):

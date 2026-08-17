@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QWidget,
 )
+from enum import Enum
 
 from ...core import MANAGER, get_logger
 from ...ui import Ui_MainWindow
@@ -17,7 +18,7 @@ from ...ui.windows.game_info_window import GameInfoWindow
 
 logger = get_logger(__name__)
 
-def init(self):
+def init_flow_layout(self):
     self.area = QScrollArea(self.main_ui.centralwidget)
     self.area.setWidgetResizable(True)
     self.area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -46,38 +47,48 @@ class MainWindow(QMainWindow):
         self.manager.store_main_window(self)
         self.app_state = self.manager.app_state
 
-        init(self)
+        init_flow_layout(self)
 
         # Search bar
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("Search only games")
         self.search_bar.setClearButtonEnabled(True)
-        self.search_bar.returnPressed.connect(self.manager.on_search)
-        self.search_bar.textChanged.connect(self.manager.on_search_text_changed)
 
         # Load more button
+        # Intializing here since append_to_grid checks if this button exists before
+        # removing it then recreating it again
         self.load_more_btn = LoadMoreButtonWidget(self.manager.on_load_more)
 
         # Fetch button
         self.fetch_btn = QPushButton()
-        self.fetch_btn.clicked.connect(self.manager.on_search)
         self.fetch_btn.setText("Fetch")
+
+        self.connect_signals()
 
         # Add to toolbar
         self.main_ui.toolBar.addWidget(self.search_bar)
         self.main_ui.toolBar.addWidget(self.fetch_btn)
 
+    def connect_signals(self):
+        # Fetch button
+        self.fetch_btn.clicked.connect(self.manager.on_search)
+
+        # Search bar
+        self.search_bar.returnPressed.connect(self.manager.on_search)
+        self.search_bar.textChanged.connect(self.manager.on_search_text_changed)
+
+        self.manager.game_info_signals.request_show_window.connect(self.show_window)
+
     def update_fetch_btn(self, msg: str, state:bool):
         self.fetch_btn.setText(msg)
         self.fetch_btn.setEnabled(state)
 
-    def show_game_info(self, game):
-        logger.info(f"show_game_info called with {game.title}")
-        self.game_info_window = GameInfoWindow(game)
-        self.game_info_window.show()
+    def show_window(self, window):
+        self.window = window
+        window.show()
 
     def append_to_grid(self, cards):
-        logger.info(f"populate_grid called with {len(cards)} games")
+        # logger.info(f"populate_grid called with {len(cards)} games")
 
         if (self.app_state.clear_grid):
             self.flow_layout.clear_layout()
@@ -88,12 +99,8 @@ class MainWindow(QMainWindow):
 
         for card in cards:
             self.flow_layout.addWidget(card)
-            self.refresh_style(card)
 
         self.flow_layout.addWidget(self.load_more_btn)
-
-    def refresh_style(self, widget: QWidget):
-        widget.style().polish(widget)
 
     def set_thumbnail(self, pixmap: QPixmap, target):
         logger.info(f"setting thumbnail for {target._card.title}")

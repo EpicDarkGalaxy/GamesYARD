@@ -1,3 +1,5 @@
+import os
+import re
 from base64 import b64decode
 from urllib.parse import urlparse
 
@@ -74,3 +76,17 @@ def get_direct_link(url: str) -> str:
     except Exception as e:
         logger.warning(f"failed to fetch direct link for {url}")
         return ""
+
+def clean_filename(filename):
+    # Remove characters that are illegal in file names
+    return re.sub(r'[\\/*?:"<>|]', "", filename)
+
+def get_filename_from_url(url):
+    # This gets the part after the last slash: "PVZGOTY2009.rar"
+    path = urlparse(url).path
+    filename = os.path.basename(path)
+
+    # Fallback if there is no filename (e.g., URL ends in /)
+    if not filename:
+        return "downloaded_file"
+    return filename
