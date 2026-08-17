@@ -8,7 +8,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ...core import MANAGER
 from ...core.tools import get_logger
 from ...ui import Ui_gameinfo
 from ..widget.provider_button_widget import ProviderButton
@@ -16,9 +15,10 @@ from ..widget.provider_button_widget import ProviderButton
 logger = get_logger(__name__)
 
 class GameInfoWindow(QWidget):
-    def __init__(self):
+    def __init__(self, manager):
         super().__init__()
-        MANAGER.game_info_signals.game_selected.connect(self.on_game_selected)
+        self.manager = manager
+        self.manager.signals.card_clicked.connect(self.on_game_selected)
 
         self.setGeometry(100, 100, 600, 600)
 
@@ -73,9 +73,9 @@ class GameInfoWindow(QWidget):
         self.links.clear()
         self.clear_layout(self.ui.download_links_layout)
 
-        download_links = MANAGER.request_provider_links(self.game_card.url)
+        download_links = self.manager.request_provider_links(self.game_card.url)
         for landing_page_url in download_links:
-            name = MANAGER.request_provider_name(landing_page_url)
+            name = self.manager.request_provider_name(landing_page_url)
             label = ProviderButton(name, landing_page_url, self.on_provider_click)
             label.setProperty("styleClass","provider-link-label")
 
@@ -99,7 +99,7 @@ class GameInfoWindow(QWidget):
         # Disable Link so the user can't spam it
         self.set_link_state(False, provider_btn)
 
-        suggested_name = MANAGER.request_filename_from_url(landing_page_url)
+        suggested_name = self.manager.request_filename_from_url(landing_page_url)
         file_path = QFileDialog.getSaveFileName(self, "Save Game", suggested_name)
         if (file_path[0] != ""):
-            MANAGER.resolve_and_download(file_path[0], landing_page_url, provider_btn.update_progress)
+            self.manager.resolve_and_download(file_path[0], landing_page_url, provider_btn.update_progress)

@@ -3,8 +3,8 @@ import sys
 
 from PySide6.QtWidgets import QApplication
 
-from src.ui.windows import MainWindow
-from src.core.manager import MANAGER
+from src.ui.window_controller import WindowController
+from src.core.manager import Manager
 
 
 def load_stylesheet(app: QApplication):
@@ -21,7 +21,6 @@ def load_stylesheet(app: QApplication):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     load_stylesheet(app)
-    window = MainWindow()
-    MANAGER.store_main_window(window)
-    window.show()
+    controller = WindowController(Manager())
+    controller.show_MainWindow()
     sys.exit(app.exec())

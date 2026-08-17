@@ -18,9 +18,8 @@ from ..core.asynchronus import (
 )
 from ..core.models import GameData, GameDetails
 from .tools import GameFetcher, get_default_icon, get_logger
-from .ui.ui_signals import GameInfoWindowSignals, MainWindowSignals
-from .ui.widget import GameCardWidget
-from .ui.windows.game_info_window import GameInfoWindow
+from ..ui import ManagerSignals
+from ..ui.widget import GameCardWidget
 
 logger = get_logger(__name__)
 
@@ -31,7 +30,8 @@ class FetchState(Enum):
     FETCH_FAIL = 4
 
 class AppState:
-    def __init__(self):
+    def __init__(self, manager):
+        self.manager = manager
         self.search_query = ""
         self._fetch_state = FetchState.READY
         self.clear_grid = False
@@ -45,31 +45,22 @@ class AppState:
     def set_fetch_state(self, state: FetchState):
         self._fetch_state = state
         if (self._fetch_state is FetchState.READY):
-            MANAGER.main_window_signals.update_fetch_btn.emit("Ready", True)
+            self.manager.signals.update_fetch_btn.emit("Ready", True)
         elif (self._fetch_state is FetchState.FETCHING):
-            MANAGER.main_window_signals.update_fetch_btn.emit("Fetching", False)
+            self.manager.signals.update_fetch_btn.emit("Fetching", False)
         elif (self._fetch_state is FetchState.FETCHED):
-            MANAGER.main_window_signals.update_fetch_btn.emit("Fetched", True)
+            self.manager.signals.update_fetch_btn.emit("Fetched", True)
         elif (self._fetch_state is FetchState.FETCH_FAIL):
-            MANAGER.main_window_signals.update_fetch_btn.emit("Fetch Fail", True)
+            self.manager.signals.update_fetch_btn.emit("Fetch Fail", True)
 
-class _Manager:
+class Manager:
     def __init__(self, main_window=None):
-        self.app_state = AppState()
+        self.app_state = AppState(self)
         self.game_fetcher = GameFetcher()
         self.worker_manager = WorkerManager()
         self.worker_pool = WorkerPool()
 
-        self.game_info_signals = GameInfoWindowSignals()
-        self.main_window_signals = MainWindowSignals()
-
-        self.bind_signals(main_window)
-
-    def bind_signals(self, main_window):
-        if (main_window)
-            self.main_window_signals.request_show_window.connect(main_window.show_window)
-            self.main_window_signals.add_to_grid.connect(main_window.append_to_grid)
-            self.main_window_signals.update_fetch_btn.connect(main_window.update_fetch_btn)
+        self.signals = ManagerSignals()
 
     # Called when the load more button is pressed
     @Slot()
@@ -84,8 +75,8 @@ class _Manager:
         data = card_widget.get_data
         data.details.system_requirements = self.request_system_req(data.url)
 
-        self.main_window_signals.request_show_window.emit(GameInfoWindow())
-        self.game_info_signals.game_selected.emit(data)
+        self.signals.show_game_info_window.emit()
+        self.signals.card_clicked.emit(data)
 
     @Slot(str)
     def on_search_text_changed(self, query: str):
@@ -138,7 +129,7 @@ class _Manager:
             self.worker_pool.run_in_thread_pool(self.thumb_fetch_thread)
 
             self.app_state.game_list.append(data)
-        self.main_window.append_to_grid(self.widgets)
+        self.signals.cards_ready.emit(self.widgets)
 
     @Slot(GameCardWidget, bytes)
     def on_thumb_fetched(self, card_widget: GameCardWidget, img_data: bytes):
@@ -215,6 +206,3 @@ class _Manager:
 
     def request_provider_links(self, url: str) -> list[str]:
         return self.game_fetcher.fetch_provder_links(url)
-
-
-MANAGER = _Manager()
