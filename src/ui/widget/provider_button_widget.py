@@ -7,13 +7,13 @@ class ProviderButton(QWidget):
 
     # _disable_interaction = False
 
-    def __init__(self, provider_name: str, provider_link: str="", on_click=None):
+    def __init__(self, provider_name: str, landing_page_url: str="", on_click=None):
         super().__init__()
 
         self.main_layout = QHBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.provider_link = provider_link
+        self.landing_page_url = landing_page_url
 
         self.btn = QPushButton(self)
         self.btn.setText(provider_name)
@@ -47,7 +47,7 @@ class ProviderButton(QWidget):
         self.progress_bar.setValue(value)
 
     def emit_special_click(self):
-        self.special_click.emit(self.provider_link, self)
+        self.special_click.emit(self.landing_page_url, self)
 
     # def mousePressEvent(self, event):
     #     print("Mouse Clicked")

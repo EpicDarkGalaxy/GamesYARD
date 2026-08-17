@@ -46,7 +46,7 @@ class GameFetchWorker(QObject):
         self.signals.finished.emit()
 
 class DownloadWorker(QObject):
-    def __init__(self, url, save_path, signals):
+    def __init__(self, url: str, save_path: str, signals):
         super().__init__()
         self.url = url
         self.save_path = save_path

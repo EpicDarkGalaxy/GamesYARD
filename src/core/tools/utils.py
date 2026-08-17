@@ -1,7 +1,7 @@
 import os
 import re
 from base64 import b64decode
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 from bs4 import BeautifulSoup
 from curl_cffi import requests
@@ -35,7 +35,7 @@ def parseHtml(url) -> BeautifulSoup:
             timeout=10
         )
         if response.status_code == 200:
-            logger.info("Response code 200")
+            logger.info("Response CODE: 200")
             return BeautifulSoup(response.text, 'html.parser')
         else:
             logger.error("could not get the html")
@@ -81,12 +81,23 @@ def clean_filename(filename):
     # Remove characters that are illegal in file names
     return re.sub(r'[\\/*?:"<>|]', "", filename)
 
-def get_filename_from_url(url):
-    # This gets the part after the last slash: "PVZGOTY2009.rar"
+def get_filename_from_url(url: str) -> str:
     path = urlparse(url).path
+
+    # Strip the trailing slash if it exists
+    if "/" in path:
+        path = path.removesuffix('/')
+
     filename = os.path.basename(path)
 
-    # Fallback if there is no filename (e.g., URL ends in /)
+    # If still empty, try to get it from the last segment of the path
     if not filename:
-        return "downloaded_file"
-    return filename
+        parts = path.split('/')
+        # Filter out empty strings from the split
+        parts = [p for p in parts if p]
+        if parts:
+            filename = parts[-1]
+        else:
+            return "downloaded_file"
+
+    return unquote(filename)

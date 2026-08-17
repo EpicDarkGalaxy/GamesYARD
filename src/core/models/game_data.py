@@ -11,6 +11,5 @@ class GameData:
     title: str
     poster_url: str
     url: str
-    # Use Optional to handle the "not fetched yet" state
     details: GameDetails | None = None
     poster_pixmap: QPixmap | None = None

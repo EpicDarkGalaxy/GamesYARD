@@ -1,8 +1,15 @@
 from PySide6.QtCore import Qt, Slot
-from PySide6.QtWidgets import QLabel, QWidget, QFileDialog, QProgressBar, QHBoxLayout, QStyleFactory
+from PySide6.QtWidgets import (
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QProgressBar,
+    QStyleFactory,
+    QWidget,
+)
 
-from ...core.tools import get_logger
 from ...core import MANAGER
+from ...core.tools import get_logger
 from ...ui import Ui_gameinfo
 from ..widget.provider_button_widget import ProviderButton
 
@@ -93,17 +100,18 @@ class GameInfoWindow(QWidget):
 
     # I will change it
     @Slot(str, object)
-    def on_provider_click(self, provider_link, label: ProviderButton):
-        logger.info(f"Clicked Link: {provider_link}")
+    def on_provider_click(self, landing_page_url, provider_btn: ProviderButton):
+        logger.info(f"Clicked Link: {landing_page_url}")
 
         # Disable Link so the user can't spam it
-        self.set_link_state(False, label)
+        self.set_link_state(False, provider_btn)
 
-        suggested_name = MANAGER.request_filename_from_url(provider_link)
+        suggested_name = MANAGER.request_filename_from_url(landing_page_url)
         file_path = QFileDialog.getSaveFileName(self, "Save Game", suggested_name)
-        if (file_path):
-            MANAGER.download_game(file_path[0], provider_link, label.update_progress)
-
+        if (file_path[0] != ""):
+            MANAGER.resolve_and_download(file_path[0], landing_page_url, provider_btn.update_progress)
+        else:
+            return
     # @Slot()
     # def on_download_finished():
     #     pass
