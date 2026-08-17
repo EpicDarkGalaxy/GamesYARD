@@ -82,22 +82,18 @@ def clean_filename(filename):
     return re.sub(r'[\\/*?:"<>|]', "", filename)
 
 def get_filename_from_url(url: str) -> str:
-    path = urlparse(url).path
+    # 1. Parse the URL
+    parsed = urlparse(url)
+    path = parsed.path  # Result: "/file/pq2gf5st6u8ajxb/PVZGOTY2009.rar/file"
 
-    # Strip the trailing slash if it exists
-    if "/" in path:
-        path = path.removesuffix('/')
+    # 2. Split into parts: ['', 'file', 'pq2gf5st6u8ajxb', 'PVZGOTY2009.rar', 'file']
+    parts = path.split('/')
 
-    filename = os.path.basename(path)
+    # 3. Look for the part that ends in a known extension
+    extensions = ('.rar', '.zip', '.7z', '.exe', '.msi')
+    for part in parts:
+        if part.lower().endswith(extensions):
+            return part
 
-    # If still empty, try to get it from the last segment of the path
-    if not filename:
-        parts = path.split('/')
-        # Filter out empty strings from the split
-        parts = [p for p in parts if p]
-        if parts:
-            filename = parts[-1]
-        else:
-            return "downloaded_file"
-
-    return unquote(filename)
+    # 4. Fallback if no extension found
+    return "downloaded_file"

@@ -27,11 +27,11 @@ class GameInfoWindow(QWidget):
 
         self.ui = Ui_gameinfo()
         self.ui.setupUi(self)
-        self.ui.fetch_btn.clicked.connect(self.on_fetch)
+        self.ui.fetch_btn.clicked.connect(self.on_fetch_btn)
 
     @Slot(object)
     def on_game_selected(self, game_data):
-        self.game_card=game_data
+        self.game_card = game_data
         title = game_data.title
         pixmap = game_data.poster_pixmap
         details = game_data.details.system_requirements
@@ -51,7 +51,6 @@ class GameInfoWindow(QWidget):
 
     def set_details(self, details):
         logger.info("setting details")
-
         for catg, req in details.items():
             label = QLabel()
             label.setText(f"<b>{catg}</b>: {req}")
@@ -67,7 +66,7 @@ class GameInfoWindow(QWidget):
                 item.layout().deleteLater()
 
     @Slot()
-    def on_fetch(self):
+    def on_fetch_btn(self):
         if (not self.game_card.details):
             return
 
@@ -75,9 +74,9 @@ class GameInfoWindow(QWidget):
         self.clear_layout(self.ui.download_links_layout)
 
         download_links = MANAGER.request_provider_links(self.game_card.url)
-        for link in download_links:
-            name = MANAGER.request_provider_name(link)
-            label = ProviderButton(name, link, self.on_provider_click)
+        for landing_page_url in download_links:
+            name = MANAGER.request_provider_name(landing_page_url)
+            label = ProviderButton(name, landing_page_url, self.on_provider_click)
             label.setProperty("styleClass","provider-link-label")
 
             # label.btn.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -85,20 +84,14 @@ class GameInfoWindow(QWidget):
 
             self.links.append(label) # Storing a Reference to keep it alive
             self.ui.download_links_layout.addWidget(label)
-            self.game_card.details.downloads_links.append(link)
+            self.game_card.details.downloads_links.append(landing_page_url)
 
 
-    # Its a temporary function and maybe be get removed
+    # Its a temporary function and may get removed
     @staticmethod
     def set_link_state(state: bool, label: ProviderButton):
         label.setInteraction(state)
 
-    # @Slot(float)
-    # def on_progress(self, progress):
-    #     logger.info(f"downloading {progress}%")
-    #     self.progress_bar.setValue(float(progress))
-
-    # I will change it
     @Slot(str, object)
     def on_provider_click(self, landing_page_url, provider_btn: ProviderButton):
         logger.info(f"Clicked Link: {landing_page_url}")
@@ -110,8 +103,3 @@ class GameInfoWindow(QWidget):
         file_path = QFileDialog.getSaveFileName(self, "Save Game", suggested_name)
         if (file_path[0] != ""):
             MANAGER.resolve_and_download(file_path[0], landing_page_url, provider_btn.update_progress)
-        else:
-            return
-    # @Slot()
-    # def on_download_finished():
-    #     pass
