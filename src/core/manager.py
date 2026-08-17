@@ -1,7 +1,7 @@
-from curl_cffi import get
+from enum import Enum
+
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QFileDialog
 
 from src.core.asynchronus.worker import DownloadWorker
 from src.core.downloaders import DownloaderFactory
@@ -17,29 +17,59 @@ from ..core.asynchronus import (
     WorkerPool,
 )
 from ..core.models import GameData, GameDetails
-from ..ui.ui_signals import GameInfoWindowSignals, UiSignals
-from ..ui.widget import GameCardWidget
 from .tools import GameFetcher, get_default_icon, get_logger
+from .ui.ui_signals import GameInfoWindowSignals, MainWindowSignals
+from .ui.widget import GameCardWidget
+from .ui.windows.game_info_window import GameInfoWindow
 
 logger = get_logger(__name__)
 
+class FetchState(Enum):
+    READY = 1
+    FETCHING = 2
+    FETCHED = 3
+    FETCH_FAIL = 4
 
 class AppState:
     def __init__(self):
         self.search_query = ""
+        self._fetch_state = FetchState.READY
         self.clear_grid = False
         self.game_list: list[GameData] = []
 
+    @property
+    def get_fetch_state(self) -> FetchState:
+        return self._fetch_state
+
+    @get_fetch_state.setter
+    def set_fetch_state(self, state: FetchState):
+        self._fetch_state = state
+        if (self._fetch_state is FetchState.READY):
+            MANAGER.main_window_signals.update_fetch_btn.emit("Ready", True)
+        elif (self._fetch_state is FetchState.FETCHING):
+            MANAGER.main_window_signals.update_fetch_btn.emit("Fetching", False)
+        elif (self._fetch_state is FetchState.FETCHED):
+            MANAGER.main_window_signals.update_fetch_btn.emit("Fetched", True)
+        elif (self._fetch_state is FetchState.FETCH_FAIL):
+            MANAGER.main_window_signals.update_fetch_btn.emit("Fetch Fail", True)
 
 class _Manager:
-    def __init__(self):
+    def __init__(self, main_window=None):
         self.app_state = AppState()
         self.game_fetcher = GameFetcher()
         self.worker_manager = WorkerManager()
         self.worker_pool = WorkerPool()
-        self.main_window = None
 
         self.game_info_signals = GameInfoWindowSignals()
+        self.main_window_signals = MainWindowSignals()
+
+        self.bind_signals(main_window)
+
+    def bind_signals(self, main_window):
+        if (main_window)
+            self.main_window_signals.request_show_window.connect(main_window.show_window)
+            self.main_window_signals.add_to_grid.connect(main_window.append_to_grid)
+            self.main_window_signals.update_fetch_btn.connect(main_window.update_fetch_btn)
 
     # Called when the load more button is pressed
     @Slot()
@@ -50,13 +80,11 @@ class _Manager:
 
     @Slot(GameCardWidget)
     def on_card_clicked(self, card_widget: GameCardWidget):
-        from src.ui.windows.game_info_window import GameInfoWindow
-
         logger.info(f"Card clicked: {card_widget}")
         data = card_widget.get_data
         data.details.system_requirements = self.request_system_req(data.url)
 
-        self.game_info_signals.request_show_window.emit(GameInfoWindow())
+        self.main_window_signals.request_show_window.emit(GameInfoWindow())
         self.game_info_signals.game_selected.emit(data)
 
     @Slot(str)
@@ -66,9 +94,9 @@ class _Manager:
 
     @Slot(bool)
     def on_search(self, load_more: bool = False):
-        logger.info("on_search pressed!")
+        logger.info("Searching!")
 
-        self.main_window.update_fetch_btn("Fetching...", False)
+        self.app_state.set_fetch_state = FetchState.FETCHING
 
         if not load_more:
             self.app_state.clear_grid = True
@@ -86,14 +114,13 @@ class _Manager:
         )
 
     @Slot(list)
-    def handle_search_result(self, game_data):
+    def handle_search_result(self, game_data: list[GameData]):
         logger.info("handle_search_result called")
 
         if not game_data:
-            self.main_window.update_fetch_btn("Failed", True)
+            self.app_state.set_fetch_state = FetchState.FETCH_FAIL
             return
 
-        self.main_window.update_fetch_btn("Fetched", True)
         self.widgets: list[GameCardWidget] = []
 
         self.thumb_fetched_signal = ThumbnailWorkerSignals()

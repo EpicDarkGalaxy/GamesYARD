@@ -56,20 +56,20 @@ class MainWindow(QMainWindow):
 
         # Load more button
         # Intializing here since append_to_grid checks if this button exists before
-        # removing it then recreating it again
+        # removing it
         self.load_more_btn = LoadMoreButtonWidget(MANAGER.on_load_more)
 
         # Fetch button
         self.fetch_btn = QPushButton()
         self.fetch_btn.setText("Fetch")
 
-        self.connect_signals()
+        self.bind_signals()
 
         # Add to toolbar
         self.main_ui.toolBar.addWidget(self.search_bar)
         self.main_ui.toolBar.addWidget(self.fetch_btn)
 
-    def connect_signals(self):
+    def bind_signals(self):
         # Fetch button
         self.fetch_btn.clicked.connect(MANAGER.on_search)
 
@@ -77,16 +77,17 @@ class MainWindow(QMainWindow):
         self.search_bar.returnPressed.connect(MANAGER.on_search)
         self.search_bar.textChanged.connect(MANAGER.on_search_text_changed)
 
-        MANAGER.game_info_signals.request_show_window.connect(self.show_window)
-
+    @Slot(str, bool)
     def update_fetch_btn(self, msg: str, state:bool):
         self.fetch_btn.setText(msg)
         self.fetch_btn.setEnabled(state)
 
+    @Slot(QWidget)
     def show_window(self, window):
         self.window = window
         window.show()
 
+    @Slot(QWidget)
     def append_to_grid(self, cards):
         logger.info(f"populate_grid called with {len(cards)} games")
 
@@ -101,19 +102,3 @@ class MainWindow(QMainWindow):
             self.flow_layout.addWidget(card)
 
         self.flow_layout.addWidget(self.load_more_btn)
-
-    # def set_thumbnail(self, pixmap: QPixmap, target):
-    #     logger.info(f"setting thumbnail for {target._card.title}")
-
-    #     if target:
-    #         logger.info(f"storing thumbnail for {target._card.title} in its CardData")
-
-    #         # Instead of fixed size, using 'KeepAspectRatio'
-    #         scaled_pixmap = pixmap.scaled(180, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-    #         target.card_thumbnail.setPixmap(scaled_pixmap)
-
-    #         # Store the data model
-    #         target._card.poster_pixmap = pixmap
-
-    #         # Update the UI
-    #         target.card_thumbnail.setPixmap(scaled_pixmap)
