@@ -5,7 +5,7 @@ TicTikBomb is a desktop application built with PySide6 that allows users to sear
 ## Features
 - **Game Search**: Search for games directly from the application.
 - **Game Details**: View system requirements and metadata for selected games
-- **Download Links**: Scrape and extract direct game download links from the site (Not implemented yet).
+- **Download**: it can donwload from MediaFire and Filekeeper hosting sites.
 
 ## Requirements
 - Python 3.10+
