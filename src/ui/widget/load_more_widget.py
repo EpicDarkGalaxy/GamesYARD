@@ -9,14 +9,13 @@ class LoadMoreButtonWidget(QWidget):
         super().__init__()
 
         self.setFixedSize(160, 180)
-
         self.main_layout = QVBoxLayout(self)
 
         self.btn = QPushButton("LoadMore")
 
-        if (on_click):
-            self.btn.clicked.connect(on_click)
-
-        self.card_thumbnail = QLabel()
+        self.card_thumbnail = QLabel() # Defined just to satisfy the layout, just a Workaround
 
         self.main_layout.addWidget(self.btn)
+
+        if (on_click):
+            self.btn.clicked.connect(on_click)

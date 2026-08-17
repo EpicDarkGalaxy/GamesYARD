@@ -1,4 +1,4 @@
-from ..models import GameCard
+from ..models import GameData, GameDetails
 from .log import get_logger
 from .utils import decodeBase64, parseHtml
 
@@ -10,11 +10,22 @@ TARGET_URL = "https://4fnet.org"
 
 class GameFetcher:
     def __init__(self):
-        self.gameList: list[GameCard] = []
+        self.gameList: list[GameData] = []
         self.page = 1
         self.has_next_page = True
 
     def get_game_list(self, query, requery=False):
+        """
+        Fetches the game list from the target URL based on the given query.
+
+        Args:
+            query (str): The search query to filter games.
+            requery (bool): Whether to requery the first page or load the next page.
+
+        Returns:
+            list[GameData]: The list of fetched game data or an empty list if no games are found.
+        """
+
         self.gameList.clear()
 
         if not requery:
@@ -48,7 +59,7 @@ class GameFetcher:
                 )
 
                 logger.info(f"Adding game: {title}")
-                self.gameList.append(GameCard(title, poster_link, main_page_link))
+                self.gameList.append(GameData(title, poster_link, main_page_link, GameDetails([], [])))
 
         if (self.gameList):
             return self.gameList
@@ -58,6 +69,15 @@ class GameFetcher:
 
     @staticmethod
     def get_game_details(game_page_url):
+        """
+        Fetches the game details from the game page URL where game details are located.
+
+        Args:
+            game_page_url (str): The URL of the game page.
+
+        Returns:
+            dict: The parsed game details or an empty dictionary if no details are found.
+        """
         soup1 = parseHtml(game_page_url)
         tr = soup1.select("tr")
         tr.pop(0) if tr else None # We don't need the first row
@@ -82,7 +102,17 @@ class GameFetcher:
         return system_requirement
 
     @staticmethod
-    def fetch_download_links(game_url=None):
+    def fetch_provder_links(game_url=None):
+        """
+        Fetches the providers links from the game page URL where download links are located.
+
+        Args:
+            game_url (str): The URL of the game page.
+
+        Returns:
+            list: The list of fetched provider links or an empty list if no links are found.
+        """
+
         if game_url is None:
             return []  # Return an empty list if no game URL is provided
         soup2 = parseHtml(game_url)
@@ -98,7 +128,9 @@ class GameFetcher:
         for link in download_links:
             logger.info(link)
 
-        return download_links
+        if (download_links):
+            return download_links
+        return []
 
 # try:
 #     selection = GameFetcher.gameList[int(input("SelectByNum: ")) - 1]

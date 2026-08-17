@@ -1,1 +1,1 @@
-from .model_game_card import GameCard, GameDetails
+from .game_data import GameData, GameDetails
