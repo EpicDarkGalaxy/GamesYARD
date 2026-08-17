@@ -19,7 +19,7 @@ from ..core.asynchronus import (
 from ..core.models import GameData, GameDetails
 from .tools import GameFetcher, get_default_icon, get_logger
 from ..ui import ManagerSignals
-from ..ui.widget import GameCardWidget
+from ..ui.widget import GameCard
 
 logger = get_logger(__name__)
 
@@ -69,8 +69,8 @@ class Manager:
         self.app_state.clear_grid = False
         self.on_search(load_more=True)
 
-    @Slot(GameCardWidget)
-    def on_card_clicked(self, card_widget: GameCardWidget):
+    @Slot(GameCard)
+    def on_card_clicked(self, card_widget: GameCard):
         logger.info(f"Card clicked: {card_widget}")
         data = card_widget.get_data
         data.details.system_requirements = self.request_system_req(data.url)
@@ -112,7 +112,7 @@ class Manager:
             self.app_state.set_fetch_state = FetchState.FETCH_FAIL
             return
 
-        self.widgets: list[GameCardWidget] = []
+        self.widgets: list[GameCard] = []
 
         self.thumb_fetched_signal = ThumbnailWorkerSignals()
         self.thumb_fetched_signal.thumbnail_fetch_finished.connect(
@@ -120,7 +120,7 @@ class Manager:
         )
 
         for data in game_data:
-            card_widget = GameCardWidget(data, on_click=self.on_card_clicked)
+            card_widget = GameCard(data, on_click=self.on_card_clicked)
             self.widgets.append(card_widget)
 
             self.thumb_fetch_thread = ThumbnailFetchWorker(
@@ -131,8 +131,8 @@ class Manager:
             self.app_state.game_list.append(data)
         self.signals.cards_ready.emit(self.widgets)
 
-    @Slot(GameCardWidget, bytes)
-    def on_thumb_fetched(self, card_widget: GameCardWidget, img_data: bytes):
+    @Slot(GameCard, bytes)
+    def on_thumb_fetched(self, card_widget: GameCard, img_data: bytes):
         data = card_widget.get_data
         if not data:
             return

@@ -2,7 +2,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
 
-class LoadMoreButtonWidget(QWidget):
+class LoadMoreButton(QWidget):
     clicked = Signal()
 
     def __init__(self, on_click=None):

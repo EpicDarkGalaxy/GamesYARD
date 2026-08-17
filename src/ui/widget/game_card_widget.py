@@ -6,7 +6,7 @@ from ...core.models import GameData
 from ..ui_signals import GameInfoWindowSignals
 
 
-class GameCardWidget(QWidget):
+class GameCard(QWidget):
     clicked: Signal = Signal(object)
 
     def __init__(self, game: GameData, on_click=None):

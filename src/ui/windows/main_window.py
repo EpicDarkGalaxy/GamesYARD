@@ -13,7 +13,7 @@ from enum import Enum
 from ...core import get_logger
 from ...ui import Ui_MainWindow
 from ...ui.layouts.flow_layout import FlowLayout
-from ...ui.widget import LoadMoreButtonWidget
+from ...ui.widget import LoadMoreButton
 
 logger = get_logger(__name__)
 
@@ -56,7 +56,7 @@ class MainWindow(QMainWindow):
         # Load more button
         # Intializing here since append_to_grid checks if this button exists before
         # removing it
-        self.load_more_btn = LoadMoreButtonWidget(self.manager.on_load_more)
+        self.load_more_btn = LoadMoreButton(self.manager.on_load_more)
 
         # Fetch button
         self.fetch_btn = QPushButton()
@@ -95,7 +95,7 @@ class MainWindow(QMainWindow):
 
         if (self.load_more_btn):
             self.flow_layout.removeWidget(self.load_more_btn)
-            self.load_more_btn = LoadMoreButtonWidget(self.manager.on_load_more)
+            self.load_more_btn = LoadMoreButton(self.manager.on_load_more)
 
         for card in cards:
             self.flow_layout.addWidget(card)
