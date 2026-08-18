@@ -1,6 +1,6 @@
 # GamesYARD
 
-GamesYARD is a desktop application built with PySide6 that allows users to search, browse, and fetch information about games from goldmines like internet archive.
+GamesYARD is a desktop application built with PySide6 that allows users to search, browse, and download games from sites like internet archive.
 
 ## Features
 - **Game Search**: Search for games directly from the application.
