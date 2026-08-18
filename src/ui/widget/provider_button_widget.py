@@ -1,7 +1,6 @@
-from typing import override
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QHBoxLayout, QProgressBar, QPushButton, QWidget
 
-from PySide6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QProgressBar
-from PySide6.QtCore import Signal, Qt
 
 class ProviderButton(QWidget):
     download_requested = Signal(str, QWidget) # URL, Widget reference
@@ -48,7 +47,6 @@ class ProviderButton(QWidget):
     def update_progress(self, value: int):
         self.progress_bar.setValue(value)
 
-    @override
     def enterEvent(self, event):
         if (self._is_downloading):
             self.btn.setStyleSheet("""
@@ -60,7 +58,6 @@ class ProviderButton(QWidget):
             self.progress_bar.setVisible(False)
             super().enterEvent(event)
 
-    @override
     def leaveEvent(self, event):
         if (self._is_downloading):
             self.btn.setVisible(False)

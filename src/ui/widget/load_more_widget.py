@@ -3,8 +3,6 @@ from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
 
 class LoadMoreButton(QWidget):
-    clicked = Signal()
-
     def __init__(self, on_click=None):
         super().__init__()
 

@@ -82,7 +82,7 @@ class GameInfoWindow(QWidget):
         if (not self.game_card.details):
             return
 
-        # clear old providers except those currently downloading to avoid duplication
+        # clearing old providers except those currently downloading to avoid duplication
         for provider in self.providers:
             if provider not in self.downloading_providers:
                 provider.deleteLater()
