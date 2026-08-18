@@ -4,8 +4,8 @@ GamesYARD is a desktop application built with PySide6 that allows users to searc
 
 ## Features
 - **Game Search**: Search for games directly from the application.
-- **Game Details**: View system requirements and metadata for selected games
-- **Download**: it can donwload from MediaFire and Filekeeper hosting sites.
+- **Game Details**: View system requirements and metadata for selected games.
+- **Download**: Currently, MediaFire and Filekeeper hosting sites are supported.
 
 ## Requirements
 - Python 3.10+
