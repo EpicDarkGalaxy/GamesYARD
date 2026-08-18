@@ -71,6 +71,7 @@ class DownloadWorker(QObject):
                         percent = int(downloaded_size / total_size * 100)
                         self.signals.progress.emit(percent)
             response.close()
+            logger.info("Download Completed!")
             self.signals.finished.emit()
 
         except Exception as e:

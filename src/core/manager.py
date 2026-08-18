@@ -16,10 +16,10 @@ from ..core.asynchronus import (
     WorkerManager,
     WorkerPool,
 )
-from ..core.models import GameData, GameDetails
-from .tools import GameFetcher, get_default_icon, get_logger
+from ..core.models import GameData
 from ..ui import ManagerSignals
 from ..ui.widget import GameCard
+from .tools import GameFetcher, get_default_icon, get_logger
 
 logger = get_logger(__name__)
 
@@ -112,6 +112,8 @@ class Manager:
             self.app_state.set_fetch_state = FetchState.FETCH_FAIL
             return
 
+        self.app_state.set_fetch_state = FetchState.FETCHED
+
         self.widgets: list[GameCard] = []
 
         self.thumb_fetched_signal = ThumbnailWorkerSignals()
@@ -152,21 +154,6 @@ class Manager:
         else:
             logger.info(f"card {data.title} does not have thumbnail, setting default")
             card_widget.thumbnail = get_default_icon()
-
-    def store_main_window(self, window):
-        """
-        Stores the MainWindow if it is not an imposter.
-        Its a one-time operation.
-
-        Args:
-            window: The main window to store.
-
-        """
-        if not self.main_window:  # We don't want to store imposters
-            logger.info(f"Storing main window: {window}")
-            self.main_window = window
-        else:
-            logger.error("No Main Window was provided, or its an imposter")
 
     def resolve_and_download(self, save_path, landing_page_url, progress_callback=None):
         self.progress_signal = DownloadWorkerSignals()
