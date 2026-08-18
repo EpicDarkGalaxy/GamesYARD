@@ -1,4 +1,4 @@
-# TicTikBomb
+# GamesYARD
 
 TicTikBomb is a desktop application built with PySide6 that allows users to search, browse, and fetch information about games from goldmines like internet archive.
 
