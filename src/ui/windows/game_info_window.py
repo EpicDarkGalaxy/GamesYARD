@@ -118,4 +118,4 @@ class GameInfoWindow(QWidget):
         file_path = QFileDialog.getSaveFileName(self, "Save Game", suggested_name)
         if (file_path[0] != ""):
             provider_btn._is_downloading = True
-            self.manager.resolve_and_download(file_path[0], landing_page_url, provider_btn.update_progress)
+            self.manager.attempt_download(file_path[0], landing_page_url, provider_btn.update_progress)
