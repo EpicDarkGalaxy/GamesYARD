@@ -35,6 +35,9 @@ class AppState:
         self.search_query = ""
         self._fetch_state = FetchState.READY
         self.clear_grid = False
+        self.is_downloading = False
+        self.providers = []
+        self.download_queue = []
         self.game_list: list[GameData] = []
 
     @property
@@ -153,9 +156,18 @@ class Manager:
             logger.info(f"card {data.title} does not have thumbnail, setting default")
             card_widget.thumbnail = get_default_icon()
 
-    def attempt_download(self, save_path, landing_page_url, progress_callback=None):
-        self.progress_signal = DownloadWorkerSignals()
-        self.progress_signal.progress.connect(progress_callback)
+    def attempt_download(self, save_path, landing_page_url, progress_callback=None, download_finished_callback=None, provider_btn=None):
+        """
+        Attempts to download a game from the given landing page URL.
+        """
+        self.download_worker_signals = DownloadWorkerSignals()
+        self.download_worker_signals.download_finished.connect(self.on_download_finished)
+
+        if (progress_callback):
+            self.download_worker_signals.progress.connect(progress_callback)
+
+        if (download_finished_callback):
+            self.download_worker_signals.download_finished.connect(download_finished_callback)
 
         provider = DownloaderFactory.get_provider(url=landing_page_url)
         if not provider:
@@ -168,16 +180,34 @@ class Manager:
                 f"direct link not found for {landing_page_url}, skipping download"
             )
             return
-        self.start_download(save_path, direct_link, progress_callback)
+        self.start_download(save_path, direct_link, progress_callback, provider_btn)
 
-    def start_download(self, save_path, direct_link, progress_callback=None):
-        self.download_worker = DownloadWorker(direct_link, save_path, self.progress_signal)
+    def start_download(self, save_path, direct_link, progress_callback=None, provider_btn=None):
+        self.download_worker = DownloadWorker(direct_link, save_path, self.download_worker_signals, provider_btn)
         self.worker_manager.run_in_thread(self.download_worker, on_progress=progress_callback)
 
     def stop_download(self):
-        if self.download_worker:
+        if (hasattr(self, 'download_worker') and self.download_worker):
             self.download_worker.is_cancelled = True
             self.download_worker = None
+
+    @Slot(object)
+    def on_download_finished(self, provider):
+        for provider_btn in self.app_state.download_queue:
+            if provider_btn is provider:
+                logger.info(f"Download finished: {provider.landing_page_url}")
+
+                provider_btn.set_downloading_state(is_downloading=False, is_downloaded=True)
+                self.app_state.download_queue.remove(provider_btn)
+                break
+
+    def cleanup(self):
+        self.stop_download()
+        self.app_state.download_queue.clear()
+        self.app_state.providers.clear()
+        self.app_state.game_list.clear()
+        self.worker_pool.WORKER_POOL.clear()
+        self.worker_manager.cleanup()
 
     @staticmethod
     def request_filename_from_url(url):

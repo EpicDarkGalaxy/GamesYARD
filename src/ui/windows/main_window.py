@@ -102,3 +102,22 @@ class MainWindow(QMainWindow):
             self.flow_layout.addWidget(card)
 
         self.flow_layout.addWidget(self.load_more_btn)
+
+    def closeEvent(self, event):
+        # Check if a download is active
+        if hasattr(self.manager, 'app_state') and self.manager.app_state.is_downloading:
+            from PySide6.QtWidgets import QMessageBox
+            reply = QMessageBox.question(
+                self, 'Exit?',
+                "A download is currently active. Are you sure you want to exit and cancel it?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            )
+
+            if reply == QMessageBox.No:
+                event.ignore() # Cancel the close event!
+                return
+
+        # If no download or they clicked Yes, proceed with cleanup
+        logger.info("Cleaning up and exiting...")
+        self.manager.cleanup()
+        event.accept()

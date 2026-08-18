@@ -7,6 +7,7 @@ class ProviderButton(QWidget):
     cancel_requested = Signal(str, QWidget) # self
 
     _is_downloading = False
+    _is_downloaded = False
 
     def __init__(self, provider_name: str, landing_page_url: str="", on_click=None, on_cancel=None):
         super().__init__()
@@ -47,8 +48,33 @@ class ProviderButton(QWidget):
     def update_progress(self, value: int):
         self.progress_bar.setValue(value)
 
+    def set_downloading_state(self, is_downloading: bool=False, is_downloaded: bool=False):
+        self._is_downloading = is_downloading
+        self._is_downloaded = is_downloaded
+
+        if (is_downloaded):
+            self.btn.setVisible(True)
+            self.btn.setStyleSheet("""
+                QPushButton {
+                    background-color: green;
+                }
+                """)
+            self.btn.setText("Donwload completed, click to redownload")
+            self.progress_bar.setVisible(False)
+            return
+
+        if (is_downloading):
+            self.btn.setVisible(False)
+            self.btn.setText("Click to Cancel")
+            self.progress_bar.setVisible(True)
+        else:
+            self.btn.setVisible(True)
+            self.btn.setStyleSheet("")
+            self.btn.setText(self.provider_name)
+            self.progress_bar.setVisible(False)
+
     def enterEvent(self, event):
-        if (self._is_downloading):
+        if (self._is_downloading and not self._is_downloaded):
             self.btn.setStyleSheet("""
                 QPushButton {
                     background-color: red;
@@ -59,19 +85,7 @@ class ProviderButton(QWidget):
             super().enterEvent(event)
 
     def leaveEvent(self, event):
-        if (self._is_downloading):
+        if (self._is_downloading and not self._is_downloaded):
             self.btn.setVisible(False)
             self.progress_bar.setVisible(True)
             super().leaveEvent(event)
-
-    def set_downloading_state(self, is_downloading: bool):
-        self._is_downloading = is_downloading
-        if (is_downloading):
-            self.btn.setVisible(False)
-            self.btn.setText("Click to Cancel")
-            self.progress_bar.setVisible(True)
-        else:
-            self.btn.setVisible(True)
-            self.btn.setStyleSheet("")
-            self.btn.setText(self.provider_name)
-            self.progress_bar.setVisible(False)

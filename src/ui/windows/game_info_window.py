@@ -25,8 +25,6 @@ class GameInfoWindow(QWidget):
 
         self.setGeometry(100, 100, 600, 600)
 
-        self.providers: list[ProviderButton] = []
-        self.downloading_providers: list[ProviderButton] = []  # Providers currently downloading
         self.progress_bars: list[QProgressBar] = []
 
         self.ui = Ui_gameinfo()
@@ -83,14 +81,14 @@ class GameInfoWindow(QWidget):
             return
 
         # clearing old providers except those currently downloading to avoid duplication
-        for provider in self.providers:
-            if provider not in self.downloading_providers:
+        for provider in self.manager.app_state.providers:
+            if provider not in self.manager.app_state.download_queue:
                 provider.deleteLater()
-        self.clear_layout(self.ui.download_links_layout, exclude=self.downloading_providers)
+        self.clear_layout(self.ui.download_links_layout, exclude=self.manager.app_state.download_queue)
 
         landing_page_urls = self.manager.request_provider_links(self.game_card.url)
         for landing_page_url in landing_page_urls:
-            if (landing_page_url in [provider.landing_page_url for provider in self.downloading_providers]):
+            if (landing_page_url in [provider.landing_page_url for provider in self.manager.app_state.download_queue]):
                 logger.info(f"Provider {landing_page_url} is currently downloading, skipping")
                 continue
             logger.info(f"Adding provider {landing_page_url}")
@@ -100,22 +98,23 @@ class GameInfoWindow(QWidget):
     def create_provider_button(self, name: str, landing_page_url: str):
         provider_btn = ProviderButton(name, landing_page_url, self.on_provider_click, self.on_provider_cancel)
 
-        self.providers.append(provider_btn) # Storing a Reference to keep it alive
+        self.manager.app_state.providers.append(provider_btn) # Storing a Reference to keep it alive
         self.ui.download_links_layout.addWidget(provider_btn)
         self.game_card.details.downloads_links.append(landing_page_url)
 
     @Slot(str, object)
     def on_provider_cancel(self, landing_page_url: str, provider_btn: ProviderButton):
         self.manager.stop_download()
-        self.downloading_providers.remove(provider_btn)
+        self.manager.app_state.download_queue.remove(provider_btn)
 
     @Slot(str, object)
     def on_provider_click(self, landing_page_url, provider_btn: ProviderButton):
         logger.info(f"Clicked Link: {landing_page_url}")
-        self.downloading_providers.append(provider_btn)
+        self.manager.app_state.download_queue.append(provider_btn)
 
         suggested_name = self.manager.request_filename_from_url(landing_page_url)
         file_path = QFileDialog.getSaveFileName(self, "Save Game", suggested_name)
         if (file_path[0] != ""):
-            provider_btn._is_downloading = True
+            provider_btn.set_downloading_state(True)
+            self.manager.app_state.is_downloading = True
             self.manager.attempt_download(file_path[0], landing_page_url, provider_btn.update_progress)

@@ -4,7 +4,7 @@ from ..tools import get_img_data
 
 
 class WorkerPool:
-    def __init__(self) -> None:
+    def __init__(self):
         self.WORKER_POOL = QThreadPool.globalInstance()
         self.WORKER_POOL.setMaxThreadCount(5)
 

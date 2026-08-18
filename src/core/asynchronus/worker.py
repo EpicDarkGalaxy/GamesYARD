@@ -8,11 +8,15 @@ from ..tools import GameFetcher, get_logger
 logger = get_logger(__name__)
 
 class WorkerManager:
+    threads = []
+    workers = []
 
-    @staticmethod
-    def run_in_thread(worker, on_finish=None, on_fail=None, on_progress=None):
+    def run_in_thread(self, worker, on_finish=None, on_fail=None, on_progress=None):
         thread = QThread()
         worker.moveToThread(thread)
+
+        self.threads.append(thread)
+        self.workers.append(worker)
 
         thread.started.connect(worker.run)
 
@@ -20,17 +24,19 @@ class WorkerManager:
         if (on_finish): worker.signals.fetch_finished.connect(on_finish)
         if (on_progress): worker.signals.progress.connect(on_progress)
 
-        def cleanup():
-            thread.quit()
-            thread.wait()
-            worker.deleteLater()
-            thread.deleteLater()
-
-        worker.signals.finished.connect(cleanup)
-        worker.signals.fail.connect(cleanup)
+        worker.signals.finished.connect(self.cleanup)
+        worker.signals.fail.connect(self.cleanup)
 
         thread.start()
         return thread, worker
+
+    def cleanup(self):
+        for thread, worker in zip(self.threads, self.workers):
+            thread.quit()
+            thread.wait()
+            worker.deleteLater()
+        self.threads.clear()
+        self.workers.clear()
 
 class GameFetchWorker(QObject):
     def __init__ (self, search_query: str, game_fetcher: GameFetcher, signals, load_more:bool=False):
@@ -47,12 +53,13 @@ class GameFetchWorker(QObject):
         self.signals.finished.emit()
 
 class DownloadWorker(QObject):
-    def __init__(self, url: str, save_path: str, signals):
+    def __init__(self, url: str, save_path: str, signals, provider):
         super().__init__()
         self.url = url
         self.save_path = save_path
         self.signals = signals
         self.is_cancelled = False
+        self.provider = provider
 
     def cancle(self):
         self.is_cancelled = True
@@ -84,7 +91,7 @@ class DownloadWorker(QObject):
                         percent = int(downloaded_size / total_size * 100)
                         self.signals.progress.emit(percent)
             response.close()
-            logger.info("Download Completed!")
+            self.signals.download_finished.emit(self.provider)
             self.signals.finished.emit()
 
         except Exception as e:

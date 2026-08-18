@@ -16,3 +16,4 @@ class ManagerSignals(UiSignals):
     update_fetch_btn = Signal(str, bool)
     card_clicked = Signal(object)
     show_game_info_window = Signal()
+    shutting_down = Signal()
