@@ -76,7 +76,7 @@ class Manager:
         data.details.system_requirements = self.request_system_req(data.url)
 
         self.signals.show_game_info_window.emit()
-        self.signals.card_clicked.emit(data)
+        self.signals.card_clicked.emit(card_widget)
 
     @Slot(str)
     def on_search_text_changed(self, query: str):
@@ -125,9 +125,7 @@ class Manager:
             card_widget = GameCard(data, on_click=self.on_card_clicked)
             self.widgets.append(card_widget)
 
-            self.thumb_fetch_thread = ThumbnailFetchWorker(
-                card_widget, data.poster_url, self.thumb_fetched_signal
-            )
+            self.thumb_fetch_thread = ThumbnailFetchWorker(card_widget, data.poster_url, self.thumb_fetched_signal)
             self.worker_pool.run_in_thread_pool(self.thumb_fetch_thread)
 
             self.app_state.game_list.append(data)
@@ -155,7 +153,7 @@ class Manager:
             logger.info(f"card {data.title} does not have thumbnail, setting default")
             card_widget.thumbnail = get_default_icon()
 
-    def resolve_and_download(self, save_path, landing_page_url, progress_callback=None):
+    def attempt_download(self, save_path, landing_page_url, progress_callback=None):
         self.progress_signal = DownloadWorkerSignals()
         self.progress_signal.progress.connect(progress_callback)
 
@@ -173,12 +171,13 @@ class Manager:
         self.start_download(save_path, direct_link, progress_callback)
 
     def start_download(self, save_path, direct_link, progress_callback=None):
-        self.download_worker = DownloadWorker(
-            direct_link, save_path, self.progress_signal
-        )
-        self.worker_manager.run_in_thread(
-            self.download_worker, on_progress=progress_callback
-        )
+        self.download_worker = DownloadWorker(direct_link, save_path, self.progress_signal)
+        self.worker_manager.run_in_thread(self.download_worker, on_progress=progress_callback)
+
+    def stop_download(self):
+        if self.download_worker:
+            self.download_worker.is_cancelled = True
+            self.download_worker = None
 
     @staticmethod
     def request_filename_from_url(url):

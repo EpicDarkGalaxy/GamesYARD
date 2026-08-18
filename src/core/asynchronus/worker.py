@@ -1,3 +1,4 @@
+import os
 from curl_cffi import requests as r
 
 from PySide6.QtCore import QObject, QThread, Slot
@@ -51,6 +52,10 @@ class DownloadWorker(QObject):
         self.url = url
         self.save_path = save_path
         self.signals = signals
+        self.is_cancelled = False
+
+    def cancle(self):
+        self.is_cancelled = True
 
     @Slot()
     def run(self):
@@ -58,13 +63,21 @@ class DownloadWorker(QObject):
             # For now, i am keeping the download logic here.
             # I may move it to a seprate file, or keep it here forever
             response = r.get(self.url, stream=True, impersonate="chrome124")
-
             response.raise_for_status()
             total_size = int(response.headers.get('content-length', 0))
             downloaded_size = 0
 
             with open(self.save_path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
+                    if (self.is_cancelled):
+                        response.close()
+                        f.close()
+                        if (os.path.exists(self.save_path)):
+                            os.remove(self.save_path)
+                        self.signals.cancelled.emit()
+                        self.signals.finished.emit()
+                        logger.info(f"Download Cancelled: {self.url}")
+                        return
                     f.write(chunk)
                     downloaded_size += len(chunk)
                     if total_size:

@@ -1,60 +1,80 @@
+from typing import override
+
 from PySide6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QProgressBar
 from PySide6.QtCore import Signal, Qt
 
 class ProviderButton(QWidget):
-    clicked = Signal()
-    special_click = Signal(str, QWidget) # I could not think of a better name!
+    download_requested = Signal(str, QWidget) # URL, Widget reference
+    cancel_requested = Signal(str, QWidget) # self
 
-    # _disable_interaction = False
+    _is_downloading = False
 
-    def __init__(self, provider_name: str, landing_page_url: str="", on_click=None):
+    def __init__(self, provider_name: str, landing_page_url: str="", on_click=None, on_cancel=None):
         super().__init__()
 
         self.main_layout = QHBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
 
+        self.provider_name = provider_name
         self.landing_page_url = landing_page_url
 
-        self.btn = QPushButton(self)
-        self.btn.setText(provider_name)
-        self.btn.clicked.connect(self.emit_special_click)
-        self.btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                border: none;
-                font-weight: bold;
-            }
-
-            QPushButton:hover {
-                border: 1px solid;
-            }
-        """)
+        self.btn = QPushButton(provider_name)
+        self.btn.setObjectName("provider-btn")
+        self.btn.clicked.connect(self.handle_click)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
-        self.progress_bar.adjustSize()
+        self.progress_bar.setVisible(False) # Hide by default!
 
-        self.btn_layout = QHBoxLayout(self.btn)
-        self.btn_layout.setContentsMargins(0, 0, 0, 0)
-
+        # Put them side-by-side or let progress_bar replace the button space
         self.main_layout.addWidget(self.btn)
-        self.btn_layout.addWidget(self.progress_bar)
+        self.main_layout.addWidget(self.progress_bar)
 
         if (on_click):
-            self.special_click.connect(on_click)
+            self.download_requested.connect(on_click)
+        if (on_cancel):
+            self.cancel_requested.connect(on_cancel)
+
+    def handle_click(self):
+        if (self._is_downloading):
+            print(f"Requesting cancellation: {self.landing_page_url}")
+            self.set_downloading_state(False)
+            self.cancel_requested.emit(self.landing_page_url, self)
+        else:
+            print(f"Requesting download: {self.landing_page_url}")
+            self.set_downloading_state(True)
+            self.download_requested.emit(self.landing_page_url, self)
 
     def update_progress(self, value: int):
         self.progress_bar.setValue(value)
 
-    def emit_special_click(self):
-        self.special_click.emit(self.landing_page_url, self)
+    @override
+    def enterEvent(self, event):
+        if (self._is_downloading):
+            self.btn.setStyleSheet("""
+                QPushButton {
+                    background-color: red;
+                }
+                """)
+            self.btn.setVisible(True)
+            self.progress_bar.setVisible(False)
+            super().enterEvent(event)
 
-    # def mousePressEvent(self, event):
-    #     print("Mouse Clicked")
-    #     if (event.button() is Qt.MouseButton.LeftButton and not self._disable_interaction):
-    #         self.special_click.emit(self.raw_text, self)
-    #         super().mousePressEvent(event)
+    @override
+    def leaveEvent(self, event):
+        if (self._is_downloading):
+            self.btn.setVisible(False)
+            self.progress_bar.setVisible(True)
+            super().leaveEvent(event)
 
-    def setInteraction(self, value: bool):
-        # self._disable_interaction = value
-        self.btn.setEnabled(value)
+    def set_downloading_state(self, is_downloading: bool):
+        self._is_downloading = is_downloading
+        if (is_downloading):
+            self.btn.setVisible(False)
+            self.btn.setText("Click to Cancel")
+            self.progress_bar.setVisible(True)
+        else:
+            self.btn.setVisible(True)
+            self.btn.setStyleSheet("")
+            self.btn.setText(self.provider_name)
+            self.progress_bar.setVisible(False)

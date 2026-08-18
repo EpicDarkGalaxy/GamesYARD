@@ -8,7 +8,6 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QWidget,
 )
-from enum import Enum
 
 from ...core import get_logger
 from ...ui import Ui_MainWindow
@@ -93,9 +92,11 @@ class MainWindow(QMainWindow):
         if (self.app_state.clear_grid):
             self.flow_layout.clear_layout()
 
+            # Recreate the load_more_button, because the flow_layout deletes the references as well.
+            self.load_more_btn = LoadMoreButton(self.manager.on_load_more)
+
         if (self.load_more_btn):
             self.flow_layout.removeWidget(self.load_more_btn)
-            self.load_more_btn = LoadMoreButton(self.manager.on_load_more)
 
         for card in cards:
             self.flow_layout.addWidget(card)

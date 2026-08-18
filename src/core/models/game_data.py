@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from PySide6.QtGui import QPixmap
+from PySide6.QtCore import Signal
 
 @dataclass
 class GameDetails:

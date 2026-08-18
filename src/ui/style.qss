@@ -1,49 +1,78 @@
 /* src/ui/style.qss */
 
-/* Global window background */
+/* Global Window styling */
 QWidget {
-    background-color: #1e1e1e;
-    color: #ffffff;
-    font-family: "Segoe UI", sans-serif;
+    background-color: #121212;
+    color: #e0e0e0;
+    font-family: "Segoe UI", "Helvetica Neue", sans-serif;
     font-size: 14px;
 }
 
-/*Specific Label Styling */
-QLabel[styleClass="link-label"]:hover {
-    border: 2px solid slategrey;
-    border-radius: 3px;
-    background-color: #333333;
+/* Text Input / Search Bar */
+QLineEdit {
+    background-color: #1e1e1e;
     color: #ffffff;
+    border: 1px solid #333333;
+    border-radius: 6px;
+    padding: 8px 12px;
+    selection-background-color: #1e90ff;
+}
+
+QLineEdit:focus {
+    border: 1px solid #1e90ff;
+    background-color: #252525;
 }
 
 /* Button Styling */
 QPushButton {
-    background-color: #333333;
-    border: 1px solid #555555;
-    border-radius: 4px;
-    padding: 6px 12px;
+    background-color: #1e90ff;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: bold;
 }
 
 QPushButton:hover {
-    background-color: #444444;
-    border-color: #777777;
+    background-color: #4faaff;
 }
 
 QPushButton:pressed {
-    background-color: #222222;
+    background-color: #0066cc;
+}
+
+QPushButton:disabled {
+    background-color: #333333;
+    color: #777777;
+}
+
+/* Secondary Buttons (e.g., fetch settings if any) */
+QPushButton[styleClass="secondary-btn"] {
+    background-color: #252525;
+    border: 1px solid #333333;
+    color: #e0e0e0;
+}
+
+QPushButton[styleClass="secondary-btn"]:hover {
+    background-color: #333333;
+    border-color: #555555;
 }
 
 /* Game Card Widget Styling */
 #game-card {
-    background-color: #252525;
-    border: 1px solid #333;
-    /* 1. Set the corner radius here */
+    background-color: #1e1e1e;
+    border: 1px solid #252525;
     border-radius: 12px;
 }
 
-/* Optional: add a nice hover effect */
 #game-card:hover {
-    border: 1px solid #555;
+    border: 1px solid #1e90ff;
+    background-color: #222222;
+}
+
+#card-thumbnail {
+    border-radius: 12px;
+    background-color: transparent;
 }
 
 #card-label {
@@ -53,50 +82,85 @@ QPushButton:pressed {
         x2: 0,
         y2: 1,
         stop: 0 transparent,
-        stop: 1 rgba(0, 0, 0, 220)
+        stop: 1 rgba(0, 0, 0, 240)
     );
-    color: white;
-/*    text-shadow: 1px 1px 2px black; /* This helps text pop against any color */
-    padding: 5px 10px; /* Top/Bottom 5px, Left/Right 10px */
+    color: #ffffff;
+    padding: 12px 10px;
     font-weight: bold;
-    /* Remove radius here since it's now inside the image */
+    font-size: 13px;
+    /* Round the bottom corners of the label to match the card */
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+#card-label:hover {
+    background: rgba(0, 0, 0, 180);
+}
+
+/* QScrollArea Styling */
+QScrollArea {
+    background-color: transparent;
+    border: none;
 }
 
 /* Scrollbar styling */
 QScrollBar:vertical {
-    background: #555555;
-    width: 10px;
+    background: #121212;
+    width: 8px;
+    margin: 0px;
 }
 
 QScrollBar:horizontal {
-    background: #555555;
-    height: 10px;
+    background: #121212;
+    height: 8px;
+    margin: 0px;
 }
 
-QScrollBar::handle:horizontal {
-    background: lightslategray;
-    border: 1px solid darkgray;
-    border-radius: 5px;
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: #333333;
+    border-radius: 4px;
+    min-height: 20px;
 }
 
-QScrollBar::handle:vertical {
-    background: lightslategray;
-    border: 1px solid darkgray;
-    border-radius: 5px;
+QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+    background: #1e90ff;
 }
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    background: none;
+    border: none;
+}
+
+#provider-btn {
+    background-color: transparent;
+    border: 1px solid #333333;
+    color: #e0e0e0;
+    font-weight: bold;
+    border-radius: 4px;
+    padding: 6px 12px;
+}
+
+#provider-btn:hover {
+    border: 1px solid #1e90ff;
+    background-color: rgba(30, 144, 255, 0.1);
+}
+
 
 /* QProgressBar styling */
 QProgressBar {
+    background-color: #1e1e1e;
+    border: 1px solid #333333;
+    border-radius: 6px;
+    text-align: center;
+    color: #ffffff;
     font-weight: bold;
-    text-align: center left;
-    padding-left: -5px;
-    background-color: transparent;
+    height: 24px;
 }
 
-/* Progress Bar Styling */
 QProgressBar::chunk {
-    /* dodgerblue */
-    background-color: rgba(30, 144, 255, 0.5); /* The "progress" blue color */
-    border: 1px solid rgba(30, 144, 255, 0.5);
-    border-radius: 4px;
+    background-color: qlineargradient(
+        x1: 0, y1: 0, x2: 1, y2: 0,
+        stop: 0 #1e90ff, stop: 1 #63b3ff
+    );
+    border-radius: 5px;
 }

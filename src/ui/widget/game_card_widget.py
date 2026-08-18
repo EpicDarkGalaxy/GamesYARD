@@ -1,50 +1,54 @@
-from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QPainter, QPixmap
-from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
+from PySide6.QtCore import QRectF, Qt, Signal, Slot
+from PySide6.QtGui import QIcon, QPainter, QPainterPath, QPixmap, QRegion
+from PySide6.QtWidgets import QFrame, QLabel, QSizePolicy, QVBoxLayout
 
 from ...core.models import GameData
-from ..ui_signals import GameInfoWindowSignals
 
 
-class GameCard(QWidget):
-    clicked: Signal = Signal(object)
+class GameCard(QFrame):
+    request_card: Signal = Signal(object)
+    thumb_loaded: Signal = Signal(QPixmap)
 
     def __init__(self, game: GameData, on_click=None):
         super().__init__()
         if (on_click):
-            self.clicked.connect(on_click)
-
-        self.thumbnail_loaded = GameInfoWindowSignals()
+            self.request_card.connect(on_click)
 
         self.setObjectName("game-card")
-        self.setAttribute(Qt.WA_StyledBackground, True) # Ensures QSS background is respected
         self.setFixedSize(160, 180)
+
         self._card = game
 
         # Main layout for the whole card
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setObjectName("game-card")
-        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setContentsMargins(1, 1, 1, 1)
         self.main_layout.setSpacing(0)
 
-        # 1. The Thumbnail
+        # Card Thumbnail
         self._card_thumbnail = QLabel()
+        self._card_thumbnail.setText("NO GAME PHOTO")
+        self._card_thumbnail.setAlignment(Qt.AlignCenter)
         self._card_thumbnail.setObjectName("card-thumbnail")
         self._card_thumbnail.setScaledContents(True)
 
         self.main_layout.addWidget(self._card_thumbnail)
 
+        # Thumbnail layout ( Holds card's title )
         self.thumb_layout = QVBoxLayout(self._card_thumbnail)
         self.thumb_layout.setObjectName("card-thumb-layout")
         self.thumb_layout.setContentsMargins(0, 0, 0, 0)
         self.thumb_layout.setAlignment(Qt.AlignBottom)
+        self._card_thumbnail.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+        # Card Title
         self.card_label = QLabel(game.title)
         self.card_label.setObjectName("card-label")
         self.card_label.setWordWrap(True)
         self.card_label.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
+        self.card_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.thumb_layout.addWidget(self.card_label)
+
 
     @property
     def thumbnail(self):
@@ -52,10 +56,24 @@ class GameCard(QWidget):
 
     @thumbnail.setter
     def thumbnail(self, pixmap: QPixmap):
-        scaled_pixmap = pixmap.scaled(180, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        self._card_thumbnail.setPixmap(scaled_pixmap)
-        self._card.poster_pixmap = scaled_pixmap
-        self.thumbnail_loaded.thumbnail_loaded.emit(scaled_pixmap)
+        scaled_pixmap = pixmap.scaled(pixmap.width(), pixmap.height(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+        rounded = QPixmap(scaled_pixmap.size())
+        rounded.fill(Qt.transparent)
+
+        painter = QPainter(rounded)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        path = QPainterPath()
+        path.addRoundedRect(0, 0, scaled_pixmap.width(), scaled_pixmap.height(), 12.0, 12.0)
+        painter.setClipPath(path)
+
+        painter.drawPixmap(0, 0, scaled_pixmap)
+        painter.end()
+
+        self._card_thumbnail.setPixmap(rounded)
+        self._card.poster_pixmap = rounded
+        self.thumb_loaded.emit(self._card.poster_pixmap)
 
     @property
     def get_data(self):
@@ -66,7 +84,26 @@ class GameCard(QWidget):
     def set_data(self, game: GameData):
         self._card = game
 
+    def enterEvent(self, event):
+        self.card_label.setAlignment(Qt.AlignCenter)
+        self.thumb_layout.setAlignment(Qt.AlignCenter)
+
+        self.style().unpolish(self)
+        self.style().polish(self)
+
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self.card_label.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
+        self.thumb_layout.setAlignment(Qt.AlignBottom)
+
+        self.style().unpolish(self)
+        self.style().polish(self)
+
+        super().leaveEvent(event)
+
+
     def mousePressEvent(self, event):
         if (event.button() is Qt.MouseButton.LeftButton):
-            self.clicked.emit(self)
+            self.request_card.emit(self)
             super().mousePressEvent(event)

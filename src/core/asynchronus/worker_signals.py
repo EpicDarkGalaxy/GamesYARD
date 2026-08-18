@@ -5,6 +5,7 @@ from PySide6.QtGui import QPixmap
 class WorkerSignals(QObject):
     fail = Signal()  # Signal to emit error messages
     finished = Signal()  # Signal to indicate the worker has finished
+    cancelled = Signal()  # Signal to indicate the worker has been cancelled
     progress = Signal(float)  # Signal to emit progress updates
 
 class ThumbnailWorkerSignals(WorkerSignals):
