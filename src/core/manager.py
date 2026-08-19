@@ -193,13 +193,17 @@ class Manager:
 
     @Slot(object)
     def on_download_finished(self, provider):
+        logger.info(f"Download finished: {provider.landing_page_url}")
+
         for provider_btn in self.app_state.download_queue:
             if provider_btn is provider:
-                logger.info(f"Download finished: {provider.landing_page_url}")
+                logger.info(f"Removing provider from download queue: {provider.landing_page_url}")
 
                 provider_btn.set_downloading_state(is_downloading=False, is_downloaded=True)
                 self.app_state.download_queue.remove(provider_btn)
                 break
+        if (not self.app_state.download_queue):
+            self.app_state.is_downloading = False
 
     def cleanup(self):
         self.stop_download()
@@ -208,6 +212,7 @@ class Manager:
         self.app_state.game_list.clear()
         self.worker_pool.WORKER_POOL.clear()
         self.worker_manager.cleanup()
+        self.signals.shutting_down.emit()
 
     @staticmethod
     def request_filename_from_url(url):

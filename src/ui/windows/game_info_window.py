@@ -117,4 +117,4 @@ class GameInfoWindow(QWidget):
         if (file_path[0] != ""):
             provider_btn.set_downloading_state(True)
             self.manager.app_state.is_downloading = True
-            self.manager.attempt_download(file_path[0], landing_page_url, provider_btn.update_progress)
+            self.manager.attempt_download(file_path[0], landing_page_url, provider_btn.update_progress, provider_btn=provider_btn)
