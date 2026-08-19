@@ -8,11 +8,10 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QWidget,
 )
-
+from ..ui_signals import MainWindowSignals
 from ...core import get_logger
 from ...ui import Ui_MainWindow
 from ...ui.layouts.flow_layout import FlowLayout
-from ...ui.widget import LoadMoreButton
 
 logger = get_logger(__name__)
 
@@ -33,17 +32,14 @@ def init_flow_layout(self):
     self.setCentralWidget(self.area)
 
 class MainWindow(QMainWindow):
-    def __init__(self, manager):
+    def __init__(self):
         super().__init__()
-        self.manager = manager
-
         self.main_ui = Ui_MainWindow()
         self.main_ui.setupUi(self)
+        self.signals = MainWindowSignals()
 
         self.setWindowTitle("GamesYARD")
         self.resize(800, 600)
-
-        self.app_state = self.manager.app_state
 
         init_flow_layout(self)
 
@@ -52,72 +48,50 @@ class MainWindow(QMainWindow):
         self.search_bar.setPlaceholderText("Search only games")
         self.search_bar.setClearButtonEnabled(True)
 
-        # Load more button
-        # Intializing here since append_to_grid checks if this button exists before
-        # removing it
-        self.load_more_btn = LoadMoreButton(self.manager.on_load_more)
-
         # Fetch button
         self.fetch_btn = QPushButton()
         self.fetch_btn.setText("Fetch")
-
+        self.fetch_btn.clicked.connect(self.fetch_button)
 
         # Add to toolbar
         self.main_ui.toolBar.addWidget(self.search_bar)
         self.main_ui.toolBar.addWidget(self.fetch_btn)
 
-        self.bind_signals()
+    def set_presenter(self, presenter):
+        self.presenter = presenter
 
-    def bind_signals(self):
-        # Manager
-        self.manager.signals.cards_ready.connect(self.append_to_grid)
-        self.manager.signals.update_fetch_btn.connect(self.update_fetch_btn)
+    def fetch_button(self):
+        text = self.search_bar.text()
+        self.presenter.on_fetch_button(text)
 
-        # Fetch button
-        self.fetch_btn.clicked.connect(self.manager.on_search)
-
-        # Search bar
-        self.search_bar.returnPressed.connect(self.manager.on_search)
-        self.search_bar.textChanged.connect(self.manager.on_search_text_changed)
-
-    @Slot(str, bool)
-    def update_fetch_btn(self, msg: str, state:bool):
-        self.fetch_btn.setText(msg)
+    def update_fetch_btn_state(self, text: str, state: bool):
+        self.fetch_btn.setText(text)
         self.fetch_btn.setEnabled(state)
 
-    @Slot(list)
-    def append_to_grid(self, cards):
-        logger.info(f"populate_grid called with {len(cards)} games")
+    def update_cards(self, cards, clear_grid: bool):
+        logger.info(f"updating grid with {len(cards)} cards")
 
-        if (self.app_state.clear_grid):
+        if (clear_grid):
             self.flow_layout.clear_layout()
-
-            # Recreate the load_more_button, because the flow_layout deletes the references as well.
-            self.load_more_btn = LoadMoreButton(self.manager.on_load_more)
-
-        if (self.load_more_btn):
-            self.flow_layout.removeWidget(self.load_more_btn)
 
         for card in cards:
             self.flow_layout.addWidget(card)
 
-        self.flow_layout.addWidget(self.load_more_btn)
+    # def closeEvent(self, event):
+    #     # Check if a download is active
+    #     if hasattr(self.manager, 'app_state') and self.manager.app_state.is_downloading:
+    #         from PySide6.QtWidgets import QMessageBox
+    #         reply = QMessageBox.question(
+    #             self, 'Exit?',
+    #             "A download is currently active. Are you sure you want to exit and cancel it?",
+    #             QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+    #         )
 
-    def closeEvent(self, event):
-        # Check if a download is active
-        if hasattr(self.manager, 'app_state') and self.manager.app_state.is_downloading:
-            from PySide6.QtWidgets import QMessageBox
-            reply = QMessageBox.question(
-                self, 'Exit?',
-                "A download is currently active. Are you sure you want to exit and cancel it?",
-                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
-            )
+    #         if reply == QMessageBox.No:
+    #             event.ignore() # Cancel the close event!
+    #             return
 
-            if reply == QMessageBox.No:
-                event.ignore() # Cancel the close event!
-                return
-
-        # If no download or they clicked Yes, proceed with cleanup
-        logger.info("Cleaning up and exiting...")
-        self.manager.cleanup()
-        event.accept()
+    #     # If no download or they clicked Yes, proceed with cleanup
+    #     logger.info("Cleaning up and exiting...")
+    #     self.manager.cleanup()
+    #     event.accept()

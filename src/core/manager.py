@@ -1,11 +1,10 @@
 from enum import Enum
 
-from PySide6.QtCore import Signal, Slot
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import QObject, Slot
 
 from src.core.asynchronus.worker import DownloadWorker
 from src.core.downloaders import DownloaderFactory
-from src.core.tools.utils import get_direct_link, get_filename_from_url, get_site_name
+from src.core.tools.utils import get_filename_from_url, get_site_name
 
 from ..core.asynchronus import (
     DownloadWorkerSignals,
@@ -18,7 +17,6 @@ from ..core.asynchronus import (
 )
 from ..core.models import GameData
 from ..ui import ManagerSignals
-from ..ui.widget import GameCard
 from .tools import GameFetcher, get_default_icon, get_logger
 
 logger = get_logger(__name__)
@@ -32,7 +30,7 @@ class FetchState(Enum):
 class AppState:
     def __init__(self, manager):
         self.manager = manager
-        self.search_query = ""
+        self.last_search_query = ""
         self._fetch_state = FetchState.READY
         self.clear_grid = False # Whether the grid should be cleared before fetching
         self.is_downloading = False
@@ -56,7 +54,7 @@ class AppState:
         elif (self._fetch_state is FetchState.FETCH_FAIL):
             self.manager.signals.update_fetch_btn.emit("Fetch Fail", True)
 
-class Manager:
+class Manager(QObject):
     def __init__(self, main_window=None):
         self.app_state = AppState(self)
         self.game_fetcher = GameFetcher()
@@ -69,41 +67,26 @@ class Manager:
         self.signals = ManagerSignals()
 
     # Called when the load more button is pressed
-    @Slot()
-    def on_load_more(self):
+    def load_more(self):
         logger.info("Loading More")
         self.app_state.clear_grid = False
-        self.on_search(load_more=True)
+        self.search(self.app_state.last_search_query, load_more=True)
 
-    @Slot(GameCard)
-    def on_card_clicked(self, card_widget: GameCard):
-        logger.info(f"Card clicked: {card_widget}")
-        data = card_widget.get_data
-        data.details.system_requirements = self.request_system_req(data.url)
-
-        self.signals.show_game_info_window.emit()
-        self.signals.card_clicked.emit(card_widget)
-
-    @Slot(str)
-    def on_search_text_changed(self, query: str):
-        logger.info(f"Search text changed: {query}")
-        self.app_state.search_query = query
-
-    @Slot(bool)
-    def on_search(self, load_more: bool = False):
+    def search(self, query: str, load_more: bool = False):
         logger.info("Searching!")
 
-        self.app_state.set_fetch_state = FetchState.FETCHING
-
         if not load_more:
+            self.app_state.last_search_query = query
             self.app_state.clear_grid = True
+
+        self.app_state.set_fetch_state = FetchState.FETCHING
 
         self.game_fetch_signals = FetchWorkerSignals()
         self.game_fetch_signals.fetch_finished.connect(self.handle_search_result)
 
         self.fetch_thread, self.fetch_worker = self.worker_manager.run_in_thread(
             GameFetchWorker(
-                self.app_state.search_query,
+                query,
                 self.game_fetcher,
                 self.game_fetch_signals,
                 load_more,
@@ -120,42 +103,20 @@ class Manager:
 
         self.app_state.set_fetch_state = FetchState.FETCHED
 
-        self.widgets: list[GameCard] = []
 
+        self.app_state.game_list = game_data
+        self.signals.cards_ready.emit(game_data, self.app_state.clear_grid)
+
+    def request_thumbnail(self, id, img_url):
         self.thumb_fetched_signal = ThumbnailWorkerSignals()
         self.thumb_fetched_signal.thumbnail_fetch_finished.connect(self.on_thumb_fetched)
+        self.thumbnail_worker = ThumbnailFetchWorker(id, img_url, self.thumb_fetched_signal)
+        self.thumbnail_worker.start()
 
-        for data in game_data:
-            card_widget = GameCard(data, on_click=self.on_card_clicked)
-            self.widgets.append(card_widget)
-
-            self.thumb_fetch_thread = ThumbnailFetchWorker(card_widget, data.poster_url, self.thumb_fetched_signal)
-            self.worker_pool.run_in_thread_pool(self.thumb_fetch_thread)
-
-            self.app_state.game_list.append(data)
-        self.signals.cards_ready.emit(self.widgets)
-
-    @Slot(GameCard, bytes)
-    def on_thumb_fetched(self, card_widget: GameCard, img_data: bytes):
-        data = card_widget.get_data
-        if not data:
-            return
-
-        if img_data:
-            logger.info(f"card {data.title} has thumbnail")
-            pixmap = QPixmap()
-            pixmap.loadFromData(img_data)
-            if not card_widget in self.widgets:
-                return
-
-            if not pixmap.isNull():
-                card_widget.thumbnail = pixmap
-            else:
-                logger.info(f"card {data.title}, invalid pixmap, setting default")
-                card_widget.thumbnail = get_default_icon()
-        else:
-            logger.info(f"card {data.title} does not have thumbnail, setting default")
-            card_widget.thumbnail = get_default_icon()
+    @Slot(bytes)
+    def on_thumb_fetched(self, id ,img_data: bytes):
+            logger.info(f"card [{id}] has thumbnail")
+            self.signals.thumb_fetched.emit(id, img_data)
 
     def attempt_download(self, save_path, landing_page_url, progress_callback=None, download_finished_callback=None, provider_btn=None):
         """
@@ -192,7 +153,6 @@ class Manager:
             self.download_worker.is_cancelled = True
             self.download_worker = None
 
-    @Slot(object)
     def on_download_finished(self, provider):
         logger.info(f"Download finished: {provider.landing_page_url}")
 

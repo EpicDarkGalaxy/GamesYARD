@@ -17,7 +17,7 @@ class GameCard(QFrame):
         self.setObjectName("game-card")
         self.setFixedSize(160, 180)
 
-        self._card = game
+        self._data = game
 
         # Main layout for the whole card
         self.main_layout = QVBoxLayout(self)
@@ -72,17 +72,27 @@ class GameCard(QFrame):
         painter.end()
 
         self._card_thumbnail.setPixmap(rounded)
-        self._card.poster_pixmap = rounded
-        self.thumb_loaded.emit(self._card.poster_pixmap)
+        self._data.poster_pixmap = rounded
+        self.thumb_loaded.emit(self._data.poster_pixmap)
 
     @property
     def get_data(self):
-        if (self._card):
-            return self._card
+        if (self._data):
+            return self._data
 
     @get_data.setter
     def set_data(self, game: GameData):
-        self._card = game
+        self._data = game
+
+    @property
+    def get_id(self):
+        if (self._card_id):
+            return self._card_id
+        return None
+
+    @get_id.setter
+    def set_id(self, id):
+        self._card_id = id
 
     def enterEvent(self, event):
         self.card_label.setAlignment(Qt.AlignCenter)
