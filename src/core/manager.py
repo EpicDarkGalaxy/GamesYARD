@@ -34,11 +34,11 @@ class AppState:
         self.manager = manager
         self.search_query = ""
         self._fetch_state = FetchState.READY
-        self.clear_grid = False
+        self.clear_grid = False # Whether the grid should be cleared before fetching
         self.is_downloading = False
-        self.providers = []
+        self.providers = [] # Provider button, also the source from the game is downloaded from
         self.download_queue = []
-        self.game_list: list[GameData] = []
+        self.game_list: list[GameData] = [] # List of games fetched from internet
 
     @property
     def get_fetch_state(self) -> FetchState:
@@ -60,6 +60,9 @@ class Manager:
     def __init__(self, main_window=None):
         self.app_state = AppState(self)
         self.game_fetcher = GameFetcher()
+
+        # Even though WorkerManager should handle WorkerPool,
+        # but they both are not in any kind of relationship :)
         self.worker_manager = WorkerManager()
         self.worker_pool = WorkerPool()
 
@@ -120,9 +123,7 @@ class Manager:
         self.widgets: list[GameCard] = []
 
         self.thumb_fetched_signal = ThumbnailWorkerSignals()
-        self.thumb_fetched_signal.thumbnail_fetch_finished.connect(
-            self.on_thumb_fetched
-        )
+        self.thumb_fetched_signal.thumbnail_fetch_finished.connect(self.on_thumb_fetched)
 
         for data in game_data:
             card_widget = GameCard(data, on_click=self.on_card_clicked)

@@ -20,15 +20,13 @@ logger = get_logger(__name__)
 class GameInfoWindow(QWidget):
     def __init__(self, manager):
         super().__init__()
+        self.setGeometry(100, 100, 600, 600)
+        self.ui = Ui_gameinfo()
+        self.ui.setupUi(self)
+
         self.manager = manager
         self.manager.signals.card_clicked.connect(self.on_game_selected)
 
-        self.setGeometry(100, 100, 600, 600)
-
-        self.progress_bars: list[QProgressBar] = []
-
-        self.ui = Ui_gameinfo()
-        self.ui.setupUi(self)
         self.ui.fetch_btn.clicked.connect(self.on_fetch_btn)
 
     @Slot(object)
@@ -50,6 +48,9 @@ class GameInfoWindow(QWidget):
 
     @Slot(QPixmap)
     def set_poster(self, pixmap):
+        """
+        Called every time the poster of the selected game is changed
+        """
         print("Loading thumb")
         if (pixmap):
             self.ui.game_poster.setPixmap(pixmap)
@@ -80,20 +81,19 @@ class GameInfoWindow(QWidget):
         if (not self.game_card.details):
             return
 
-        # clearing old providers except those currently downloading to avoid duplication
-        for provider in self.manager.app_state.providers:
-            if provider not in self.manager.app_state.download_queue:
-                provider.deleteLater()
+        # clearing old providers except those currently downloading to avoid duplication and
         self.clear_layout(self.ui.download_links_layout, exclude=self.manager.app_state.download_queue)
 
         landing_page_urls = self.manager.request_provider_links(self.game_card.url)
+        skip_providers_dict = {provider.landing_page_url: provider for provider in self.manager.app_state.download_queue}
         for landing_page_url in landing_page_urls:
-            if (landing_page_url in [provider.landing_page_url for provider in self.manager.app_state.download_queue]):
-                logger.info(f"Provider {landing_page_url} is currently downloading, skipping")
-                continue
-            logger.info(f"Adding provider {landing_page_url}")
-            name = self.manager.request_provider_name(landing_page_url)
-            self.create_provider_button(name, landing_page_url)
+            if landing_page_url in skip_providers_dict:
+                logger.info(f"Provider {landing_page_url} is currently downloading, just readding")
+                self.ui.download_links_layout.addWidget(skip_providers_dict[landing_page_url])
+            else:
+                logger.info(f"Adding provider {landing_page_url}")
+                name = self.manager.request_provider_name(landing_page_url)
+                self.create_provider_button(name, landing_page_url)
 
     def create_provider_button(self, name: str, landing_page_url: str):
         provider_btn = ProviderButton(name, landing_page_url, self.on_provider_click, self.on_provider_cancel)
@@ -106,6 +106,7 @@ class GameInfoWindow(QWidget):
     def on_provider_cancel(self, landing_page_url: str, provider_btn: ProviderButton):
         self.manager.stop_download()
         self.manager.app_state.download_queue.remove(provider_btn)
+        self.manager.app_state.is_downloading = False
 
     @Slot(str, object)
     def on_provider_click(self, landing_page_url, provider_btn: ProviderButton):
