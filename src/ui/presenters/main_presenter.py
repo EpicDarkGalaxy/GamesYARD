@@ -8,6 +8,7 @@ from ...core.tools import get_logger
 from ..ui_signals import MainPresenterSignals
 from ..widget import GameCard, LoadMoreButton
 from ..windows import MainWindow
+from .presenter_bridge_signals import PRESENTER_BRIDGE_SIGNALS
 
 logger = get_logger(__name__)
 
@@ -63,7 +64,7 @@ class MainPresenter:
         data.details.system_requirements = self.model.request_system_req(data.url)
 
         self.window_controller.show_GameInfoWindow()
-        self.signals.on_card_clicked.emit(card)
+        PRESENTER_BRIDGE_SIGNALS.card_clicked_to_show.emit(card)
 
     @Slot(str, bool)
     def on_update_fetch_btn(self, text: str, state: bool):

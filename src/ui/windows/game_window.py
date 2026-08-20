@@ -28,19 +28,21 @@ class GameWindow(QWidget, IGameView):
 
         self.signals = GameWindowSignals()
 
-        # self.ui.fetch_btn.clicked.connect(self.on_fetch_btn)
+        self.ui.fetch_btn.clicked.connect(self.fetch_btn)
 
-    def display_game_info(self, game_id: int):
-        pass
+    def fetch_btn(self):
+        self.signals.fetch_btn_clicked.emit()
 
     def set_title(self, title: str):
-        pass
+        logger.info(f"setting title: {title}")
+        self.ui.game_name_label.setText(title)
 
     def set_poster(self, poster: QPixmap):
         """
         Called every time the poster of the selected game is changed
         """
-        print("Loading thumb")
+        logger.info("setting poster")
+
         if (poster):
             self.ui.game_poster.setPixmap(poster)
         # else:
