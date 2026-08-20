@@ -8,7 +8,10 @@ class WorkerPool:
         self.WORKER_POOL = QThreadPool.globalInstance()
         self.WORKER_POOL.setMaxThreadCount(5)
 
+        self.workers = []
+
     def run_in_thread_pool(self, worker):
+        self.workers.append(worker)
         self.WORKER_POOL.start(worker)
 
 class ThumbnailFetchWorker(QRunnable):

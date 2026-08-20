@@ -1,5 +1,3 @@
-import uuid
-
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QPushButton, QWidget
 
@@ -9,7 +7,7 @@ class UiSignals(QObject):
 
 class MainPresenterSignals(UiSignals):
     show_game_info_window = Signal()
-    card_clicked = Signal(object)
+    on_card_clicked = Signal(object)
 
 class GameInfoWindowSignals(UiSignals):
     thumbnail_loaded = Signal(object)
@@ -21,7 +19,7 @@ class MainWindowSignals(UiSignals):
 class ManagerSignals(UiSignals):
     cards_ready = Signal(list, bool)
     update_fetch_btn = Signal(str, bool)
-    thumb_fetched = Signal(uuid, object)
+    thumb_fetched = Signal(str, bytes)
     card_clicked = Signal(object)
     load_more = Signal()
     show_game_info_window = Signal()

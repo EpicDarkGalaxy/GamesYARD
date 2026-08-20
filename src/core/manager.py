@@ -1,10 +1,10 @@
 from enum import Enum
+from uuid import UUID
 
 from PySide6.QtCore import QObject, Slot
 
-from src.core.asynchronus.worker import DownloadWorker
 from src.core.downloaders import DownloaderFactory
-from src.core.tools.utils import get_filename_from_url, get_site_name
+from src.core.tools.utils import get_default_icon, get_filename_from_url, get_site_name
 
 from ..core.asynchronus import (
     DownloadWorkerSignals,
@@ -17,7 +17,7 @@ from ..core.asynchronus import (
 )
 from ..core.models import GameData
 from ..ui import ManagerSignals
-from .tools import GameFetcher, get_default_icon, get_logger
+from .tools import GameFetcher, get_logger
 
 logger = get_logger(__name__)
 
@@ -32,11 +32,11 @@ class AppState:
         self.manager = manager
         self.last_search_query = ""
         self._fetch_state = FetchState.READY
-        self.clear_grid = False # Whether the grid should be cleared before fetching
+        self.clear_grid = False  # Whether the grid should be cleared before fetching
         self.is_downloading = False
-        self.providers = [] # Provider button, also the source from the game is downloaded from
+        self.providers = []  # Provider button, also the source from the game is downloaded from
         self.download_queue = []
-        self.game_list: list[GameData] = [] # List of games fetched from internet
+        self.game_list: list[GameData] = []  # List of games fetched from internet
 
     @property
     def get_fetch_state(self) -> FetchState:
@@ -108,15 +108,17 @@ class Manager(QObject):
         self.signals.cards_ready.emit(game_data, self.app_state.clear_grid)
 
     def request_thumbnail(self, id, img_url):
+        logger.info(f"Starting Worker for thumbnail for url {img_url}")
         self.thumb_fetched_signal = ThumbnailWorkerSignals()
-        self.thumb_fetched_signal.thumbnail_fetch_finished.connect(self.on_thumb_fetched)
-        self.thumbnail_worker = ThumbnailFetchWorker(id, img_url, self.thumb_fetched_signal)
-        self.thumbnail_worker.start()
+        self.thumb_fetched_signal.thumbnail_fetch_finished.connect(self.thumb_fetched)
 
-    @Slot(bytes)
-    def on_thumb_fetched(self, id ,img_data: bytes):
-            logger.info(f"card [{id}] has thumbnail")
-            self.signals.thumb_fetched.emit(id, img_data)
+        thumbnail_worker = ThumbnailFetchWorker(id, img_url, self.thumb_fetched_signal)
+        self.worker_pool.run_in_thread_pool(thumbnail_worker)
+
+    @Slot(str, bytes)
+    def thumb_fetched(self, id, img_data: bytes):
+        logger.info(f"Thumbnail Worker finished for card {id}")
+        self.signals.thumb_fetched.emit(id, img_data)
 
     def attempt_download(self, save_path, landing_page_url, progress_callback=None, download_finished_callback=None, provider_btn=None):
         """
@@ -178,6 +180,10 @@ class Manager(QObject):
     @staticmethod
     def request_filename_from_url(url):
         return get_filename_from_url(url)
+
+    @staticmethod
+    def request_default_icon():
+        return get_default_icon()
 
     @staticmethod
     def request_provider_name(url: str):

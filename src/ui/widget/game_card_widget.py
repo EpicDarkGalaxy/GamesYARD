@@ -51,11 +51,11 @@ class GameCard(QFrame):
 
 
     @property
-    def thumbnail(self):
+    def get_thumbnail(self):
         return self._card_thumbnail.pixmap()
 
-    @thumbnail.setter
-    def thumbnail(self, pixmap: QPixmap):
+    @get_thumbnail.setter
+    def set_thumbnail(self, pixmap: QPixmap):
         scaled_pixmap = pixmap.scaled(pixmap.width(), pixmap.height(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
         rounded = QPixmap(scaled_pixmap.size())

@@ -47,6 +47,7 @@ class MainWindow(QMainWindow):
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("Search only games")
         self.search_bar.setClearButtonEnabled(True)
+        self.search_bar.returnPressed.connect(self.fetch_button)
 
         # Fetch button
         self.fetch_btn = QPushButton()
@@ -70,6 +71,12 @@ class MainWindow(QMainWindow):
 
     def update_cards(self, cards, clear_grid: bool):
         logger.info(f"updating grid with {len(cards)} cards")
+
+        # The load more button at the bottom of the grid is removed before adding new cards.
+        # This is to have it always at the bottom.
+        load_more_button = self.flow_layout.takeAt(self.flow_layout.count() -1)
+        if load_more_button is not None:
+            load_more_button.widget().deleteLater()
 
         if (clear_grid):
             self.flow_layout.clear_layout()

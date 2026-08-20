@@ -9,7 +9,7 @@ class LevelFilter(logging.Filter):
         return record.levelno <= self.level
 
 logging.basicConfig(
-    level=logging.INFO,  # Changed from DEBUG to INFO to suppress DEBUG logs
+    level=logging.DEBUG,  # Changed from DEBUG to INFO to suppress DEBUG logs
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[

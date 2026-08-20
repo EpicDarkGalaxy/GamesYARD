@@ -1,7 +1,6 @@
-import os
 import re
 from base64 import b64decode
-from urllib.parse import unquote, urlparse
+from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 from curl_cffi import requests
@@ -21,7 +20,7 @@ def get_img_data(url: str) -> bytes:
         img_data = requests.get(url, timeout=4).content
         return img_data
     except Exception as e:
-        logger.warning("failed to fetch img")
+        logger.warning(f"failed to fetch img from {url} \nException:({e})")
         return None
 
 def parseHtml(url) -> BeautifulSoup:
@@ -35,14 +34,14 @@ def parseHtml(url) -> BeautifulSoup:
             timeout=10
         )
         if response.status_code == 200:
-            logger.info("Response CODE: 200")
+            logger.info(f"Response CODE: 200 for {url}")
             return BeautifulSoup(response.text, 'html.parser')
         else:
-            logger.error("could not get the html")
+            logger.error(f"could not get the html for {url}")
             return BeautifulSoup("", 'html.parser')
 
     except Exception as e:
-        logger.error("No Internet I guess (:")
+        logger.error(f"Error: {e}")
         return BeautifulSoup("", 'html.parser')
 
 def decodeBase64(url) -> str:
@@ -74,10 +73,10 @@ def get_direct_link(url: str) -> str:
             direct_link = download_button["href"]
             return direct_link
     except Exception as e:
-        logger.warning(f"failed to fetch direct link for {url}")
+        logger.warning(f"failed: {e} for {url}")
         return ""
 
-def clean_filename(filename):
+def clean_filename(filename: str):
     # Remove characters that are illegal in file names
     return re.sub(r'[\\/*?:"<>|]', "", filename)
 
