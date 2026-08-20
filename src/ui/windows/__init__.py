@@ -1,2 +1,2 @@
-from .game_info_window import GameInfoWindow
+from .game_window import GameWindow
 from .main_window import MainWindow

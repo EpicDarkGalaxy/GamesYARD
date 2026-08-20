@@ -9,11 +9,13 @@ class MainPresenterSignals(UiSignals):
     show_game_info_window = Signal()
     on_card_clicked = Signal(object)
 
-class GameInfoWindowSignals(UiSignals):
+class GameWindowSignals(UiSignals):
     thumbnail_loaded = Signal(object)
+    fetch_btn_clicked = Signal(str)
+
 
 class MainWindowSignals(UiSignals):
-    fetch_btn_clicked = Signal()
+    fetch_btn_clicked = Signal(str)
     search_text_changed = Signal(str)
 
 class ManagerSignals(UiSignals):

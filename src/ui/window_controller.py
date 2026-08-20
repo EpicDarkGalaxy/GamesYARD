@@ -1,4 +1,6 @@
-from .windows import GameInfoWindow, MainWindow
+from .windows import GameWindow, MainWindow
+from .presenters import GamePresenter
+
 
 class WindowController:
     def __init__(self, manager):
@@ -16,7 +18,8 @@ class WindowController:
         self.window_list.append(self._main_window)
 
     def show_GameInfoWindow(self):
-        self._game_info_window = GameInfoWindow(self.manager)
+        self._game_info_window = GameWindow()
+        self.game_presenter = GamePresenter(self._game_info_window, self.manager)
         self._show_Window(self._game_info_window)
         self.window_list.append(self._game_info_window)
 

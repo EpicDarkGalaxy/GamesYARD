@@ -1,5 +1,6 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QProgressBar, QPushButton, QWidget
+from uuid import uuid4
 
 
 class ProviderButton(QWidget):
@@ -11,7 +12,7 @@ class ProviderButton(QWidget):
 
     def __init__(self, provider_name: str, landing_page_url: str="", on_click=None, on_cancel=None):
         super().__init__()
-
+        self._id = str(uuid4())
         self.main_layout = QHBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -89,3 +90,7 @@ class ProviderButton(QWidget):
             self.btn.setVisible(False)
             self.progress_bar.setVisible(True)
             super().leaveEvent(event)
+
+    @property
+    def get_id(self):
+        return self._id

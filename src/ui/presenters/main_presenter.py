@@ -13,11 +13,11 @@ logger = get_logger(__name__)
 
 
 class MainPresenter:
-    def __init__(self, view: MainWindow, model: Manager):
+    def __init__(self, view: MainWindow, model: Manager, window_controller=None):
         self.view: MainWindow = view
-        self.view.set_presenter(self)
         self.model = model
         self.signals = MainPresenterSignals()
+        self.window_controller = window_controller
         self.cards_dict = {}
 
         self.bind_signals()
@@ -27,6 +27,8 @@ class MainPresenter:
         self.model.signals.update_fetch_btn.connect(self.on_update_fetch_btn)
         self.model.signals.load_more.connect(self.on_load_more)
         self.model.signals.thumb_fetched.connect(self.on_thumbnail_fetched)
+
+        self.view.signals.fetch_btn_clicked.connect(self.on_fetch_button)
 
     @Slot(str)
     def on_fetch_button(self, query: str=""):
@@ -60,7 +62,7 @@ class MainPresenter:
         data = card.get_data
         data.details.system_requirements = self.model.request_system_req(data.url)
 
-        self.signals.show_game_info_window.emit()
+        self.window_controller.show_GameInfoWindow()
         self.signals.on_card_clicked.emit(card)
 
     @Slot(str, bool)

@@ -25,7 +25,7 @@ if __name__ == "__main__":
     load_stylesheet(app)
     manager = Manager()
     window = MainWindow()
-    presenter = MainPresenter(window, manager)
     controller = WindowController(manager)
+    presenter = MainPresenter(window, manager, controller)
     window.show()
     sys.exit(app.exec())
