@@ -16,7 +16,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     env:
-      ENTRY_POINT: src/main.py   # <-- change this to your entry script
+      ENTRY_POINT: app.py   # <-- change this to your entry script
       APP_NAME: GamesYARD        # <-- change executable name if desired
       DIST_DIR: dist/${{ matrix.os }}
     steps:
