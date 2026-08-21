@@ -15,7 +15,7 @@ class WindowController:
 
     def show_MainWindow(self):
         self._main_window = MainWindow()
-        self._main_presenter = MainPresenter(self._main_window, self.manager)
+        self._main_presenter = MainPresenter(self._main_window, self.manager, self)
         self._show_Window(self._main_window)
         self.window_list.append(self._main_window)
 
