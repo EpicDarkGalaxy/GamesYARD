@@ -1,4 +1,4 @@
-from ..models import GameData, GameDetails
+from ..models import GameData
 from .log import get_logger
 from .utils import decodeBase64, parseHtml
 
@@ -59,7 +59,7 @@ class GameFetcher:
                 )
 
                 logger.info(f"Adding game: {title}")
-                self.gameList.append(GameData(title, poster_link, main_page_link, GameDetails([], [])))
+                self.gameList.append(GameData(title, poster_link, main_page_link))
 
         if (self.gameList):
             return self.gameList

@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QPushButton, QWidget
 
 class UiSignals(QObject):
     update_btn = Signal(QPushButton)
+    close = Signal(object)
 
 class MainPresenterSignals(UiSignals):
     show_game_info_window = Signal()
@@ -25,4 +26,5 @@ class ManagerSignals(UiSignals):
     card_clicked = Signal(object)
     load_more = Signal()
     show_game_info_window = Signal()
+    opened_card_changed = Signal(object)
     shutting_down = Signal()

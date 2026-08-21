@@ -1,21 +1,13 @@
-from PySide6.QtCore import Qt, Slot
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
-    QFileDialog,
-    QHBoxLayout,
     QLabel,
-    QProgressBar,
-    QStyleFactory,
     QWidget,
 )
 
-from PySide6.QtGui import QPixmap
-
-from ..views.igame_view import IGameView
-from ..ui_signals import GameWindowSignals
-
 from ...core.tools import get_logger
 from ...ui import Ui_gameinfo
-from ..widget.provider_button_widget import ProviderButton
+from ..ui_signals import GameWindowSignals
+from ..views.igame_view import IGameView
 
 logger = get_logger(__name__)
 

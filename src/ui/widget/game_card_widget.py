@@ -1,7 +1,7 @@
 from PySide6.QtCore import QRectF, Qt, Signal, Slot
 from PySide6.QtGui import QIcon, QPainter, QPainterPath, QPixmap, QRegion
 from PySide6.QtWidgets import QFrame, QLabel, QSizePolicy, QVBoxLayout
-
+from uuid import uuid4
 from ...core.models import GameData
 
 
@@ -11,6 +11,7 @@ class GameCard(QFrame):
 
     def __init__(self, game: GameData, on_click=None):
         super().__init__()
+        self._id = str(uuid4())
         if (on_click):
             self.request_card.connect(on_click)
 
@@ -86,13 +87,10 @@ class GameCard(QFrame):
 
     @property
     def get_id(self):
-        if (self._card_id):
-            return self._card_id
+        if (self._id):
+            return self._id
         return None
 
-    @get_id.setter
-    def set_id(self, id):
-        self._card_id = id
 
     def enterEvent(self, event):
         self.card_label.setAlignment(Qt.AlignCenter)

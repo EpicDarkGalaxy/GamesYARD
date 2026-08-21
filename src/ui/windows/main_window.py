@@ -81,21 +81,14 @@ class MainWindow(QMainWindow):
         for card in cards:
             self.flow_layout.addWidget(card)
 
-    # def closeEvent(self, event):
-    #     # Check if a download is active
-    #     if hasattr(self.manager, 'app_state') and self.manager.app_state.is_downloading:
-    #         from PySide6.QtWidgets import QMessageBox
-    #         reply = QMessageBox.question(
-    #             self, 'Exit?',
-    #             "A download is currently active. Are you sure you want to exit and cancel it?",
-    #             QMessageBox.Yes | QMessageBox.No, QMessageBox.No
-    #         )
+    def show_confirm_box(self):
+        from PySide6.QtWidgets import QMessageBox
+        reply = QMessageBox.question(
+            self, 'Exit?',
+            "A download is currently active. Are you sure you want to exit and cancel it?",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+        )
+        return reply
 
-    #         if reply == QMessageBox.No:
-    #             event.ignore() # Cancel the close event!
-    #             return
-
-    #     # If no download or they clicked Yes, proceed with cleanup
-    #     logger.info("Cleaning up and exiting...")
-    #     self.manager.cleanup()
-    #     event.accept()
+    def closeEvent(self, event):
+        self.signals.close.emit(event)

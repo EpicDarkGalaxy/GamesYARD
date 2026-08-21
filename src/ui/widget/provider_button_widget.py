@@ -43,7 +43,7 @@ class ProviderButton(QWidget):
             self.cancel_requested.emit(self.landing_page_url, self)
         else:
             print(f"Requesting download: {self.landing_page_url}")
-            self.set_downloading_state(True)
+            # self.set_downloading_state(True)
             self.download_requested.emit(self.landing_page_url, self)
 
     def update_progress(self, value: int):
@@ -75,7 +75,9 @@ class ProviderButton(QWidget):
             self.progress_bar.setVisible(False)
 
     def enterEvent(self, event):
+        print(f"enterEvent: is_downloading={self._is_downloading}, is_downloaded={self._is_downloaded}")
         if (self._is_downloading and not self._is_downloaded):
+
             self.btn.setStyleSheet("""
                 QPushButton {
                     background-color: red;

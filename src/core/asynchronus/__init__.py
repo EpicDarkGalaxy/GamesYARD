@@ -1,4 +1,4 @@
-from .worker import GameFetchWorker, WorkerManager
+from .worker import GameFetchWorker, WorkerManager, DownloadWorker
 from .worker_pool import ThumbnailFetchWorker, WorkerPool
 from .worker_signals import (
     DownloadWorkerSignals,
@@ -14,4 +14,5 @@ __all__ = [
     "GameFetchWorker",
     "WorkerPool",
     "ThumbnailFetchWorker",
+    "DownloadWorker",
 ]

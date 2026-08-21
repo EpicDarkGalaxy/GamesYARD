@@ -1,5 +1,4 @@
 from enum import Enum
-from uuid import UUID
 
 from PySide6.QtCore import QObject, Slot
 
@@ -7,6 +6,7 @@ from src.core.downloaders import DownloaderFactory
 from src.core.tools.utils import get_default_icon, get_filename_from_url, get_site_name
 
 from ..core.asynchronus import (
+    DownloadWorker,
     DownloadWorkerSignals,
     FetchWorkerSignals,
     GameFetchWorker,
@@ -32,11 +32,21 @@ class AppState:
         self.manager = manager
         self.last_search_query = ""
         self._fetch_state = FetchState.READY
+        self._opened_card = None # Card That user is currently viewing
         self.clear_grid = False  # Whether the grid should be cleared before fetching
         self.is_downloading = False
-        self.providers = []  # Provider button, also the source from the game is downloaded from
+        self.providers = []  # Provider button, also the source where the game's direct link is indexed
         self.download_queue = []
         self.game_list: list[GameData] = []  # List of games fetched from internet
+
+    @property
+    def get_opened_card(self):
+        return self._opened_card
+
+    @get_opened_card.setter
+    def set_opened_card(self, card):
+        self._opened_card = card
+        self.manager.signals.opened_card_changed.emit(card)
 
     @property
     def get_fetch_state(self) -> FetchState:
@@ -46,7 +56,7 @@ class AppState:
     def set_fetch_state(self, state: FetchState):
         self._fetch_state = state
         if (self._fetch_state is FetchState.READY):
-            self.manager.signals.update_fetch_btn.emit("Ready", True)
+            self.manager.signals.update_fetch_btn.emit(f"Ready", True)
         elif (self._fetch_state is FetchState.FETCHING):
             self.manager.signals.update_fetch_btn.emit("Fetching", False)
         elif (self._fetch_state is FetchState.FETCHED):
@@ -149,6 +159,8 @@ class Manager(QObject):
     def start_download(self, save_path, direct_link, progress_callback=None, provider_btn=None):
         self.download_worker = DownloadWorker(direct_link, save_path, self.download_worker_signals, provider_btn)
         self.worker_manager.run_in_thread(self.download_worker, on_progress=progress_callback)
+        self.app_state.download_queue.append(provider_btn)
+        self.app_state.is_downloading = True
 
     def stop_download(self):
         if (hasattr(self, 'download_worker') and self.download_worker):
@@ -168,7 +180,7 @@ class Manager(QObject):
         if (not self.app_state.download_queue):
             self.app_state.is_downloading = False
 
-    def cleanup(self):
+    def cleanup(self, event=None):
         self.stop_download()
         self.app_state.download_queue.clear()
         self.app_state.providers.clear()
@@ -176,6 +188,9 @@ class Manager(QObject):
         self.worker_pool.WORKER_POOL.clear()
         self.worker_manager.cleanup()
         self.signals.shutting_down.emit()
+        if (event):
+            logger.info("Cleaning up and exiting...")
+            event.accept()
 
     @staticmethod
     def request_filename_from_url(url):

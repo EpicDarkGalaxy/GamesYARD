@@ -1,7 +1,6 @@
-from uuid import uuid4
-
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import QMessageBox
 
 from ...core.manager import Manager
 from ...core.tools import get_logger
@@ -30,6 +29,7 @@ class MainPresenter:
         self.model.signals.thumb_fetched.connect(self.on_thumbnail_fetched)
 
         self.view.signals.fetch_btn_clicked.connect(self.on_fetch_button)
+        self.view.signals.close.connect(self.on_close)
 
     @Slot(str)
     def on_fetch_button(self, query: str=""):
@@ -45,7 +45,6 @@ class MainPresenter:
         cards = []
         for data in game_data:
             card = GameCard(data, on_click=self.on_card_clicked)
-            card.set_id = str(uuid4())
             cards.append(card)
             self.cards_dict[card.get_id] = card
 
@@ -61,10 +60,11 @@ class MainPresenter:
         logger.info(f"Card clicked: {card._data.title} of id {card.get_id}")
 
         data = card.get_data
-        data.details.system_requirements = self.model.request_system_req(data.url)
+        data.system_requirements = self.model.request_system_req(data.url)
 
         self.window_controller.show_GameInfoWindow()
-        PRESENTER_BRIDGE_SIGNALS.card_clicked_to_show.emit(card)
+        self.model.app_state.set_opened_card = card
+
 
     @Slot(str, bool)
     def on_update_fetch_btn(self, text: str, state: bool):
@@ -86,3 +86,14 @@ class MainPresenter:
             card.set_thumbnail = pixmap
         else:
             logger.warning(f"No image data or card found for card {card.get_data.title}")
+
+    @Slot(object)
+    def on_close(self, event):
+        if self.model.app_state.is_downloading:
+            reply = self.view.show_confirm_box()
+            logger.info(f"Close reply: {reply}")
+            if reply == QMessageBox.No:
+                logger.info("User cancelled close")
+                event.ignore()
+                return
+        self.model.cleanup(event)
