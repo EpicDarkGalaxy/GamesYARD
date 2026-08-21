@@ -1,0 +1,132 @@
+# Builds PyInstaller binaries on Linux and Windows and attaches them to a Release.
+# Triggers on tag push (e.g. `git tag v1.2.3 && git push origin v1.2.3`) and manual dispatch.
+
+name: Build and attach PyInstaller artifacts
+
+on:
+  push:
+    tags:
+      - 'v*'             # only on version tags like v1.2.3
+  workflow_dispatch:    # allow manual run
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    env:
+      ENTRY_POINT: src/main.py   # <-- change this to your entry script
+      APP_NAME: GamesYARD        # <-- change executable name if desired
+      DIST_DIR: dist/${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies (Linux)
+        if: runner.os != 'Windows'
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pyinstaller
+        shell: bash
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          python -m pip install --upgrade pip
+          if (Test-Path requirements.txt) { pip install -r requirements.txt }
+          pip install pyinstaller
+        shell: pwsh
+
+      - name: Prepare dist dir (Linux)
+        if: runner.os != 'Windows'
+        run: mkdir -p "${{ env.DIST_DIR }}"
+        shell: bash
+
+      - name: Prepare dist dir (Windows)
+        if: runner.os == 'Windows'
+        run: New-Item -ItemType Directory -Force -Path $Env:DIST_DIR
+        shell: pwsh
+
+      - name: Run PyInstaller (Linux)
+        if: runner.os != 'Windows'
+        run: pyinstaller --name "${{ env.APP_NAME }}" --onefile --distpath "${{ env.DIST_DIR }}" "${{ env.ENTRY_POINT }}"
+        shell: bash
+
+      - name: Run PyInstaller (Windows)
+        if: runner.os == 'Windows'
+        run: pyinstaller --name "${{ env.APP_NAME }}" --onefile --distpath "${{ env.DIST_DIR }}" "${{ env.ENTRY_POINT }}"
+        shell: pwsh
+
+      - name: Package artifact (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cd "${{ env.DIST_DIR }}"
+          exe=$(ls | head -n1)
+          zip -j "${{ env.APP_NAME }}-linux.zip" "$exe"
+        shell: bash
+
+      - name: Package artifact (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          $exe = Get-ChildItem -Path $Env:DIST_DIR | Select-Object -First 1
+          $zip = Join-Path -Path $Env:DIST_DIR -ChildPath "${Env:APP_NAME}-windows.zip"
+          Compress-Archive -Path $exe.FullName -DestinationPath $zip -Force
+        shell: pwsh
+
+      - name: Show packaged files (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: ls -la "${{ env.DIST_DIR }}"
+        shell: bash
+
+      - name: Show packaged files (Windows)
+        if: matrix.os == 'windows-latest'
+        run: Get-ChildItem -Path $Env:DIST_DIR
+        shell: pwsh
+
+      - name: Create or get Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release asset (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.DIST_DIR }}/${{ env.APP_NAME }}-linux.zip
+          asset_name: ${{ env.APP_NAME }}-linux.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release asset (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.DIST_DIR }}/${{ env.APP_NAME }}-windows.zip
+          asset_name: ${{ env.APP_NAME }}-windows.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
