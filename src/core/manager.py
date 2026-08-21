@@ -5,7 +5,7 @@ from PySide6.QtCore import QObject, Slot
 from src.core.downloaders import DownloaderFactory
 from src.core.tools.utils import get_default_icon, get_filename_from_url, get_site_name
 
-from ..core.asynchronus import (
+from ..core.background_tasks import (
     DownloadWorker,
     DownloadWorkerSignals,
     FetchWorkerSignals,
@@ -30,7 +30,7 @@ class FetchState(Enum):
 class AppState:
     def __init__(self, manager):
         self.manager = manager
-        self.last_search_query = ""
+        self.last_search_query = "" # Used when user clicks load more button
         self._fetch_state = FetchState.READY
         self._opened_card = None # Card That user is currently viewing
         self.clear_grid = False  # Whether the grid should be cleared before fetching
