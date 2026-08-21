@@ -47,7 +47,6 @@ python app.py
 
 ## Notes / Known issues
 - The repository contains a few internal names and directories (e.g., `src/core/asynchronus`) whose spelling may look inconsistent; this does not affect how to run the app.
-- If you plan to distribute the app, use `pyinstaller` (listed in requirements) to create platform-specific binaries.
 
 ## Contributing
 Feel free to open issues or pull requests for bug fixes, new provider implementations in `src/core/downloaders/`, or UI improvements.
