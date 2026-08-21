@@ -163,6 +163,7 @@ class Manager(QObject):
         self.app_state.is_downloading = True
 
     def stop_download(self):
+        # Later, we will use a list containing the deployed workers
         if (hasattr(self, 'download_worker') and self.download_worker):
             self.download_worker.is_cancelled = True
             self.download_worker = None
