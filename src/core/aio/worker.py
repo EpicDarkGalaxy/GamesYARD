@@ -42,7 +42,7 @@ class WorkerManager:
         self.threads.clear()
         self.workers.clear()
 
-class GameFetchWorker(QObject):
+class SearchWorker(QObject):
     def __init__ (self, search_query: str, game_fetcher: GameFetcher, load_more:bool=False):
         super().__init__()
         self.search_query = search_query

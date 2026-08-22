@@ -59,8 +59,8 @@ class MainWindow(QMainWindow):
         self.main_ui.toolBar.addWidget(self.fetch_btn)
 
     def fetch_button(self):
-        text = self.search_bar.text()
-        self.signals.fetch_btn_clicked.emit(text)
+        search_query = self.search_bar.text()
+        self.signals.fetch_btn_clicked.emit(search_query)
 
     def update_fetch_btn_state(self, text: str, state: bool):
         self.fetch_btn.setText(text)

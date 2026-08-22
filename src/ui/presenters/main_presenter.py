@@ -1,8 +1,8 @@
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QMessageBox
+from typing import TYPE_CHECKING
 
-from ...core.manager import Manager
 from ...core.tools import get_logger
 from ..ui_signals import MainPresenterSignals
 from ..widget import GameCard, LoadMoreButton
@@ -11,11 +11,15 @@ from .presenter_bridge_signals import PRESENTER_BRIDGE_SIGNALS
 
 logger = get_logger(__name__)
 
+if TYPE_CHECKING:
+    from ...core.app_core import AppCore
+    from ...core.models import GameData
+
 
 class MainPresenter:
-    def __init__(self, view: MainWindow, model: Manager, window_controller=None):
+    def __init__(self, view: MainWindow, app_core: "AppCore", window_controller=None):
         self.view: MainWindow = view
-        self.model = model
+        self.app_core = app_core
         self.signals = MainPresenterSignals()
         self.window_controller = window_controller
         self.cards_dict = {}
@@ -23,10 +27,9 @@ class MainPresenter:
         self.bind_signals()
 
     def bind_signals(self):
-        self.model.signals.cards_ready.connect(self.on_game_list_ready)
-        self.model.signals.update_fetch_btn.connect(self.on_update_fetch_btn)
-        self.model.signals.load_more.connect(self.on_load_more)
-        self.model.signals.thumb_fetched.connect(self.on_thumbnail_fetched)
+        self.app_core.search_manager.search_completed.connect(self.on_game_list_ready)
+        self.app_core.search_manager.search_state_changed.connect(self.on_update_fetch_btn)
+        self.app_core.thumbnail_manager.thumbnail_ready.connect(self.on_thumbnail_fetched)
 
         self.view.signals.fetch_btn_clicked.connect(self.on_fetch_button)
         self.view.signals.close.connect(self.on_close)
@@ -34,21 +37,23 @@ class MainPresenter:
     @Slot(str)
     def on_fetch_button(self, query: str=""):
         logger.info(f"Requesting games for query: {query}")
-        self.model.search(query)
+        self.app_core.search_manager.search(query)
 
     @Slot()
     def on_load_more(self):
-        self.model.load_more()
+        self.app_core.search_manager.load_more()
 
     @Slot(list, bool)
-    def on_game_list_ready(self, game_data, clear_grid: bool=False):
+    def on_game_list_ready(self, games_data: list["GameData"], clear_grid: bool):
+        logger.info(f"Received {len(games_data)} games ({clear_grid=})")
+
         cards = []
-        for data in game_data:
+        for data in games_data:
             card = GameCard(data, on_click=self.on_card_clicked)
             cards.append(card)
             self.cards_dict[card.get_id] = card
 
-            self.model.request_thumbnail(card.get_id, data.poster_url)
+            self.app_core.thumbnail_manager.request_thumbnail(card.get_id, data.poster_url)
             logger.info(f"Adding card: {data.title} with id {card.get_id}")
 
         load_more_button = LoadMoreButton(self.on_load_more)
@@ -60,10 +65,10 @@ class MainPresenter:
         logger.info(f"Card clicked: {card._data.title} of id {card.get_id}")
 
         data = card.get_data
-        data.system_requirements = self.model.request_system_req(data.url)
+        data.system_requirements = self.app_core.request_system_req(data.url)
 
         self.window_controller.show_GameInfoWindow()
-        self.model.app_state.set_opened_card = card
+        self.app_core.app_state.set_opened_card = card
 
 
     @Slot(str, bool)
@@ -89,11 +94,11 @@ class MainPresenter:
 
     @Slot(object)
     def on_close(self, event):
-        if self.model.app_state.is_downloading:
+        if self.app_core.app_state.is_downloading:
             reply = self.view.show_confirm_box()
             logger.info(f"Close reply: {reply}")
             if reply == QMessageBox.No:
                 logger.info("User cancelled close")
                 event.ignore()
                 return
-        self.model.cleanup(event)
+        self.app_core.cleanup(event)
