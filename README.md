@@ -1,4 +1,4 @@
-# GamesYARD
+# GamesYARD (Alpha)
 
 <img width="810" height="634" alt="GamesYARD_1" src="https://github.com/user-attachments/assets/972341a2-f1c8-4127-94e2-a3e5cb25a99c" />
 
