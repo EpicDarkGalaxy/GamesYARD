@@ -1,5 +1,5 @@
 from PySide6.QtCore import QRunnable, QThreadPool
-
+from .worker_signals import ThumbnailWorkerSignals
 from ..tools import get_img_data
 
 
@@ -15,9 +15,9 @@ class WorkerPool:
         self.WORKER_POOL.start(worker)
 
 class ThumbnailFetchWorker(QRunnable):
-    def __init__(self, id, url, signals):
+    def __init__(self, id, url):
         super().__init__()
-        self.signals = signals
+        self.signals = ThumbnailWorkerSignals()
         self.id = id
         self.url = url
 

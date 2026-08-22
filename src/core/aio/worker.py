@@ -2,7 +2,11 @@ import os
 from curl_cffi import requests as r
 
 from PySide6.QtCore import QObject, QThread, Slot
-
+from .worker_signals import (
+    DownloadWorkerSignals,
+    FetchWorkerSignals,
+    LinkExtractorWorkerSignals
+)
 from ..tools import GameFetcher, get_logger
 
 logger = get_logger(__name__)
@@ -39,11 +43,11 @@ class WorkerManager:
         self.workers.clear()
 
 class GameFetchWorker(QObject):
-    def __init__ (self, search_query: str, game_fetcher: GameFetcher, signals, load_more:bool=False):
+    def __init__ (self, search_query: str, game_fetcher: GameFetcher, load_more:bool=False):
         super().__init__()
         self.search_query = search_query
         self.game_fetcher = game_fetcher
-        self.signals = signals
+        self.signals = FetchWorkerSignals()
         self.load_more = load_more
 
     @Slot()
@@ -53,13 +57,12 @@ class GameFetchWorker(QObject):
         self.signals.finished.emit()
 
 class DownloadWorker(QObject):
-    def __init__(self, url: str, save_path: str, signals, provider):
+    def __init__(self, url: str, save_path: str):
         super().__init__()
         self.url = url
         self.save_path = save_path
-        self.signals = signals
+        self.signals = DownloadWorkerSignals()
         self.is_cancelled = False
-        self.provider = provider
 
     def cancle(self):
         self.is_cancelled = True
@@ -91,8 +94,24 @@ class DownloadWorker(QObject):
                         percent = int(downloaded_size / total_size * 100)
                         self.signals.progress.emit(percent)
             response.close()
-            self.signals.download_finished.emit(self.provider)
+            # self.signals.download_finished.emit(self.provider)
             self.signals.finished.emit()
 
         except Exception as e:
             logger.error(f"failed to download {self.url} {e}")
+
+class LinkExtractionWorker(QObject):
+    def __init__(self, method, url: str, provider):
+        super().__init__()
+        self.url = url
+        self.signals = LinkExtractorWorkerSignals()
+        self.provider = provider
+        self.method = method # Extraction Logic Function
+
+    def run(self):
+        try:
+            result = self.method(self.url)
+            print(f"Extracted Link: {result}")
+            self.signals.link_extracted.emit(result, self.url)
+        except Exception as e:
+            logger.error(f"failed to extract links from {self.url} {e}")

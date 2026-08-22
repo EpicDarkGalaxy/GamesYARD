@@ -6,7 +6,10 @@ class MediaFireDownloader(BaseDownloader):
     def can_handle(self, url) -> bool:
         return "mediafire.com" in url
 
-    def get_direct_link(self, landing_page_url: str) -> str | None:
+    def get_method(self) -> object:
+        return self.extract_dl_url
+
+    def extract_dl_url(self, landing_page_url: str) -> str | None:
         soup = parseHtml(landing_page_url)
         btn = soup.select_one("#downloadButton")
         return btn['href'] if btn else None

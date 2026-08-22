@@ -28,3 +28,8 @@ class ManagerSignals(UiSignals):
     show_game_info_window = Signal()
     opened_card_changed = Signal(object)
     shutting_down = Signal()
+
+class DownloadSignals(UiSignals):
+    download_progress = Signal(int)
+    download_finished = Signal()
+    download_cancelled = Signal()

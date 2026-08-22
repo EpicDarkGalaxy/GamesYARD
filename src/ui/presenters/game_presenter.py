@@ -13,7 +13,6 @@ class GamePresenter():
         self.view = view
         self.model = model
         self.providers = []
-        self.downloading_providers = []
         self.bind_signals()
 
     def bind_signals(self):
@@ -87,5 +86,6 @@ class GamePresenter():
         suggested_name = self.model.request_filename_from_url(landing_page_url)
         file_path = QFileDialog.getSaveFileName(self.view, "Save Game", suggested_name)
         if (file_path[0] != ""):
+            self.model.download_signals.download_progress.connect(provider_btn.update_progress)
             provider_btn.set_downloading_state(True)
-            self.model.attempt_download(file_path[0], landing_page_url, provider_btn.update_progress, provider_btn=provider_btn)
+            self.model.attempt_download(file_path[0], landing_page_url)

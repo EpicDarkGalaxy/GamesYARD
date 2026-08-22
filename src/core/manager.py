@@ -5,18 +5,16 @@ from PySide6.QtCore import QObject, Slot
 from src.core.downloaders import DownloaderFactory
 from src.core.tools.utils import get_default_icon, get_filename_from_url, get_site_name
 
-from ..core.background_tasks import (
+from ..core.aio import (
     DownloadWorker,
-    DownloadWorkerSignals,
-    FetchWorkerSignals,
     GameFetchWorker,
     ThumbnailFetchWorker,
-    ThumbnailWorkerSignals,
     WorkerManager,
+    LinkExtractionWorker,
     WorkerPool,
 )
 from ..core.models import GameData
-from ..ui import ManagerSignals
+from ..ui import ManagerSignals, DownloadSignals
 from .tools import GameFetcher, get_logger
 
 logger = get_logger(__name__)
@@ -27,6 +25,20 @@ class FetchState(Enum):
     FETCHED = 3
     FETCH_FAIL = 4
 
+class Download:
+    def __init__(self, save_path, download_url, landing_page_url, manager=None):
+        self.save_path = save_path
+        self.download_url = download_url
+        self.landing_page_url = landing_page_url
+        self.download_progress = 0
+        self.manager = manager
+
+    def update_progress(self, progress):
+        logger.info(f"Download progress: {progress}")
+        self.download_progress = progress
+        if self.manager:
+            self.manager.download_signals.download_progress.emit(self.download_progress)
+
 class AppState:
     def __init__(self, manager):
         self.manager = manager
@@ -35,7 +47,6 @@ class AppState:
         self._opened_card = None # Card That user is currently viewing
         self.clear_grid = False  # Whether the grid should be cleared before fetching
         self.is_downloading = False
-        self.providers = []  # Provider button, also the source where the game's direct link is indexed
         self.download_queue = []
         self.game_list: list[GameData] = []  # List of games fetched from internet
 
@@ -65,7 +76,8 @@ class AppState:
             self.manager.signals.update_fetch_btn.emit("Fetch Fail", True)
 
 class Manager(QObject):
-    def __init__(self, main_window=None):
+    def __init__(self):
+        super().__init__()
         self.app_state = AppState(self)
         self.game_fetcher = GameFetcher()
 
@@ -75,6 +87,8 @@ class Manager(QObject):
         self.worker_pool = WorkerPool()
 
         self.signals = ManagerSignals()
+        self.download_signals = DownloadSignals()
+
 
     # Called when the load more button is pressed
     def load_more(self):
@@ -91,17 +105,14 @@ class Manager(QObject):
 
         self.app_state.set_fetch_state = FetchState.FETCHING
 
-        self.game_fetch_signals = FetchWorkerSignals()
-        self.game_fetch_signals.fetch_finished.connect(self.handle_search_result)
-
         self.fetch_thread, self.fetch_worker = self.worker_manager.run_in_thread(
             GameFetchWorker(
                 query,
                 self.game_fetcher,
-                self.game_fetch_signals,
                 load_more,
             )
         )
+        self.fetch_worker.signals.fetch_finished.connect(self.handle_search_result)
 
     @Slot(list)
     def handle_search_result(self, game_data: list[GameData]):
@@ -119,10 +130,8 @@ class Manager(QObject):
 
     def request_thumbnail(self, id, img_url):
         logger.info(f"Starting Worker for thumbnail for url {img_url}")
-        self.thumb_fetched_signal = ThumbnailWorkerSignals()
-        self.thumb_fetched_signal.thumbnail_fetch_finished.connect(self.thumb_fetched)
-
-        thumbnail_worker = ThumbnailFetchWorker(id, img_url, self.thumb_fetched_signal)
+        thumbnail_worker = ThumbnailFetchWorker(id, img_url)
+        thumbnail_worker.signals.thumbnail_fetch_finished.connect(self.thumb_fetched)
         self.worker_pool.run_in_thread_pool(thumbnail_worker)
 
     @Slot(str, bytes)
@@ -130,36 +139,39 @@ class Manager(QObject):
         logger.info(f"Thumbnail Worker finished for card {id}")
         self.signals.thumb_fetched.emit(id, img_data)
 
-    def attempt_download(self, save_path, landing_page_url, progress_callback=None, download_finished_callback=None, provider_btn=None):
+    def attempt_download(self, save_path, landing_page_url):
         """
         Attempts to download a game from the given landing page URL.
         """
-        self.download_worker_signals = DownloadWorkerSignals()
-        self.download_worker_signals.download_finished.connect(self.on_download_finished)
-
-        if (progress_callback):
-            self.download_worker_signals.progress.connect(progress_callback)
-
-        if (download_finished_callback):
-            self.download_worker_signals.download_finished.connect(download_finished_callback)
 
         provider = DownloaderFactory.get_provider(url=landing_page_url)
         if not provider:
             logger.error(f"no provider found for {landing_page_url}, skipping download")
             return
 
-        direct_link = provider.get_direct_link(landing_page_url)
-        if not direct_link:
-            logger.error(
-                f"direct link not found for {landing_page_url}, skipping download"
-            )
-            return
-        self.start_download(save_path, direct_link, progress_callback, provider_btn)
+        download = Download(save_path, "", landing_page_url=landing_page_url, manager=self)
+        self.app_state.download_queue.append(download)
 
-    def start_download(self, save_path, direct_link, progress_callback=None, provider_btn=None):
-        self.download_worker = DownloadWorker(direct_link, save_path, self.download_worker_signals, provider_btn)
-        self.worker_manager.run_in_thread(self.download_worker, on_progress=progress_callback)
-        self.app_state.download_queue.append(provider_btn)
+        self.link_worker = LinkExtractionWorker(provider.get_method(), landing_page_url, provider)
+        self.link_worker.signals.link_extracted.connect(self.on_download_url)
+        self.worker_manager.run_in_thread(self.link_worker)
+
+    def on_download_url(self, download_url, landing_page_url):
+        logger.info(f"Link extracted: {download_url}")
+
+        for download in self.app_state.download_queue:
+            if download.landing_page_url == landing_page_url:
+                download.download_url = download_url
+                self.start_download(download)
+                break
+
+    def start_download(self, download: Download):
+        logger.info(f"Starting download: {download.download_url} to {download.save_path}")
+
+        self.download_worker = DownloadWorker(download.download_url, download.save_path)
+        self.download_worker.signals.download_finished.connect(self.on_download_finished)
+        self.worker_manager.run_in_thread(self.download_worker, on_progress=download.update_progress)
+        self.app_state.download_queue.append(download)
         self.app_state.is_downloading = True
 
     def stop_download(self):
@@ -184,7 +196,6 @@ class Manager(QObject):
     def cleanup(self, event=None):
         self.stop_download()
         self.app_state.download_queue.clear()
-        self.app_state.providers.clear()
         self.app_state.game_list.clear()
         self.worker_pool.WORKER_POOL.clear()
         self.worker_manager.cleanup()

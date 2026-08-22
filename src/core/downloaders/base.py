@@ -11,8 +11,16 @@ class BaseDownloader(ABC): # Inherit from ABC
         pass # No need for 'raise NotImplementedError' anymore!
 
     @abstractmethod
-    def get_direct_link(self, landing_page_url: str) -> str | None:
+    def extract_dl_url(self, landing_page_url: str) -> str | None:
         """
         Resolves the landing page and returns the final direct file download URL.
+        """
+        pass
+
+
+    @abstractmethod
+    def get_method(self) -> object:
+        """
+        Returns the extraction logic function.
         """
         pass
