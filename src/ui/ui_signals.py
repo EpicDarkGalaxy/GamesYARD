@@ -31,5 +31,5 @@ class ManagerSignals(UiSignals):
 
 class DownloadSignals(UiSignals):
     download_progress = Signal(int)
-    download_finished = Signal()
+    download_finished = Signal(str)
     download_cancelled = Signal()

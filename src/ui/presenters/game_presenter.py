@@ -19,6 +19,7 @@ class GamePresenter():
         self.view.signals.fetch_btn_clicked.connect(self.on_fetch_btn)
 
         self.model.signals.opened_card_changed.connect(self.view_card)
+        self.model.download_signals.download_finished.connect(self.on_download_finished)
 
         # PRESENTER_BRIDGE_SIGNALS.show_card.connect(self.on_card_clicked)
 
@@ -49,7 +50,7 @@ class GamePresenter():
 
     def create_provider_list(self, game_card: GameCard):
         data = game_card.get_data
-        if (not data and not data.details):
+        if (not data):
             return
 
         landing_page_urls = self.model.request_provider_links(data.url)
@@ -75,9 +76,8 @@ class GamePresenter():
     @Slot(str, object)
     def on_provider_cancel(self, landing_page_url: str, provider_btn: ProviderButton):
         self.model.stop_download()
-        if (provider_btn in self.model.app_state.download_queue):
-            self.model.app_state.download_queue.remove(provider_btn)
-        self.model.app_state.is_downloading = False
+        self.model.update_download_queue(download_id=provider_btn.get_id, adding=False)
+        self.model.update_download_state()
 
     @Slot(str, object)
     def on_provider_click(self, landing_page_url, provider_btn: ProviderButton):
@@ -87,5 +87,12 @@ class GamePresenter():
         file_path = QFileDialog.getSaveFileName(self.view, "Save Game", suggested_name)
         if (file_path[0] != ""):
             self.model.download_signals.download_progress.connect(provider_btn.update_progress)
+            self.model.download_signals.download_finished.connect(self.on_download_finished)
             provider_btn.set_downloading_state(True)
-            self.model.attempt_download(file_path[0], landing_page_url)
+            self.model.attempt_download(file_path[0], landing_page_url, provider_btn.get_id)
+
+    @Slot(str)
+    def on_download_finished(self, download_id):
+        for provider_btn in self.providers:
+            if (provider_btn.get_id == download_id):
+                provider_btn.set_downloading_state(is_downloading=False, is_downloaded=True)

@@ -26,25 +26,25 @@ class FetchState(Enum):
     FETCH_FAIL = 4
 
 class Download:
-    def __init__(self, save_path, download_url, landing_page_url, manager=None):
+    def __init__(self, save_path="", download_url="", download_id="", manager=None):
         self.save_path = save_path
         self.download_url = download_url
-        self.landing_page_url = landing_page_url
+        self.download_id = download_id
         self.download_progress = 0
-        self.manager = manager
+        self._manager = manager
 
     def update_progress(self, progress):
         logger.info(f"Download progress: {progress}")
         self.download_progress = progress
-        if self.manager:
-            self.manager.download_signals.download_progress.emit(self.download_progress)
+        if self._manager:
+            self._manager.download_signals.download_progress.emit(self.download_progress)
 
 class AppState:
     def __init__(self, manager):
         self.manager = manager
         self.last_search_query = "" # Used when user clicks load more button
         self._fetch_state = FetchState.READY
-        self._opened_card = None # Card That user is currently viewing
+        self._opened_card = None # The card That user is currently viewing
         self.clear_grid = False  # Whether the grid should be cleared before fetching
         self.is_downloading = False
         self.download_queue = []
@@ -139,7 +139,7 @@ class Manager(QObject):
         logger.info(f"Thumbnail Worker finished for card {id}")
         self.signals.thumb_fetched.emit(id, img_data)
 
-    def attempt_download(self, save_path, landing_page_url):
+    def attempt_download(self, save_path, landing_page_url, download_id: str=""):
         """
         Attempts to download a game from the given landing page URL.
         """
@@ -149,18 +149,19 @@ class Manager(QObject):
             logger.error(f"no provider found for {landing_page_url}, skipping download")
             return
 
-        download = Download(save_path, "", landing_page_url=landing_page_url, manager=self)
+        download = Download(save_path=save_path, download_id=download_id, manager=self)
         self.app_state.download_queue.append(download)
 
-        self.link_worker = LinkExtractionWorker(provider.get_method(), landing_page_url, provider)
+        self.link_worker = LinkExtractionWorker(provider.get_method(), landing_page_url, download_id)
         self.link_worker.signals.link_extracted.connect(self.on_download_url)
         self.worker_manager.run_in_thread(self.link_worker)
 
-    def on_download_url(self, download_url, landing_page_url):
+    @Slot(str, str)
+    def on_download_url(self, download_url, download_id):
         logger.info(f"Link extracted: {download_url}")
 
         for download in self.app_state.download_queue:
-            if download.landing_page_url == landing_page_url:
+            if download.download_id == download_id:
                 download.download_url = download_url
                 self.start_download(download)
                 break
@@ -169,10 +170,10 @@ class Manager(QObject):
         logger.info(f"Starting download: {download.download_url} to {download.save_path}")
 
         self.download_worker = DownloadWorker(download.download_url, download.save_path)
-        self.download_worker.signals.download_finished.connect(self.on_download_finished)
+        self.download_worker.signals.download_finished.connect(self.update_download_queue)
         self.worker_manager.run_in_thread(self.download_worker, on_progress=download.update_progress)
-        self.app_state.download_queue.append(download)
-        self.app_state.is_downloading = True
+        self.update_download_queue(download=download, adding=True)
+        self.update_download_state()
 
     def stop_download(self):
         # Later, we will use a list containing the deployed workers
@@ -180,18 +181,28 @@ class Manager(QObject):
             self.download_worker.is_cancelled = True
             self.download_worker = None
 
-    def on_download_finished(self, provider):
-        logger.info(f"Download finished: {provider.landing_page_url}")
-
-        for provider_btn in self.app_state.download_queue:
-            if provider_btn is provider:
-                logger.info(f"Removing provider from download queue: {provider.landing_page_url}")
-
-                provider_btn.set_downloading_state(is_downloading=False, is_downloaded=True)
-                self.app_state.download_queue.remove(provider_btn)
-                break
-        if (not self.app_state.download_queue):
+    def update_download_state(self):
+        if (self.app_state.download_queue):
+            logger.info("App is downloading.")
+            self.app_state.is_downloading = True
+        else:
+            logger.info("All downloads finished.")
             self.app_state.is_downloading = False
+
+    @Slot(str, object, bool)
+    def update_download_queue(self, download_id: str="", download=None, adding: bool=False):
+        logger.debug(f"update_download_queue: download_id={download_id}, download={download}, adding={adding}")
+        if (adding and download):
+            logger.info(f"Adding download to queue: {download.download_id}")
+            self.app_state.download_queue.append(download)
+        else:
+            for download in self.app_state.download_queue:
+                if download.download_id == download_id:
+                    logger.info(f"Download finished: {download_id}")
+                    logger.info(f"Removing download from queue: {download_id}")
+                    self.app_state.download_queue.remove(download)
+                    break
+        self.update_download_state()
 
     def cleanup(self, event=None):
         self.stop_download()

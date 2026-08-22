@@ -16,8 +16,8 @@ class FetchWorkerSignals(WorkerSignals):
     fetch_fail = Signal() # Signal to indicate the worker has failed to fetch items
 
 class DownloadWorkerSignals(WorkerSignals):
-    download_finished = Signal(object)  # Signal to indicate the download has finished
+    download_finished = Signal(str)  # Signal to indicate the download has finished
     download_fail = Signal()  # Signal to indicate the download has failed
 
 class LinkExtractorWorkerSignals(WorkerSignals):
-    link_extracted = Signal(str, object)  # Signal to emit the extracted link and the URL
+    link_extracted = Signal(str, str)  # Signal to emit the extracted link and the URL

@@ -24,8 +24,8 @@ class WorkerManager:
 
         thread.started.connect(worker.run)
 
-        if (on_fail): worker.signals.fetch_fail.connect(on_fail)
-        if (on_finish): worker.signals.fetch_finished.connect(on_finish)
+        if (on_fail): worker.signals.fail.connect(on_fail)
+        if (on_finish): worker.signals.finished.connect(on_finish)
         if (on_progress): worker.signals.progress.connect(on_progress)
 
         worker.signals.finished.connect(self.cleanup)
@@ -57,10 +57,11 @@ class GameFetchWorker(QObject):
         self.signals.finished.emit()
 
 class DownloadWorker(QObject):
-    def __init__(self, url: str, save_path: str):
+    def __init__(self, url: str, save_path: str, download_id: str=""):
         super().__init__()
         self.url = url
         self.save_path = save_path
+        self.download_id = download_id
         self.signals = DownloadWorkerSignals()
         self.is_cancelled = False
 
@@ -94,24 +95,24 @@ class DownloadWorker(QObject):
                         percent = int(downloaded_size / total_size * 100)
                         self.signals.progress.emit(percent)
             response.close()
-            # self.signals.download_finished.emit(self.provider)
+            self.signals.download_finished.emit(self.download_id)
             self.signals.finished.emit()
 
         except Exception as e:
             logger.error(f"failed to download {self.url} {e}")
 
 class LinkExtractionWorker(QObject):
-    def __init__(self, method, url: str, provider):
+    def __init__(self, method, url: str, id: str=""):
         super().__init__()
         self.url = url
         self.signals = LinkExtractorWorkerSignals()
-        self.provider = provider
         self.method = method # Extraction Logic Function
+        self.id = id
 
     def run(self):
         try:
             result = self.method(self.url)
             print(f"Extracted Link: {result}")
-            self.signals.link_extracted.emit(result, self.url)
+            self.signals.link_extracted.emit(result, self.id)
         except Exception as e:
             logger.error(f"failed to extract links from {self.url} {e}")
