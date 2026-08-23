@@ -9,7 +9,7 @@ class AkiraBoxDownloader(BaseDownloader):
     def get_method(self) -> object:
         return self.extract_dl_url
 
-    def extract_dl_url(self, landing_page_url: str) -> str | None:
+    def extract_dl_url(self, provider_url: str) -> str | None:
         headers = {
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
             "Referer": "https://akirabox.to/",
@@ -17,7 +17,7 @@ class AkiraBoxDownloader(BaseDownloader):
 
         try:
             # Using curl_cffi with impersonation to bypass basic bot detection
-            response = requests.get(url, headers=headers, impersonate="chrome124", timeout=10)
+            response = requests.get(provider_url, headers=headers, impersonate="chrome124", timeout=10)
             response.raise_for_status()
 
             soup = BeautifulSoup(response.text, 'html.parser')

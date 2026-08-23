@@ -70,6 +70,7 @@ class DownloadWorker(QObject):
 
     @Slot()
     def run(self):
+        logger.debug(f"Download Started: [{self.url}], ID: [{self.download_id}]")
         try:
             # For now, i am keeping the download logic here.
             # I may move it to a seprate file, or keep it here forever
@@ -99,6 +100,7 @@ class DownloadWorker(QObject):
             self.signals.finished.emit()
 
         except Exception as e:
+            self.signals.download_fail.emit(self.download_id)
             logger.error(f"failed to download {self.url} {e}")
 
 class LinkExtractionWorker(QObject):

@@ -18,14 +18,15 @@ class GamePresenter():
     def __init__(self, view: GameWindow, appt_core: "AppCore"):
         self.view = view
         self.app_core = appt_core
-        self.provider_buttons = {}
+        self.provider_buttons: dict[str, ProviderButton]= {}
         self.bind_signals()
 
     def bind_signals(self):
         self.view.signals.fetch_btn_clicked.connect(self.on_fetch_btn)
 
         self.app_core.signals.opened_card_changed.connect(self.view_card)
-        self.app_core.download_manager.download_finished.connect(self.on_download_finished)
+        self.app_core.download_manager.download_finished.connect(self.on_download_finish)
+        self.app_core.download_manager.download_failed.connect(self.on_download_fail)
 
     @Slot()
     def on_fetch_btn(self):
@@ -63,9 +64,10 @@ class GamePresenter():
         data = card.get_data
         provider_urls = self.app_core.search_manager.get_host_urls(data.url)
         if not provider_urls:
-            logger.warning("Provider URLS is Empty")
+            logger.warning("Provider URLs is Empty")
             return [], {}
 
+        # [skip_providers] We don't want to Recreate Providers that were downloading
         skip_providers = {provider.provider_url: provider for provider in self.app_core.download_manager.download_queue}
         new_providers = []
         for provider_url in provider_urls:
@@ -78,7 +80,7 @@ class GamePresenter():
                 name = get_site_name(provider_url)
                 new_providers.append(self.create_provider_button(name, provider_url))
 
-        logger.debug(f"Returning providers STATE: [{len(new_providers)}, skipped {len(skip_providers)}]")
+        logger.debug(f"Returning providers: new=[{len(new_providers)}], old=[{len(skip_providers)}]")
         return new_providers, skip_providers
 
     def create_provider_button(self, name: str, url: str):
@@ -92,8 +94,8 @@ class GamePresenter():
         return btn
 
 
-    @Slot(str, object)
-    def on_provider_cancel(self, provider_id: str):
+    @Slot(str, str)
+    def on_provider_cancel(self, provider_url: str="", provider_id: str=""):
         btn = self.provider_buttons.get(provider_id)
         if not btn:
             logger.warning(f"Provider button not found for id: {provider_id}")
@@ -104,8 +106,8 @@ class GamePresenter():
         self.app_core.download_manager.download_progress.disconnect(btn.update_progress)
 
     @Slot(str, object)
-    def on_provider_click(self, provider_url: str, provider_id):
-        logger.info(f"Clicked Provider: {provider_url}")
+    def on_provider_click(self, provider_url: str, provider_id: str):
+        logger.debug(f"Clicked Provider: {provider_url}")
 
         btn = self.provider_buttons.get(provider_id)
         if not btn:
@@ -116,13 +118,26 @@ class GamePresenter():
         file_path = QFileDialog.getSaveFileName(self.view, "Save Game", suggested_name)
         if (file_path[0] != ""):
             self.app_core.download_manager.download_progress.connect(btn.update_progress)
-            self.app_core.download_manager.download_finished.connect(self.on_download_finished)
-
-            btn.set_downloading_state(True)
+            btn.set_downloading_state(is_downloading=True)
             self.app_core.download_manager.attempt_download(file_path[0], provider_url, provider_id)
 
+
+    # ------I will refactor it later------
     @Slot(str)
-    def on_download_finished(self, download_id: str):
+    def on_download_finish(self, download_id: str):
+        logger.debug(f"Download Finished for provider: {download_id}")
         btn = self.provider_buttons.get(download_id)
-        if btn:
-            btn.set_downloading_state(is_downloading=False, is_downloaded=True)
+        if not btn:
+            logger.warning(f"Provider not found for download id: {download_id}")
+            return
+        btn.set_downloading_state(is_downloaded=True)
+
+    @Slot(str)
+    def on_download_fail(self, download_id: str):
+        logger.debug(f"Download failed for provider: {download_id}")
+        btn = self.provider_buttons.get(download_id)
+        if not btn:
+            logger.warning(f"Provider not found for download id: {download_id}")
+            return
+        btn.set_downloading_state(failed=True)
+# ------I will refactor it later------
