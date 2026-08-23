@@ -23,6 +23,6 @@ class ThumbnailManager(QObject):
         self.worker_pool.run_in_thread_pool(thumbnail_worker)
 
     @Slot(str, bytes)
-    def thumb_fetched(self, id, img_data: bytes):
+    def thumb_fetched(self, id: str, img_data: bytes):
         logger.info(f"Thumbnail Worker finished for card {id}")
         self.thumbnail_ready.emit(id, img_data)

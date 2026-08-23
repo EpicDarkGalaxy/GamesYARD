@@ -9,7 +9,7 @@ class MediaFireDownloader(BaseDownloader):
     def get_method(self) -> object:
         return self.extract_dl_url
 
-    def extract_dl_url(self, landing_page_url: str) -> str | None:
-        soup = parseHtml(landing_page_url)
+    def extract_dl_url(self, provider_url: str) -> str | None:
+        soup = parseHtml(provider_url)
         btn = soup.select_one("#downloadButton")
         return btn['href'] if btn else None

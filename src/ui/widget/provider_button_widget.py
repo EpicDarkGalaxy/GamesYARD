@@ -4,20 +4,20 @@ from uuid import uuid4
 
 
 class ProviderButton(QWidget):
-    download_requested = Signal(str, QWidget) # URL, Widget reference
-    cancel_requested = Signal(str, QWidget) # self
+    download_requested = Signal(str, str) # URL, Widget reference
+    cancel_requested = Signal(str, str) # self, provider_id
 
     _is_downloading = False
     _is_downloaded = False
 
-    def __init__(self, provider_name: str, landing_page_url: str="", on_click=None, on_cancel=None):
+    def __init__(self, provider_name: str="", provider_url: str=""):
         super().__init__()
         self._id = str(uuid4())
         self.main_layout = QHBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
 
         self.provider_name = provider_name
-        self.landing_page_url = landing_page_url
+        self.provider_url = provider_url
 
         self.btn = QPushButton(provider_name)
         self.btn.setObjectName("provider-btn")
@@ -31,20 +31,15 @@ class ProviderButton(QWidget):
         self.main_layout.addWidget(self.btn)
         self.main_layout.addWidget(self.progress_bar)
 
-        if (on_click):
-            self.download_requested.connect(on_click)
-        if (on_cancel):
-            self.cancel_requested.connect(on_cancel)
-
     def handle_click(self):
         if (self._is_downloading):
-            print(f"Requesting cancellation: {self.landing_page_url}")
+            print(f"Requesting cancellation: {self.provider_url}")
             self.set_downloading_state(False)
-            self.cancel_requested.emit(self.landing_page_url, self)
+            self.cancel_requested.emit(self.provider_url, self._id)
         else:
-            print(f"Requesting download: {self.landing_page_url}")
+            print(f"Requesting download: {self.provider_url}")
             # self.set_downloading_state(True)
-            self.download_requested.emit(self.landing_page_url, self)
+            self.download_requested.emit(self.provider_url, self._id)
 
     def update_progress(self, value: int):
         self.progress_bar.setValue(value)

@@ -16,13 +16,8 @@ logger = get_logger(__name__)
 
 class AppState:
     def __init__(self, manager):
-        self.manager = manager
-        self.last_search_query = "" # Used when user clicks load more button
+        self._manager = manager
         self._opened_card = None # The card That user is currently viewing
-        self.clear_grid = False  # Whether the grid should be cleared before fetching
-        self.is_downloading = False
-        self.download_queue = []
-        self.game_list: list[GameData] = []  # List of games fetched from internet
 
     @property
     def get_opened_card(self):
@@ -31,7 +26,7 @@ class AppState:
     @get_opened_card.setter
     def set_opened_card(self, card):
         self._opened_card = card
-        self.manager.signals.opened_card_changed.emit(card)
+        self._manager.signals.opened_card_changed.emit(card)
 
 class AppCore(QObject):
     def __init__(self):
@@ -54,29 +49,9 @@ class AppCore(QObject):
 
     def cleanup(self, event=None):
         self.download_manager.stop_download()
-        self.app_state.download_queue.clear()
-        self.app_state.game_list.clear()
         self.worker_pool.WORKER_POOL.clear()
         self.worker_manager.cleanup()
         self.signals.shutting_down.emit()
         if (event):
             logger.info("Cleaning up and exiting...")
             event.accept()
-
-    @staticmethod
-    def request_filename_from_url(url):
-        return get_filename_from_url(url)
-
-    @staticmethod
-    def request_default_icon():
-        return get_default_icon()
-
-    @staticmethod
-    def request_provider_name(url: str):
-        return get_site_name(url)
-
-    def request_system_req(self, url: str) -> dict[str, str]:
-        return self.game_fetcher.get_game_details(url)
-
-    def request_provider_links(self, url: str) -> list[str]:
-        return self.game_fetcher.fetch_provder_links(url)

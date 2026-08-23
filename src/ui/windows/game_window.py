@@ -49,6 +49,8 @@ class GameWindow(QWidget, IGameView):
             self.ui.game_details_layout.addWidget(label)
 
     def update_providers(self, providers, exlude):
+        logger.info(f"Updating providers: {providers}")
+
         self.clear_layout(self.ui.download_links_layout, exlude)
         if (not providers):
             return

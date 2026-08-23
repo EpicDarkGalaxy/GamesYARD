@@ -3,7 +3,7 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QMessageBox
 from typing import TYPE_CHECKING
 
-from ...core.tools import get_logger
+from ...core.tools import get_logger, get_default_icon
 from ..ui_signals import MainPresenterSignals
 from ..widget import GameCard, LoadMoreButton
 from ..windows import MainWindow
@@ -65,7 +65,7 @@ class MainPresenter:
         logger.info(f"Card clicked: {card._data.title} of id {card.get_id}")
 
         data = card.get_data
-        data.system_requirements = self.app_core.request_system_req(data.url)
+        data.system_requirements = self.app_core.search_manager.request_system_req(data.url)
 
         self.window_controller.show_GameInfoWindow()
         self.app_core.app_state.set_opened_card = card
@@ -94,7 +94,7 @@ class MainPresenter:
 
     @Slot(object)
     def on_close(self, event):
-        if self.app_core.app_state.is_downloading:
+        if self.app_core.download_manager.is_downloading:
             reply = self.view.show_confirm_box()
             logger.info(f"Close reply: {reply}")
             if reply == QMessageBox.No:

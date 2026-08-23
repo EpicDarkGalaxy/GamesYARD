@@ -68,7 +68,7 @@ class GameFetcher:
             return []
 
     @staticmethod
-    def get_game_details(game_page_url):
+    def get_game_details(game_page_url: str) -> dict[str, str]:
         """
         Fetches the game details from the game page URL where game details are located.
 
@@ -102,7 +102,7 @@ class GameFetcher:
         return system_requirement
 
     @staticmethod
-    def fetch_provder_links(game_url=None):
+    def fetch_host_urls(game_url: str="") -> list[str]:
         """
         Fetches the providers links from the game page URL where download links are located.
 
@@ -113,8 +113,11 @@ class GameFetcher:
             list: The list of fetched provider links or an empty list if no links are found.
         """
 
-        if game_url is None:
+        if not game_url:
+            logger.warning("GAME URL is Empty")
             return []  # Return an empty list if no game URL is provided
+
+        logger.info(f"Fetching hosts from URL: {game_url}")
         soup2 = parseHtml(game_url)
         download_links = []
         for element in soup2.select("a"):

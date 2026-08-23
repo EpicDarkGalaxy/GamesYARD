@@ -8,12 +8,12 @@ class BaseDownloader(ABC): # Inherit from ABC
         """
         Returns True if this provider can handle the given URL.
         """
-        pass # No need for 'raise NotImplementedError' anymore!
+        pass
 
     @abstractmethod
-    def extract_dl_url(self, landing_page_url: str) -> str | None:
+    def extract_dl_url(self, provider_url: str) -> str | None:
         """
-        Resolves the landing page and returns the final direct file download URL.
+        Resolves the provider url and returns the final direct file download URL.
         """
         pass
 

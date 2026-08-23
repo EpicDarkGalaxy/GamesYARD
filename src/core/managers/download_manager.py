@@ -37,20 +37,20 @@ class DownloadManager(QObject):
         self.is_downloading = False
         self.worker_manager = worker_manager
 
-    def attempt_download(self, save_path, landing_page_url, download_id: str=""):
+    def attempt_download(self, save_path, provider_url, download_id: str=""):
         """
-        Attempts to download a game from the given landing page URL.
+        Attempts to download a game from the given host URL.
         """
 
-        provider = DownloaderFactory.get_provider(url=landing_page_url)
+        provider = DownloaderFactory.get_provider(url=provider_url)
         if not provider:
-            logger.error(f"no provider found for {landing_page_url}, skipping download")
+            logger.error(f"no provider found for {provider_url}, skipping download")
             return
 
         download = Download(save_path=save_path, download_id=download_id, manager=self)
         self.download_queue.append(download)
 
-        self.link_worker = LinkExtractionWorker(provider.get_method(), landing_page_url, download_id)
+        self.link_worker = LinkExtractionWorker(provider.get_method(), provider_url, download_id)
         self.link_worker.signals.link_extracted.connect(self.on_download_url)
         self.worker_manager.run_in_thread(self.link_worker)
 

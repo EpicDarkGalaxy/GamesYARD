@@ -1,42 +1,51 @@
-from ..windows.game_window import GameWindow
-from .presenter_bridge_signals import PRESENTER_BRIDGE_SIGNALS, PresenterBridgeSignals
+from inspect import FrameInfo
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QFileDialog
-from ..widget import ProviderButton, GameCard
-from ...core.tools import get_logger
+
+from ...core.tools import get_filename_from_url, get_logger, get_site_name
+from ..widget import GameCard, ProviderButton
+from ..windows.game_window import GameWindow
+
+if TYPE_CHECKING:
+    from ...core.app_core import AppCore
+
 
 logger = get_logger(__name__)
 
 class GamePresenter():
-    def __init__(self, view: GameWindow, context):
+    def __init__(self, view: GameWindow, appt_core: "AppCore"):
         self.view = view
-        self.context = context
-        self.providers = []
+        self.app_core = appt_core
+        self.provider_buttons = {}
         self.bind_signals()
 
     def bind_signals(self):
         self.view.signals.fetch_btn_clicked.connect(self.on_fetch_btn)
 
-        self.context.signals.opened_card_changed.connect(self.view_card)
-        self.context.download_manager.download_finished.connect(self.on_download_finished)
-
-        # PRESENTER_BRIDGE_SIGNALS.show_card.connect(self.on_card_clicked)
+        self.app_core.signals.opened_card_changed.connect(self.view_card)
+        self.app_core.download_manager.download_finished.connect(self.on_download_finished)
 
     @Slot()
     def on_fetch_btn(self):
-        logger.info("Game Window fetch btn clicked")
-        if self.context.app_state.opened_card is None:
-            return
+        logger.debug("Fetch Providers")
 
-        providers, skip_providers_dict = self.create_provider_list(self.context.app_state.opened_card)
-        self.view.update_providers(providers, skip_providers_dict)
+        providers, skip_providers = self.create_provider_list(self.app_core.app_state.opened_card)
+        self.view.update_providers(providers, skip_providers)
 
     @Slot(object)
     def view_card(self, card):
-        logger.info("card clicked to show")
-        self.context.app_state.opened_card = card
+        logger.debug("A card was clicked to show")
+        if not card:
+            logger.warning("A card was clicked to show, but card is None")
+            return
+        if not card.get_data:
+            logger.warning(f"Card data not available for card: {card.get_id}")
+            return
 
+        logger.debug(f"Viewing card: {card.get_id}")
+        self.app_core.app_state.opened_card = card
         data = card.get_data
         title = data.title
         thumbnail = data.poster_pixmap
@@ -48,51 +57,72 @@ class GamePresenter():
         self.view.set_poster(thumbnail)
         self.view.set_description(system_req)
 
-    def create_provider_list(self, game_card: GameCard):
-        data = game_card.get_data
-        if (not data):
+    def create_provider_list(self, card: GameCard) -> tuple[list[ProviderButton], dict[str, ProviderButton]]:
+        logger.debug(f"Create provider list for card: {card.get_id}")
+
+        data = card.get_data
+        provider_urls = self.app_core.search_manager.get_host_urls(data.url)
+        if not provider_urls:
+            logger.warning("Provider URLS is Empty")
+            return [], {}
+
+        skip_providers = {provider.provider_url: provider for provider in self.app_core.download_manager.download_queue}
+        new_providers = []
+        for provider_url in provider_urls:
+            logger.info(f"Creating provider for {provider_url}")
+            if provider_url in skip_providers:
+                logger.info(f"Provider {provider_url} is currently downloading, so just readding it")
+                new_providers.append(skip_providers[provider_url])
+            else:
+                logger.info(f"Adding provider {provider_url}")
+                name = get_site_name(provider_url)
+                new_providers.append(self.create_provider_button(name, provider_url))
+
+        logger.debug(f"Returning providers STATE: [{len(new_providers)}, skipped {len(skip_providers)}]")
+        return new_providers, skip_providers
+
+    def create_provider_button(self, name: str, url: str):
+        logger.debug(f"GamePresenter: create_provider_button called with name={name}, url={url}")
+        btn = ProviderButton(name, url)
+
+        btn.download_requested.connect(self.on_provider_click)
+        btn.cancel_requested.connect(self.on_provider_cancel)
+
+        self.provider_buttons[btn.get_id] = btn
+        return btn
+
+
+    @Slot(str, object)
+    def on_provider_cancel(self, provider_id: str):
+        btn = self.provider_buttons.get(provider_id)
+        if not btn:
+            logger.warning(f"Provider button not found for id: {provider_id}")
             return
 
-        landing_page_urls = self.context.request_provider_links(data.url)
-        skip_providers_dict = {provider.landing_page_url: provider for provider in self.context.app_state.download_queue}
-        new_providers = []
-        for landing_page_url in landing_page_urls:
-            if landing_page_url in skip_providers_dict:
-                logger.info(f"Provider {landing_page_url} is currently downloading, so just readding it")
-                new_providers.append(skip_providers_dict[landing_page_url])
-            else:
-                logger.info(f"Adding provider {landing_page_url}")
-                name = self.context.request_provider_name(landing_page_url)
-                new_providers.append(self.create_provider_button(name, landing_page_url))
-        return new_providers, skip_providers_dict
-
-
-    def create_provider_button(self, name: str, landing_page_url: str):
-        provider_btn = ProviderButton(name, landing_page_url, self.on_provider_click, self.on_provider_cancel)
-
-        self.providers.append(provider_btn) # Storing a Reference to keep it alive
-        return provider_btn
+        self.app_core.download_manager.stop_download()
+        self.app_core.download_manager.update_download_queue(download_id=provider_id, adding=False)
+        self.app_core.download_manager.download_progress.disconnect(btn.update_progress)
 
     @Slot(str, object)
-    def on_provider_cancel(self, landing_page_url: str, provider_btn: ProviderButton):
-        self.context.download_manager.stop_download()
-        self.context.download_manager.update_download_queue(download_id=provider_btn.get_id, adding=False)
-        self.context.download_manager.update_download_state()
+    def on_provider_click(self, provider_url: str, provider_id):
+        logger.info(f"Clicked Provider: {provider_url}")
 
-    @Slot(str, object)
-    def on_provider_click(self, landing_page_url, provider_btn: ProviderButton):
-        logger.info(f"Clicked Link: {landing_page_url}")
+        btn = self.provider_buttons.get(provider_id)
+        if not btn:
+            logger.warning(f"Provider button not found for id: {provider_id}")
+            return
 
-        suggested_name = self.context.request_filename_from_url(landing_page_url)
+        suggested_name = get_filename_from_url(provider_url)
         file_path = QFileDialog.getSaveFileName(self.view, "Save Game", suggested_name)
         if (file_path[0] != ""):
-            self.context.download_manager.download_progress.connect(provider_btn.update_progress)
-            self.context.download_manager.download_finished.connect(self.on_download_finished)
-            provider_btn.set_downloading_state(True)
-            self.context.download_manager.attempt_download(file_path[0], landing_page_url, provider_btn.get_id)
+            self.app_core.download_manager.download_progress.connect(btn.update_progress)
+            self.app_core.download_manager.download_finished.connect(self.on_download_finished)
+
+            btn.set_downloading_state(True)
+            self.app_core.download_manager.attempt_download(file_path[0], provider_url, provider_id)
 
     @Slot(str)
-    def on_download_finished(self, download_id):
-        for provider_btn in self.providers:
-            if (provider_btn.get_id == download_id):
-                provider_btn.set_downloading_state(is_downloading=False, is_downloaded=True)
+    def on_download_finished(self, download_id: str):
+        btn = self.provider_buttons.get(download_id)
+        if btn:
+            btn.set_downloading_state(is_downloading=False, is_downloaded=True)

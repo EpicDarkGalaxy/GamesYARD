@@ -40,16 +40,16 @@ class SearchManager(QObject):
 
     def __init__(self, worker_manager: "WorkerManager"):
         super().__init__()
-        self.last_search_query = ""
+        self.last_search_query: str= ""
         self.temp_load_more = False
 
         self.worker_manager = worker_manager
         self.game_fetcher = GameFetcher()
 
 
-    def search(self, query, load_more=False):
+    def search(self, query: str="", load_more: bool=False):
         self.temp_load_more = not load_more
-        print(f"Searching for: {query}, load_more: {load_more}")
+        logger.debug(f"Searching for: {query}, Load More: {load_more}")
 
         if not load_more:
             self.last_search_query = query
@@ -66,12 +66,11 @@ class SearchManager(QObject):
         self.fetch_worker.signals.fetch_finished.connect(self.handle_search_result)
 
     def load_more(self):
-        logger.info("Loading More")
         self.search(self.last_search_query, load_more=True)
 
     @Slot(list)
     def handle_search_result(self, games: list[GameData]):
-        logger.info("handle_search_result called")
+        logger.debug(f"handle_search_result called with games: {games}")
 
         if not games:
             self.set_search_state(SearchState.FETCH_FAIL)
@@ -79,3 +78,9 @@ class SearchManager(QObject):
 
         self.set_search_state(SearchState.FETCHED)
         self.search_completed.emit(games, self.temp_load_more)
+
+    def get_host_urls(self, url: str) -> list[str]:
+        return self.game_fetcher.fetch_host_urls(url)
+
+    def request_system_req(self, url: str) -> dict[str, str]:
+        return self.game_fetcher.get_game_details(url)

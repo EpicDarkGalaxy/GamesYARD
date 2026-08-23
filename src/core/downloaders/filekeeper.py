@@ -11,9 +11,9 @@ class FileKeeperDownloader(BaseDownloader):
     def get_method(self) -> object:
         return self.extract_dl_url
 
-    def extract_dl_url(self, landing_page_url) -> str | None:
+    def extract_dl_url(self, provider_url) -> str | None:
         # 1. Fetch the landing page
-        soup = parseHtml(landing_page_url)
+        soup = parseHtml(provider_url)
 
         # 2. Find the countdown element
         countdown_element = soup.select_one("#download-countdown")
@@ -39,7 +39,7 @@ class FileKeeperDownloader(BaseDownloader):
         # 5. Perform the POST request to the same URL
         # We use the same 'scraper' session to keep cookies intact
         post_response = requests.post(
-            landing_page_url, data=payload, impersonate="chrome124", stream=True
+            provider_url, data=payload, impersonate="chrome124", stream=True
         )
 
         # print(f"Status: {post_response.status_code}")
