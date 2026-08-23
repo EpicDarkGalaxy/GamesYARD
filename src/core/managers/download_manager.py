@@ -13,9 +13,9 @@ logger = get_logger(__name__)
 
 class Download:
     def __init__(self, save_path="", download_url="", download_id="", manager=None):
-        self.save_path = save_path
-        self.download_url = download_url
         self.download_id = download_id
+        self.download_url = download_url
+        self.save_path = save_path
         self.download_progress = 0
         self._manager = manager
 
@@ -38,7 +38,7 @@ class DownloadManager(QObject):
         self.is_downloading = False
         self.worker_manager = worker_manager
 
-    def attempt_download(self, save_path: str, provider_url: str, download_id: str):
+    def queue_download(self, save_path: str, provider_url: str, download_id: str):
         """
         Attempts to download a game from the given host URL.
         """
@@ -48,27 +48,25 @@ class DownloadManager(QObject):
             return
 
         download = Download(save_path=save_path, download_id=download_id, manager=self)
-        self.update_download_queue(download_id, download, True)
+        self.add_to_queue(download)
 
         self.link_worker = LinkExtractionWorker(provider.get_method(), provider_url, download_id)
-        self.link_worker.signals.link_extracted.connect(self.download_url_found)
+        self.link_worker.signals.link_extracted.connect(self.handle_url_extracted)
         self.worker_manager.run_in_thread(self.link_worker)
 
     @Slot(str, str)
-    def download_url_found(self, download_url, download_id):
-        logger.info(f"Link extracted: {download_url}")
-
+    def handle_url_extracted(self, download_url, download_id):
+        logger.info(f"URL extracted: {download_url}")
         download = self.download_queue[download_id]
         download.download_url = download_url
         self.start_download(download)
-
 
     def start_download(self, download: Download):
         logger.info(f"Starting download: [{download.download_url}] to [{download.save_path}]")
 
         self.download_worker = DownloadWorker(download.download_url, download.save_path, download.download_id)
-        self.download_worker.signals.download_finished.connect(self.update_download_queue)
-        self.download_worker.signals.download_fail.connect(self.on_download_fail)
+        self.download_worker.signals.download_finished.connect(self.handle_download_success)
+        self.download_worker.signals.download_fail.connect(self.handle_download_failure)
         self.worker_manager.run_in_thread(self.download_worker, on_progress=download.update_progress)
 
     def stop_download(self, ):
@@ -85,29 +83,28 @@ class DownloadManager(QObject):
             logger.info("All Downloads FINISHED.")
             self.is_downloading = False
 
-    @Slot(str, object, bool)
-    def update_download_queue(self, download_id: str="", download=None, adding: bool=False):
-        logger.debug(f"update_download_queue: download_id=[{download_id}], download=[{download}], adding=[{adding}]")
+    def add_to_queue(self, download: Download):
+       logger.info(f"Adding download to queue: {download.download_id}")
+       self.download_queue[download.download_id] = download
+       self.update_download_state()
 
-        if (adding and download):
-            logger.info(f"Adding download to queue with id: [{download_id}]")
-            self.download_queue[download_id] = download
-        elif (self.download_queue.get(download_id)):
-            logger.warning(f"Download Removed: [{download_id}]")
-            self.download_queue.pop(download_id)
-        else:
-            logger.warning("Could not Update Download queue")
-
+    def remove_from_queue(self, download_id: str):
+        logger.info("Removing download from queue")
+        download = self.download_queue.pop(download_id, None)
+        if not download:
+            logger.warning(f"Download was not in queue: [{download_id}]")
         self.update_download_state()
 
     @Slot(str)
-    def on_download_fail(self, download_id: str):
+    def handle_download_failure(self, download_id: str):
         logger.info(f"Download Failed: [{download_id}]")
-        self.update_download_queue(download_id=download_id) # Remove download from queue
+        self.remove_from_queue(download_id=download_id)
         self.download_failed.emit(download_id)
 
-    def on_download_finish(self, download_id: str):
+    @Slot(str)
+    def handle_download_success(self, download_id: str):
         logger.info(f"Download Completed: [{download_id}]")
+        self.remove_from_queue(download_id=download_id)
         self.download_finished.emit(download_id)
 
     def pause_download(self, ):

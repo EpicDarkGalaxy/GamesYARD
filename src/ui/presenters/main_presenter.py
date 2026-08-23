@@ -1,13 +1,16 @@
+from typing import TYPE_CHECKING
+
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QMessageBox
-from typing import TYPE_CHECKING
 
-from ...core.tools import get_logger, get_default_icon
+from ...core.tools import get_default_icon, get_logger
 from ..ui_signals import MainPresenterSignals
 from ..widget import GameCard, LoadMoreButton
 from ..windows import MainWindow
-from .presenter_bridge_signals import PRESENTER_BRIDGE_SIGNALS
+
+if TYPE_CHECKING:
+    from ..window_controller import WindowController
 
 logger = get_logger(__name__)
 
@@ -17,7 +20,7 @@ if TYPE_CHECKING:
 
 
 class MainPresenter:
-    def __init__(self, view: MainWindow, app_core: "AppCore", window_controller=None):
+    def __init__(self, view: MainWindow, app_core: "AppCore", window_controller: "WindowController"=None):
         self.view: MainWindow = view
         self.app_core = app_core
         self.signals = MainPresenterSignals()
@@ -70,19 +73,19 @@ class MainPresenter:
         self.window_controller.show_GameInfoWindow()
         self.app_core.app_state.set_opened_card = card
 
-
     @Slot(str, bool)
     def on_update_fetch_btn(self, text: str, state: bool):
         self.view.update_fetch_btn_state(text, state)
 
     @Slot(str, bytes)
     def on_thumbnail_fetched(self, card_id: str, img_data: bytes):
-        if card_id not in self.cards_dict.keys():
+        card = self.cards_dict.get(card_id)
+        if not card:
+            logger.warning(f"Card was not in list: [{card_id}]")
             return
 
-        pixmap = QPixmap()
-        card = self.cards_dict[card_id]
-        if img_data and card:
+        if img_data:
+            pixmap = QPixmap()
             pixmap.loadFromData(img_data)
             if pixmap.isNull():
                 logger.warning(f"Failed to load thumbnail for card {card.get_data.title}")

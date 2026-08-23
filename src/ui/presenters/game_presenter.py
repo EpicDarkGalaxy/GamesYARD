@@ -15,9 +15,9 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 class GamePresenter():
-    def __init__(self, view: GameWindow, appt_core: "AppCore"):
+    def __init__(self, view: GameWindow, app_core: "AppCore"):
         self.view = view
-        self.app_core = appt_core
+        self.app_core = app_core
         self.provider_buttons: dict[str, ProviderButton]= {}
         self.bind_signals()
 
@@ -119,7 +119,7 @@ class GamePresenter():
         if (file_path[0] != ""):
             self.app_core.download_manager.download_progress.connect(btn.update_progress)
             btn.set_downloading_state(is_downloading=True)
-            self.app_core.download_manager.attempt_download(file_path[0], provider_url, provider_id)
+            self.app_core.download_manager.queue_download(file_path[0], provider_url, provider_id)
 
 
     # ------I will refactor it later------
@@ -140,4 +140,4 @@ class GamePresenter():
             logger.warning(f"Provider not found for download id: {download_id}")
             return
         btn.set_downloading_state(failed=True)
-# ------I will refactor it later------
+    # ------I will refactor it later------
