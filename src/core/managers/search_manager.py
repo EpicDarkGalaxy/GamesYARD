@@ -66,7 +66,7 @@ class SearchManager(QObject):
 
     @Slot(list)
     def handle_search_result(self, games: list[GameData]):
-        logger.debug(f"handle_search_result called with games: {len(games)}")
+        logger.debug(f"handle_search_result called with games: [{len(games)}]")
 
         if not games:
             self.set_search_state(SearchState.FETCH_FAIL)

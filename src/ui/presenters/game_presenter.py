@@ -68,7 +68,7 @@ class GamePresenter():
         provider_urls = self.app_core.search_manager.get_host_urls(data.url)
         if not provider_urls:
             logger.warning("Provider URLs is Empty")
-            return [], {}
+            return [], []
 
         # [skip_providers] We don't want to Recreate Providers that are downloading
         downloading_ids = self._get_downloading_providers()
