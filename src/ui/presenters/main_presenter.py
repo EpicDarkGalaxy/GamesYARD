@@ -70,7 +70,7 @@ class MainPresenter:
         data = card.get_data
         data.system_requirements = self.app_core.search_manager.request_system_req(data.url)
 
-        self.window_controller.show_GameInfoWindow()
+        self.view.show_game_details(card)
         self.app_core.app_state.set_opened_card = card
 
     @Slot(str, bool)

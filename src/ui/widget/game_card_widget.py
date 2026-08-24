@@ -1,7 +1,9 @@
+from uuid import uuid4
+
 from PySide6.QtCore import QRectF, Qt, Signal, Slot
 from PySide6.QtGui import QIcon, QPainter, QPainterPath, QPixmap, QRegion
 from PySide6.QtWidgets import QFrame, QLabel, QSizePolicy, QVBoxLayout
-from uuid import uuid4
+
 from ...core.models import GameData
 
 

@@ -7,6 +7,8 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QWidget,
+    QSizePolicy,
+    QLabel
 )
 from ..ui_signals import MainWindowSignals
 from ...core import get_logger
@@ -41,30 +43,29 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("GamesYARD")
         self.resize(800, 600)
 
-        init_flow_layout(self)
+        self.main_ui.scrollArea.setWidgetResizable(True)
+        self.main_ui.game_grid_container.setSizePolicy(
+            QSizePolicy.Expanding,
+            QSizePolicy.Expanding
+        )
+        self.flow_layout = FlowLayout(self.main_ui.game_grid_container, margin=20, spacing=20)
 
-        # Search bar
-        self.search_bar = QLineEdit()
-        self.search_bar.setPlaceholderText("Search only games")
-        self.search_bar.setClearButtonEnabled(True)
-        self.search_bar.returnPressed.connect(self.fetch_button)
+        # Buttons
+        self.main_ui.btn_search_2.clicked.connect(self.search_button)
+        self.main_ui.btn_back.clicked.connect(self.show_grid)
 
-        # Fetch button
-        self.fetch_btn = QPushButton()
-        self.fetch_btn.setText("Search")
-        self.fetch_btn.clicked.connect(self.fetch_button)
+        # SearchBar
+        self.main_ui.line_search_bar.returnPressed.connect(self.search_button)
+        self.show_grid()
 
-        # Add to toolbar
-        self.main_ui.toolBar.addWidget(self.search_bar)
-        self.main_ui.toolBar.addWidget(self.fetch_btn)
-
-    def fetch_button(self):
-        search_query = self.search_bar.text()
+    def search_button(self):
+        search_query = self.main_ui.line_search_bar.text()
         self.signals.fetch_btn_clicked.emit(search_query)
+        self.show_grid()
 
     def update_fetch_btn_state(self, text: str, state: bool):
-        self.fetch_btn.setText(text)
-        self.fetch_btn.setEnabled(state)
+        self.main_ui.btn_search_2.setText(text)
+        self.main_ui.btn_search_2.setEnabled(state)
 
     def update_cards(self, cards, clear_grid: bool):
         logger.info(f"updating grid with {len(cards)} cards")
@@ -80,6 +81,23 @@ class MainWindow(QMainWindow):
 
         for card in cards:
             self.flow_layout.addWidget(card)
+
+    def show_game_details(self, game_card):
+        data = game_card.get_data
+        if data:
+            self.main_ui.game_poster.setPixmap(data.poster_pixmap)
+            self.main_ui.game_title.setText(data.title)
+
+        logger.info("setting details")
+        for catg, req in data.system_requirements.items():
+            label = QLabel()
+            label.setText(f"<b>{catg}</b>: {req}")
+            self.main_ui.verticalLayout_9.addWidget(label)
+
+            self.main_ui.stackedWidget.setCurrentWidget(self.main_ui.details_page)
+
+    def show_grid(self):
+        self.main_ui.stackedWidget.setCurrentWidget(self.main_ui.grid_page)
 
     def show_confirm_box(self):
         from PySide6.QtWidgets import QMessageBox

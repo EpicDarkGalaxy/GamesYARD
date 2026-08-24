@@ -8,19 +8,70 @@ QWidget {
     font-size: 14px;
 }
 
-/* Text Input / Search Bar */
-QLineEdit {
-    background-color: #1e1e1e;
-    color: #ffffff;
-    border: 1px solid #333333;
-    border-radius: 6px;
-    padding: 8px 12px;
-    selection-background-color: #1e90ff;
+/* Sidebar and Main Content areas */
+#side_bar {
+    background-color: #121212; /* Slightly darker than main */
+    border-right: 1px solid #252525;
 }
 
-QLineEdit:focus {
-    border: 1px solid #1e90ff;
-    background-color: #252525;
+#main_entry {
+    background-color: #181818; /* The "Store" canvas */
+}
+
+/* Make the Search bar look modern */
+#line_search_bar {
+    background-color: #0d0d0d;
+    border: 1px solid #333333;
+    border-radius: 8px;
+    padding: 5px 15px;
+}
+
+
+#side_bar QPushButton {
+    color: floralwhite;
+    border: none;
+    padding: 12px;
+    font-size: 15px;
+}
+
+#side_bar QPushButton:hover {
+    color: #ffffff;
+    background-color: #222222;
+}
+
+/* Padding for the detail page container */
+#details_page {
+    padding: 30px;
+}
+
+/* Style the Hero area */
+#hero_frame {
+    background-color: #1e1e1e;
+    border-radius: 12px;
+    padding: 15px;
+}
+
+/* Make title stand out */
+#game_title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+/* Metadata color */
+#game_metadata {
+    color: #888888;
+    margin-bottom: 20px;
+}
+
+#info_area {
+    border-radius: 12px;
+}
+
+#description_scroll {
+    background-color: #1e1e1e;
+    border-radius: 12px;
+    padding: 15px;
 }
 
 /* Button Styling */
