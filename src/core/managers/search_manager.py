@@ -49,7 +49,7 @@ class SearchManager(QObject):
 
     def search(self, query: str = "", load_more: bool = False):
         self.temp_load_more = not load_more
-        logger.debug(f"Searching for: {query}, Load More: {load_more}")
+        logger.debug(f"Searching for: [{query}], Load More: {load_more}")
 
         if not load_more:
             self.last_search_query = query

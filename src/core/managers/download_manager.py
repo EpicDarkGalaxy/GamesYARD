@@ -5,7 +5,7 @@ from ..aio import DownloadWorker, LinkExtractionWorker
 from ..downloaders import DownloaderFactory
 from ..tools.log import get_logger
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 if TYPE_CHECKING:
     from ..aio import WorkerManager
@@ -17,35 +17,39 @@ class Download:
     download_id: str
     save_path: str = ""
     download_url: str = ""
+    host_url: str=""
     download_progress: int = 0
     metadata: dict[str, Any] = field(default_factory=dict)
-    _manager: Optional["DownloadManager"] = None
-
-    def update_progress(self, progress: int) -> None:
-        self.download_progress = progress
-        if self._manager:
-            self._manager.download_progress.emit(self.download_progress)
 
 class DownloadManager(QObject):
     download_started = Signal(str)
     download_finished = Signal(str)
-    download_progress = Signal(int)
+    download_progress = Signal(str ,int)
     download_failed = Signal(str)
     download_cancelled = Signal()
 
     def __init__(self, worker_manager: "WorkerManager"):
         super().__init__()
         self.download_queue: dict[str, Download] = {}
-        self.is_downloading = False
+        self.is_downloading: bool= False
         self.worker_manager = worker_manager
+        self.active_workers: dict[str, Any]= {}
 
     def store_download_metadata(self, download_id: str, metadata: dict[str, any]):
         download = self.download_queue.get(download_id)
         if download:
-            setattr(download, 'metadata', metadata)
+            download.metadata = metadata
             logger.info(f"Metadata stored for download: {download_id}")
         else:
             logger.warning(f"Could not store metadata: {download_id} not in queue")
+
+    def get_download_metadata(self, host_url: str = "") -> dict[str, Any]:
+        for download in self.download_queue.values():
+            if download.host_url == host_url:
+                logger.info(f"Metadata found for URL: {host_url}")
+                return download.metadata
+        logger.warning(f"No metadata found for URL: {host_url}")
+        return {}
 
     def queue_download(self, save_path: str, provider_url: str, download_id: str):
         """
@@ -56,7 +60,7 @@ class DownloadManager(QObject):
             logger.error(f"no provider found for {provider_url}, skipping download")
             return
 
-        download = Download(save_path=save_path, download_id=download_id, manager=self)
+        download = Download(save_path=save_path, download_id=download_id, host_url=provider_url)
         self._add_to_queue(download)
 
         link_worker = LinkExtractionWorker(provider.get_method(), provider_url, download_id)
@@ -65,25 +69,45 @@ class DownloadManager(QObject):
 
     @Slot(str, str)
     def handle_url_extracted(self, download_url, download_id):
-        logger.info(f"URL extracted: {download_url}")
         download = self.download_queue[download_id]
         download.download_url = download_url
         self.start_download(download)
 
     def start_download(self, download: Download):
-        logger.info(f"Starting download: [{download.download_url}] to [{download.save_path}]")
+        logger.info(f"Starting download: [{download.download_id}] to [{download.save_path}]")
 
-        self.download_worker = DownloadWorker(download.download_url, download.save_path, download.download_id)
-        self.download_worker.signals.download_finished.connect(self.handle_download_success)
-        self.download_worker.signals.download_fail.connect(self.handle_download_failure)
-        self.worker_manager.run_in_thread(self.download_worker, on_progress=download.update_progress)
+        download_worker = DownloadWorker(download.download_url, download.save_path, download.download_id)
+        download_worker.signals.download_finished.connect(self.handle_download_success)
+        download_worker.signals.download_fail.connect(self.handle_download_failure)
+        download_worker.signals.download_progress.connect(self.handle_download_progress)
+        self.worker_manager.run_in_thread(download_worker)
 
-    def stop_download(self, download_id: str=""):
-        # Later, we will use a list containing the deployed workers
-        if (hasattr(self, 'download_worker') and self.download_worker):
-            self.download_worker.is_cancelled = True
-            self.download_worker = None
-        self._remove_from_queue(download_id)
+        self.active_workers[download.download_id] = download_worker
+
+    def stop_download(self, download_id: str = ""):
+        """
+        Stops a specific download by ID or all active downloads if no ID is provided.
+
+        Args:
+            download_id (str): The unique identifier of the download to stop.
+                               If empty, all downloads in the queue will be cancelled.
+        """
+        # We maintain a dictionary of active workers to stop specific tasks
+        if download_id:
+            worker = self.active_workers.pop(download_id, None)
+            if worker:
+                worker.is_cancelled = True
+                logger.info(f"Stopping worker for download: {download_id}")
+            self._remove_from_queue(download_id)
+        else:
+            for dl_id, worker in self.active_workers.items():
+                worker.is_cancelled = False
+                logger.info(f"Stopping worker for download: {dl_id}")
+            self.active_workers.clear()
+            self.download_queue.clear()
+            self.update_download_state()
+
+        self.download_cancelled.emit()
 
     def update_download_state(self):
         if (self.download_queue):
@@ -104,6 +128,10 @@ class DownloadManager(QObject):
         if not download:
             logger.warning(f"Download was not in queue: [{download_id}]")
         self.update_download_state()
+
+    @Slot(str, int)
+    def handle_download_progress(self, download_id: str, progress: int):
+        self.download_progress.emit(download_id, progress)
 
     @Slot(str)
     def handle_download_failure(self, download_id: str):

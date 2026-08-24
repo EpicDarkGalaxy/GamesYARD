@@ -25,8 +25,10 @@ class GamePresenter():
         self.view.signals.close.connect(self._on_close)
 
         self.app_core.signals.opened_card_changed.connect(self.view_card)
+
         self.app_core.download_manager.download_finished.connect(self.on_download_finish)
         self.app_core.download_manager.download_failed.connect(self.on_download_fail)
+        self.app_core.download_manager.download_progress.connect(self.on_download_progress)
 
 
     @Slot()
@@ -99,14 +101,24 @@ class GamePresenter():
 
     def create_provider_button(self, name: str, url: str):
         logger.debug(f"GamePresenter: create_provider_button called with name={name}, url={url}")
-        btn = ProviderButton(name, url)
+
+        metadata = self._get_provider_metadata(url)
+        if metadata:
+            btn = ProviderButton(metadata["name"], metadata["url"])
+            btn.set_state(
+                is_downloading=metadata["is_downloading"],
+                is_downloaded=metadata["is_downloaded"],
+                failed=metadata["has_failed"]
+            )
+            btn.set_id = metadata["id"]
+        else:
+            btn = ProviderButton(name, url)
 
         btn.download_requested.connect(self.on_provider_click)
         btn.cancel_requested.connect(self.on_provider_cancel)
 
         self.provider_buttons[btn.get_id] = btn
         return btn
-
 
     @Slot(str, str)
     def on_provider_cancel(self, provider_url: str="", provider_id: str=""):
@@ -130,10 +142,14 @@ class GamePresenter():
         suggested_name = get_filename_from_url(provider_url)
         file_path = QFileDialog.getSaveFileName(self.view, "Save Game", suggested_name)
         if (file_path[0] != ""):
-            self.app_core.download_manager.download_progress.connect(btn.update_progress)
-            btn.set_downloading_state(is_downloading=True)
+            btn.set_state(is_downloading=True)
             self.app_core.download_manager.queue_download(file_path[0], provider_url, provider_id)
 
+    @Slot(str, int)
+    def on_download_progress(self, provider_id: str="", progress: int=0):
+        btn = self.provider_buttons.get(provider_id)
+        if (btn):
+            btn.update_progress(progress)
 
     # ------I will refactor it later------
     @Slot(str)
@@ -143,7 +159,7 @@ class GamePresenter():
         if not btn:
             logger.warning(f"Provider not found for download id: {download_id}")
             return
-        btn.set_downloading_state(is_downloaded=True)
+        btn.set_state(is_downloaded=True)
 
     @Slot(str)
     def on_download_fail(self, download_id: str):
@@ -152,17 +168,17 @@ class GamePresenter():
         if not btn:
             logger.warning(f"Provider not found for download id: {download_id}")
             return
-        btn.set_downloading_state(failed=True)
+        btn.set_state(failed=True)
     # ------I will refactor it later------
 
     @Slot(object)
     def _on_close(self, event: "QCloseEvent"):
-        if self._preserve_dl_provider():
+        if self._store_provider_metadata():
             event.accept()
         else:
             event.ignore()
 
-    def _preserve_dl_provider(self) -> bool:
+    def _store_provider_metadata(self) -> bool:
         downloading_ids = self._get_downloading_providers()
         if not downloading_ids:
             logger.debug("No active downloads to preserve.")
@@ -171,6 +187,21 @@ class GamePresenter():
         for pid in downloading_ids:
             btn = self.provider_buttons.get(pid)
             if btn:
-                logger.debug(f"Preserving provider during close: {pid}")
+                logger.debug(f"Storing metadata and preserving provider during close: {btn.provider_url}")
+                is_downloading, is_downloaded, has_failed = btn.get_state
+                self.app_core.download_manager.store_download_metadata(
+                    pid,
+                    {
+                        "name": btn.provider_name,
+                        "id": btn.get_id,
+                        "url": btn.provider_url,
+                        "is_downloading": is_downloading,
+                        "is_downloaded": is_downloaded,
+                        "has_failed": has_failed,
+                    },
+                )
                 btn.setParent(None)
         return True
+
+    def _get_provider_metadata(self, provider_url: str=""):
+        return self.app_core.download_manager.get_download_metadata(provider_url)

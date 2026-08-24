@@ -15,7 +15,7 @@ class WorkerManager:
     threads = []
     workers = []
 
-    def run_in_thread(self, worker, on_finish=None, on_fail=None, on_progress=None):
+    def run_in_thread(self, worker):
         thread = QThread()
         worker.moveToThread(thread)
 
@@ -23,10 +23,6 @@ class WorkerManager:
         self.workers.append(worker)
 
         thread.started.connect(worker.run)
-
-        if (on_fail): worker.signals.fail.connect(on_fail)
-        if (on_finish): worker.signals.finished.connect(on_finish)
-        if (on_progress): worker.signals.progress.connect(on_progress)
 
         worker.signals.finished.connect(self.cleanup)
         worker.signals.fail.connect(self.cleanup)
@@ -70,7 +66,7 @@ class DownloadWorker(QObject):
 
     @Slot()
     def run(self):
-        logger.debug(f"Download Started: [{self.url}], ID: [{self.download_id}]")
+        logger.debug(f"Download Started for ID: [{self.download_id}]")
         try:
             # For now, i am keeping the download logic here.
             # I may move it to a seprate file, or keep it here forever
@@ -88,13 +84,13 @@ class DownloadWorker(QObject):
                             os.remove(self.save_path)
                         self.signals.cancelled.emit()
                         self.signals.finished.emit()
-                        logger.info(f"Download Cancelled: {self.url}")
+                        logger.info(f"Download Cancelled: {self.download_id}")
                         return
                     f.write(chunk)
                     downloaded_size += len(chunk)
                     if total_size:
                         percent = int(downloaded_size / total_size * 100)
-                        self.signals.progress.emit(percent)
+                        self.signals.download_progress.emit(self.download_id ,percent)
             response.close()
             self.signals.download_finished.emit(self.download_id)
             self.signals.finished.emit()

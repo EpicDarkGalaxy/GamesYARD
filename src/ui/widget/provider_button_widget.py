@@ -12,7 +12,7 @@ class ProviderButton(QWidget):
 
     _is_downloading = False
     _is_downloaded = False
-    has_download_failed = False
+    _has_download_failed = False
 
     def __init__(self, provider_name: str="", provider_url: str=""):
         super().__init__()
@@ -38,7 +38,7 @@ class ProviderButton(QWidget):
     def handle_click(self):
         if (self._is_downloading):
             print(f"Requesting cancellation: {self.provider_url}")
-            self.set_downloading_state()
+            self.set_state(is_downloading=False)
             self.cancel_requested.emit(self.provider_url, self._id)
         else:
             print(f"Requesting download: {self.provider_url}")
@@ -47,23 +47,6 @@ class ProviderButton(QWidget):
 
     def update_progress(self, value: int):
         self.progress_bar.setValue(value)
-
-    def set_downloading_state(self, is_downloading: bool=False, is_downloaded: bool=False, failed: bool=False ):
-        self._is_downloading = is_downloading
-        self._is_downloaded = is_downloaded
-        self.has_download_failed = failed
-
-        if (is_downloading):
-            self._set_working_display()
-        elif (is_downloaded):
-            self._set_finished_display()
-        elif (failed):
-            self._set_failed_display()
-        else:
-            self.btn.setVisible(True)
-            self.btn.setStyleSheet("")
-            self.btn.setText(self.provider_name)
-            self.progress_bar.setVisible(False)
 
     def _set_working_display(self):
         self.btn.setVisible(False)
@@ -98,10 +81,10 @@ class ProviderButton(QWidget):
             f"Name:         {self.provider_name}\n"
             f"Downloading:  {self._is_downloading}\n"
             f"Downloaded:   {self._is_downloaded}\n"
-            f"Failed:       {self.has_download_failed}\n"
+            f"Failed:       {self._has_download_failed}\n"
             "----------------------------"
         )
-        if (self._is_downloading and not self._is_downloaded and not self.has_download_failed):
+        if (self._is_downloading and not self._is_downloaded and not self._has_download_failed):
             self.btn.setStyleSheet("""
                 QPushButton {
                     background-color: red;
@@ -121,3 +104,29 @@ class ProviderButton(QWidget):
     @property
     def get_id(self):
         return self._id
+
+    @get_id.setter
+    def set_id(self, id: str):
+        if (id):
+            self._id = id
+
+    @property
+    def get_state(self):
+        return self._is_downloading, self._is_downloaded, self._has_download_failed
+
+    def set_state(self, is_downloading: bool = False, is_downloaded: bool = False, failed: bool = False):
+        self._is_downloading = is_downloading
+        self._is_downloaded = is_downloaded
+        self._has_download_failed = failed
+
+        if (is_downloading):
+            self._set_working_display()
+        elif (is_downloaded):
+            self._set_finished_display()
+        elif (failed):
+            self._set_failed_display()
+        else:
+            self.btn.setVisible(True)
+            self.btn.setStyleSheet("")
+            self.btn.setText(self.provider_name)
+            self.progress_bar.setVisible(False)

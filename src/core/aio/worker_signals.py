@@ -18,6 +18,6 @@ class FetchWorkerSignals(WorkerSignals):
 class DownloadWorkerSignals(WorkerSignals):
     download_finished = Signal(str)  # Signal to indicate the download has finished
     download_fail = Signal(str)  # Signal to indicate the download has failed
-
+    download_progress = Signal(str, int) # Sisnal to indicate download progress for spcific id
 class LinkExtractorWorkerSignals(WorkerSignals):
     link_extracted = Signal(str, str)  # Signal to emit the extracted link and the URL

@@ -48,11 +48,12 @@ class MainPresenter:
 
     @Slot(list, bool)
     def on_game_list_ready(self, games_data: list["GameData"], clear_grid: bool):
-        logger.info(f"Received {len(games_data)} games ({clear_grid=})")
+        self.app_core.download_manager.stop_download()
+        logger.info(f"Received {len(games_data)} games, ({clear_grid=})")
 
         cards = []
         for data in games_data:
-            card = GameCard(data, on_click=self.on_card_clicked)
+            card = GameCard(data, on_click=self.handle_card_click)
             cards.append(card)
             self.cards_dict[card.get_id] = card
 
@@ -64,7 +65,7 @@ class MainPresenter:
         self.view.update_cards(new_cards, clear_grid)
 
     @Slot(GameCard)
-    def on_card_clicked(self, card):
+    def handle_card_click(self, card):
         logger.info(f"Card clicked: {card._data.title} of id {card.get_id}")
 
         data = card.get_data

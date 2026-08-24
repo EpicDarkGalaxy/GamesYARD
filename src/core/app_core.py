@@ -25,6 +25,7 @@ class AppState:
 
     @get_opened_card.setter
     def set_opened_card(self, card):
+        logger.info(f"Setting opened card to: {card.get_id}")
         self._opened_card = card
         self._manager.signals.opened_card_changed.emit(card)
 
