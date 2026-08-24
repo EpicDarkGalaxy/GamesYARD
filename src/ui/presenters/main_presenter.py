@@ -48,7 +48,6 @@ class MainPresenter:
 
     @Slot(list, bool)
     def on_game_list_ready(self, games_data: list["GameData"], clear_grid: bool):
-        self.app_core.download_manager.stop_download()
         logger.info(f"Received {len(games_data)} games, ({clear_grid=})")
 
         cards = []

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from ..models import GameData
 
-from ..aio.worker import SearchWorker
+from ..aio.workers import SearchWorker
 from ..tools.log import get_logger
 from ..tools.fetcher import GameFetcher
 
@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 
 
 if TYPE_CHECKING:
-    from ..aio.worker import WorkerManager
+    from ..aio import TaskRunner
 
 
 class SearchState(Enum):
@@ -38,12 +38,12 @@ class SearchManager(QObject):
         label, enabled = state.ui_info
         self.search_state_changed.emit(label, enabled)
 
-    def __init__(self, worker_manager: "WorkerManager"):
+    def __init__(self, task_runner: "TaskRunner"):
         super().__init__()
         self.last_search_query: str= ""
         self.temp_load_more = False
 
-        self.worker_manager = worker_manager
+        self.task_runner = task_runner
         self.game_fetcher = GameFetcher()
 
 
@@ -57,9 +57,9 @@ class SearchManager(QObject):
         self.set_search_state(SearchState.FETCHING)
 
         worker = SearchWorker(query, self.game_fetcher, load_more)
-        worker.signals.fetch_finished.connect(self.handle_search_result)
+        worker.signals.search_finished.connect(self.handle_search_result)
 
-        self.worker_manager.run_in_thread(worker)
+        self.task_runner.run(worker)
 
     def load_more(self):
         self.search(self.last_search_query, load_more=True)

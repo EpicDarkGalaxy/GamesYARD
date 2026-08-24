@@ -1,17 +1,17 @@
-from .worker import SearchWorker, WorkerManager, DownloadWorker, LinkExtractionWorker
-from .worker_pool import ThumbnailFetchWorker, WorkerPool
+from .base_worker import BaseWorker
+from .task_runner import TaskRunner
 from .worker_signals import (
     DownloadWorkerSignals,
-    FetchWorkerSignals,
+    SearchWorkerSignals,
     ThumbnailWorkerSignals,
-    LinkExtractorWorkerSignals,
+    UrlExtractorWorkerSignals,
 )
 
 __all__ = [
-    "FetchWorkerSignals",
+    "SearchWorkerSignals",
     "ThumbnailWorkerSignals",
     "DownloadWorkerSignals",
-    "LinkExtractorWorkerSignals",
+    "UrlExtractorWorkerSignals",
     "WorkerManager",
     "SearchWorker",
     "WorkerPool",

@@ -1,5 +1,5 @@
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtGui import QPixmap
+
 
 # Singals for the worker threads
 class WorkerSignals(QObject):
@@ -11,13 +11,14 @@ class WorkerSignals(QObject):
 class ThumbnailWorkerSignals(WorkerSignals):
     thumbnail_fetch_finished = Signal(object, bytes)  # Signal to emit the list of fetched icons
 
-class FetchWorkerSignals(WorkerSignals):
-    fetch_finished = Signal(list)  # Signal to emit the list of fetched items
+class SearchWorkerSignals(WorkerSignals):
+    search_finished = Signal(list)  # Signal to emit the list of fetched items
     fetch_fail = Signal() # Signal to indicate the worker has failed to fetch items
 
 class DownloadWorkerSignals(WorkerSignals):
     download_finished = Signal(str)  # Signal to indicate the download has finished
     download_fail = Signal(str)  # Signal to indicate the download has failed
     download_progress = Signal(str, int) # Sisnal to indicate download progress for spcific id
-class LinkExtractorWorkerSignals(WorkerSignals):
+
+class UrlExtractorWorkerSignals(WorkerSignals):
     link_extracted = Signal(str, str)  # Signal to emit the extracted link and the URL

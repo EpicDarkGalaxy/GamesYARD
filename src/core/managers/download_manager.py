@@ -1,14 +1,14 @@
 from PySide6.QtCore import QObject, Signal, Slot
 
 from typing import TYPE_CHECKING
-from ..aio import DownloadWorker, LinkExtractionWorker
+from ..aio.workers import DownloadWorker, LinkExtractionWorker
 from ..downloaders import DownloaderFactory
 from ..tools.log import get_logger
 from dataclasses import dataclass, field
 from typing import Any
 
 if TYPE_CHECKING:
-    from ..aio import WorkerManager
+    from ..aio import TaskRunner
 
 logger = get_logger(__name__)
 
@@ -28,11 +28,11 @@ class DownloadManager(QObject):
     download_failed = Signal(str)
     download_cancelled = Signal()
 
-    def __init__(self, worker_manager: "WorkerManager"):
+    def __init__(self, task_runner: "TaskRunner"):
         super().__init__()
         self.download_queue: dict[str, Download] = {}
         self.is_downloading: bool= False
-        self.worker_manager = worker_manager
+        self.task_runner = task_runner
         self.active_workers: dict[str, Any]= {}
 
     def store_download_metadata(self, download_id: str, metadata: dict[str, any]):
@@ -65,7 +65,7 @@ class DownloadManager(QObject):
 
         link_worker = LinkExtractionWorker(provider.get_method(), provider_url, download_id)
         link_worker.signals.link_extracted.connect(self.handle_url_extracted)
-        self.worker_manager.run_in_thread(link_worker)
+        self.task_runner.run(link_worker)
 
     @Slot(str, str)
     def handle_url_extracted(self, download_url, download_id):
@@ -80,7 +80,7 @@ class DownloadManager(QObject):
         download_worker.signals.download_finished.connect(self.handle_download_success)
         download_worker.signals.download_fail.connect(self.handle_download_failure)
         download_worker.signals.download_progress.connect(self.handle_download_progress)
-        self.worker_manager.run_in_thread(download_worker)
+        self.task_runner.run(download_worker)
 
         self.active_workers[download.download_id] = download_worker
 
