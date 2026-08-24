@@ -85,16 +85,24 @@ class MainWindow(QMainWindow):
     def show_game_details(self, game_card):
         data = game_card.get_data
         if data:
-            self.main_ui.game_poster.setPixmap(data.poster_pixmap)
+            if data.poster_pixmap:
+                self.main_ui.game_poster.setPixmap(data.poster_pixmap)
             self.main_ui.game_title.setText(data.title)
 
-        logger.info("setting details")
-        for catg, req in data.system_requirements.items():
-            label = QLabel()
-            label.setText(f"<b>{catg}</b>: {req}")
-            self.main_ui.verticalLayout_9.addWidget(label)
+        self.update_requirements(data.system_requirements)
+        self.main_ui.stackedWidget.setCurrentWidget(self.main_ui.details_page)
 
-            self.main_ui.stackedWidget.setCurrentWidget(self.main_ui.details_page)
+    def update_requirements(self, req_data):
+        # Clear old grid rows
+        while self.main_ui.gridLayout.count():
+            child = self.main_ui.gridLayout.takeAt(0)
+            if child is not None and child.widget() is not None:
+                child.widget().deleteLater()
+
+        # Add new rows dynamically based on the game data
+        for i, (label, value) in enumerate(req_data.items()):
+            self.main_ui.gridLayout.addWidget(QLabel(label), i, 0)
+            self.main_ui.gridLayout.addWidget(QLabel(value), i, 1)
 
     def show_grid(self):
         self.main_ui.stackedWidget.setCurrentWidget(self.main_ui.grid_page)

@@ -15,10 +15,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-    QLineEdit, QMainWindow, QPushButton, QScrollArea,
-    QSizePolicy, QSpacerItem, QStackedWidget, QVBoxLayout,
-    QWidget)
+from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
+    QLabel, QLineEdit, QMainWindow, QPushButton,
+    QScrollArea, QSizePolicy, QSpacerItem, QStackedWidget,
+    QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -224,7 +224,7 @@ class Ui_MainWindow(object):
         self.description_scroll.setWidgetResizable(True)
         self.scrollAreaWidgetContents_4 = QWidget()
         self.scrollAreaWidgetContents_4.setObjectName(u"scrollAreaWidgetContents_4")
-        self.scrollAreaWidgetContents_4.setGeometry(QRect(0, 0, 413, 93))
+        self.scrollAreaWidgetContents_4.setGeometry(QRect(0, 0, 413, 191))
         sizePolicy.setHeightForWidth(self.scrollAreaWidgetContents_4.sizePolicy().hasHeightForWidth())
         self.scrollAreaWidgetContents_4.setSizePolicy(sizePolicy)
         self.verticalLayout_6 = QVBoxLayout(self.scrollAreaWidgetContents_4)
@@ -243,18 +243,27 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_6.addWidget(self.label)
 
-        self.verticalLayout_9 = QVBoxLayout()
+        self.requirements_container = QFrame(self.scrollAreaWidgetContents_4)
+        self.requirements_container.setObjectName(u"requirements_container")
+        self.requirements_container.setFrameShape(QFrame.Shape.Box)
+        self.requirements_container.setFrameShadow(QFrame.Shadow.Raised)
+        self.verticalLayout_9 = QVBoxLayout(self.requirements_container)
         self.verticalLayout_9.setObjectName(u"verticalLayout_9")
+        self.gridLayout = QGridLayout()
+        self.gridLayout.setObjectName(u"gridLayout")
 
-        self.verticalLayout_6.addLayout(self.verticalLayout_9)
+        self.verticalLayout_9.addLayout(self.gridLayout)
+
+
+        self.verticalLayout_6.addWidget(self.requirements_container)
+
+        self.verticalSpacer_3 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.verticalLayout_6.addItem(self.verticalSpacer_3)
 
         self.description_scroll.setWidget(self.scrollAreaWidgetContents_4)
 
         self.verticalLayout_4.addWidget(self.description_scroll)
-
-        self.verticalSpacer_3 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-
-        self.verticalLayout_4.addItem(self.verticalSpacer_3)
 
 
         self.verticalLayout_8.addLayout(self.verticalLayout_4)

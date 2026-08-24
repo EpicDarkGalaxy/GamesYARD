@@ -68,11 +68,20 @@ QWidget {
     border-radius: 12px;
 }
 
-#description_scroll {
-    background-color: #1e1e1e;
-    border-radius: 12px;
+/* Styling the Requirement Box */
+#requirements_container {
+    background-color: #0f0f0f;
+    border: 1px solid #222222;
+    border-radius: 8px;
     padding: 15px;
 }
+
+/* Style for Labels (like OS:, CPU:) */
+#requirements_container QLabel {
+    color: #1e90ff; /* Your accent blue */
+    font-weight: bold;
+}
+
 
 /* Button Styling */
 QPushButton {
