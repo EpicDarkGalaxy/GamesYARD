@@ -38,9 +38,19 @@ class AppCore(QObject):
         self.download_signals = Signals()
 
     def cleanup(self, event=None):
-        self.download_manager.stop_download()
+        logger.info("AppCore cleanup starting...")
+
+        # 1. Stop all workers in managers
+        self.download_manager.stop_all_downloads()
+
+        # 2. Force the ThreadPool to wait (or discard)
+        # This is the secret sauce for clean exits
         self.task_runner.pool.clear()
-        self.signals.shutting_down.emit()
-        if (event):
-            logger.info("Cleaning up and exiting...")
+
+        # 3. If the user provided an event, accept it so the window closes
+        if event:
             event.accept()
+
+        # 4. Optional: Force exit to ensure no "ghost" threads survive
+        import os
+        os._exit(0)

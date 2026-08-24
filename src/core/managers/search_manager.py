@@ -25,9 +25,9 @@ class SearchState(Enum):
     def ui_info(self) -> tuple[str, bool]:
         return {
             SearchState.READY: ("Ready", True),
-            SearchState.FETCHING: ("Fetching", False),
-            SearchState.FETCHED: ("Fetched", True),
-            SearchState.FETCH_FAIL: ("Fetch Fail", True),
+            SearchState.FETCHING: ("Searching", False),
+            SearchState.FETCHED: ("Searched", True),
+            SearchState.FETCH_FAIL: ("Failed", True),
         }[self]
 
 class SearchManager(QObject):
@@ -66,7 +66,7 @@ class SearchManager(QObject):
 
     @Slot(list)
     def handle_search_result(self, games: list[GameData]):
-        logger.debug(f"handle_search_result called with games: {len(games)}")
+        logger.debug(f"handle_search_result called with games: [{len(games)}]")
 
         if not games:
             self.set_search_state(SearchState.FETCH_FAIL)
