@@ -37,9 +37,8 @@ class DownloadWorker(BaseWorker):
                         f.close()
                         if (os.path.exists(self.save_path)):
                             os.remove(self.save_path)
-                        self.signals.cancelled.emit()
-                        self.signals.finished.emit()
                         logger.info(f"Download Cancelled: {self.download_id}")
+                        self.signals.cancelled.emit()
                         return
                     f.write(chunk)
                     downloaded_size += len(chunk)

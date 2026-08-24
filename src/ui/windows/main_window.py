@@ -51,7 +51,7 @@ class MainWindow(QMainWindow):
 
         # Fetch button
         self.fetch_btn = QPushButton()
-        self.fetch_btn.setText("Fetch")
+        self.fetch_btn.setText("Search")
         self.fetch_btn.clicked.connect(self.fetch_button)
 
         # Add to toolbar

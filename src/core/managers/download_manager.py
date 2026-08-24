@@ -84,29 +84,30 @@ class DownloadManager(QObject):
 
         self.active_workers[download.download_id] = download_worker
 
-    def stop_download(self, download_id: str = ""):
+    def stop_download(self, download_id: str):
         """
-        Stops a specific download by ID or all active downloads if no ID is provided.
+        Stops a specific download by ID.
 
         Args:
             download_id (str): The unique identifier of the download to stop.
-                               If empty, all downloads in the queue will be cancelled.
         """
-        # We maintain a dictionary of active workers to stop specific tasks
-        if download_id:
-            worker = self.active_workers.pop(download_id, None)
-            if worker:
-                worker.is_cancelled = True
-                logger.info(f"Stopping worker for download: {download_id}")
-            self._remove_from_queue(download_id)
-        else:
-            for dl_id, worker in self.active_workers.items():
-                worker.is_cancelled = False
-                logger.info(f"Stopping worker for download: {dl_id}")
-            self.active_workers.clear()
-            self.download_queue.clear()
-            self.update_download_state()
+        worker = self.active_workers.pop(download_id, None)
+        if worker:
+            worker.is_cancelled = True
+            logger.info(f"Stopping worker for download: {download_id}")
+        self._remove_from_queue(download_id)
+        self.download_cancelled.emit()
 
+    def stop_all_downloads(self):
+        """
+        Stops all active downloads.
+        """
+        for dl_id, worker in self.active_workers.items():
+            worker.is_cancelled = True
+            logger.info(f"Stopping worker for download: {dl_id}")
+        self.active_workers.clear()
+        self.download_queue.clear()
+        self.update_download_state()
         self.download_cancelled.emit()
 
     def update_download_state(self):

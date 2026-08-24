@@ -38,9 +38,13 @@ class AppCore(QObject):
         self.download_signals = Signals()
 
     def cleanup(self, event=None):
-        self.download_manager.stop_download()
+        logger.info("AppCore cleanup starting...")
+
+        self.download_manager.stop_all_downloads()
         self.task_runner.pool.clear()
-        self.signals.shutting_down.emit()
-        if (event):
-            logger.info("Cleaning up and exiting...")
+
+        if event:
             event.accept()
+
+        import os
+        os._exit(0)
