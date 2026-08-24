@@ -92,7 +92,15 @@ class ProviderButton(QWidget):
         self.progress_bar.setVisible(False)
 
     def enterEvent(self, event):
-        logger.debug(f"enterEvent: is_downloading={self._is_downloading}, is_downloaded={self._is_downloaded}")
+        logger.debug(
+            "\n--- ProviderButton Event ---\n"
+            f"ID:           {self._id}\n"
+            f"Name:         {self.provider_name}\n"
+            f"Downloading:  {self._is_downloading}\n"
+            f"Downloaded:   {self._is_downloaded}\n"
+            f"Failed:       {self.has_download_failed}\n"
+            "----------------------------"
+        )
         if (self._is_downloading and not self._is_downloaded and not self.has_download_failed):
             self.btn.setStyleSheet("""
                 QPushButton {

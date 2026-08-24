@@ -1,4 +1,3 @@
-from inspect import FrameInfo
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Slot
@@ -10,7 +9,7 @@ from ..windows.game_window import GameWindow
 
 if TYPE_CHECKING:
     from ...core.app_core import AppCore
-
+    from PySide6.QtGui import QCloseEvent
 
 logger = get_logger(__name__)
 
@@ -23,10 +22,12 @@ class GamePresenter():
 
     def bind_signals(self):
         self.view.signals.fetch_btn_clicked.connect(self.on_fetch_btn)
+        self.view.signals.close.connect(self._on_close)
 
         self.app_core.signals.opened_card_changed.connect(self.view_card)
         self.app_core.download_manager.download_finished.connect(self.on_download_finish)
         self.app_core.download_manager.download_failed.connect(self.on_download_fail)
+
 
     @Slot()
     def on_fetch_btn(self):
@@ -58,7 +59,7 @@ class GamePresenter():
         self.view.set_poster(thumbnail)
         self.view.set_description(system_req)
 
-    def create_provider_list(self, card: GameCard) -> tuple[list[ProviderButton], dict[str, ProviderButton]]:
+    def create_provider_list(self, card: GameCard) -> tuple[list[ProviderButton], list[ProviderButton]]:
         logger.debug(f"Create provider list for card: {card.get_id}")
 
         data = card.get_data
@@ -67,21 +68,34 @@ class GamePresenter():
             logger.warning("Provider URLs is Empty")
             return [], {}
 
-        # [skip_providers] We don't want to Recreate Providers that were downloading
-        skip_providers = {provider.provider_url: provider for provider in self.app_core.download_manager.download_queue}
-        new_providers = []
-        for provider_url in provider_urls:
-            logger.info(f"Creating provider for {provider_url}")
-            if provider_url in skip_providers:
-                logger.info(f"Provider {provider_url} is currently downloading, so just readding it")
-                new_providers.append(skip_providers[provider_url])
+        # [skip_providers] We don't want to Recreate Providers that are downloading
+        downloading_ids = self._get_downloading_providers()
+        logger.debug(f"Downloading Provider: [{len(downloading_ids)}]")
+        skip_providers: list[ProviderButton] = []
+        new_providers: list[ProviderButton] = []
+
+        for url in provider_urls:
+            name = get_site_name(url)
+            # Find if this provider was already created and is in the download queue
+            found_id = next((pid for pid, btn in self.provider_buttons.items()
+                             if btn.provider_url == url and pid in downloading_ids), None)
+
+            if found_id:
+                logger.debug(f"Provider {url} is currently downloading, so just readding it")
+                skip_providers.append(self.provider_buttons[found_id])
             else:
-                logger.info(f"Adding provider {provider_url}")
-                name = get_site_name(provider_url)
-                new_providers.append(self.create_provider_button(name, provider_url))
+                logger.info(f"Adding provider {url}")
+                new_providers.append(self.create_provider_button(name, url))
 
         logger.debug(f"Returning providers: new=[{len(new_providers)}], old=[{len(skip_providers)}]")
         return new_providers, skip_providers
+
+    def _get_downloading_providers(self) -> list[str]:
+        dl_providers_id = []
+        for id in self.app_core.download_manager.download_queue.keys():
+            if id in self.provider_buttons.keys():
+                dl_providers_id.append(id)
+        return dl_providers_id
 
     def create_provider_button(self, name: str, url: str):
         logger.debug(f"GamePresenter: create_provider_button called with name={name}, url={url}")
@@ -101,8 +115,7 @@ class GamePresenter():
             logger.warning(f"Provider button not found for id: {provider_id}")
             return
 
-        self.app_core.download_manager.stop_download()
-        self.app_core.download_manager.update_download_queue(download_id=provider_id, adding=False)
+        self.app_core.download_manager.stop_download(provider_id)
         self.app_core.download_manager.download_progress.disconnect(btn.update_progress)
 
     @Slot(str, object)
@@ -141,3 +154,23 @@ class GamePresenter():
             return
         btn.set_downloading_state(failed=True)
     # ------I will refactor it later------
+
+    @Slot(object)
+    def _on_close(self, event: "QCloseEvent"):
+        if self._preserve_dl_provider():
+            event.accept()
+        else:
+            event.ignore()
+
+    def _preserve_dl_provider(self) -> bool:
+        downloading_ids = self._get_downloading_providers()
+        if not downloading_ids:
+            logger.debug("No active downloads to preserve.")
+            return True
+
+        for pid in downloading_ids:
+            btn = self.provider_buttons.get(pid)
+            if btn:
+                logger.debug(f"Preserving provider during close: {pid}")
+                btn.setParent(None)
+        return True

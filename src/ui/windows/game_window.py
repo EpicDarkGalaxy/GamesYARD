@@ -1,3 +1,5 @@
+from typing import override
+
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QLabel,
@@ -50,21 +52,31 @@ class GameWindow(QWidget, IGameView):
 
     def update_providers(self, providers, exlude):
         logger.info(f"Updating providers: {providers}")
+        marged_providers = providers + exlude
 
         self.clear_layout(self.ui.download_links_layout, exlude)
         if (not providers):
             return
 
-        for provider in providers:
+        for provider in marged_providers:
             self.ui.download_links_layout.addWidget(provider)
 
-    def clear_layout(self, layout, exclude=[]):
+    def clear_layout(self, layout, exclude=None):
+        if exclude is None:
+            exclude = []
         while layout.count():
-            item = layout.itemAt(0)
-            if item is not None:
-                if item.widget() and item.widget() not in exclude:
-                    item.widget().deleteLater()
-                elif item.layout():
-                    self.clear_layout(item.layout())
-                    item.layout().deleteLater()
-            layout.removeItem(item)
+            item = layout.takeAt(0)
+            if item is None:
+                continue
+
+            widget = item.widget()
+            if widget:
+                if widget in exclude:
+                    continue
+                widget.deleteLater()
+            elif item.layout():
+                self.clear_layout(item.layout(), exclude)
+                item.layout().deleteLater()
+
+    def closeEvent(self, event):
+        self.signals.close.emit(event)

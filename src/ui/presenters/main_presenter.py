@@ -35,7 +35,7 @@ class MainPresenter:
         self.app_core.thumbnail_manager.thumbnail_ready.connect(self.on_thumbnail_fetched)
 
         self.view.signals.fetch_btn_clicked.connect(self.on_fetch_button)
-        self.view.signals.close.connect(self.on_close)
+        self.view.signals.close.connect(self._on_close)
 
     @Slot(str)
     def on_fetch_button(self, query: str=""):
@@ -96,7 +96,7 @@ class MainPresenter:
             logger.warning(f"No image data or card found for card {card.get_data.title}")
 
     @Slot(object)
-    def on_close(self, event):
+    def _on_close(self, event):
         if self.app_core.download_manager.is_downloading:
             reply = self.view.show_confirm_box()
             logger.info(f"Close reply: {reply}")
@@ -104,4 +104,5 @@ class MainPresenter:
                 logger.info("User cancelled close")
                 event.ignore()
                 return
+        self.window_controller.close_AllWindows()
         self.app_core.cleanup(event)

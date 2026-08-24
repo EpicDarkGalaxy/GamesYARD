@@ -13,7 +13,7 @@ class MainPresenterSignals(UiSignals):
 class GameWindowSignals(UiSignals):
     thumbnail_loaded = Signal(object)
     fetch_btn_clicked = Signal()
-
+    closing_window = Signal()
 
 class MainWindowSignals(UiSignals):
     fetch_btn_clicked = Signal(str)

@@ -47,7 +47,7 @@ class SearchManager(QObject):
         self.game_fetcher = GameFetcher()
 
 
-    def search(self, query: str="", load_more: bool=False):
+    def search(self, query: str = "", load_more: bool = False):
         self.temp_load_more = not load_more
         logger.debug(f"Searching for: {query}, Load More: {load_more}")
 
@@ -56,21 +56,17 @@ class SearchManager(QObject):
 
         self.set_search_state(SearchState.FETCHING)
 
-        self.fetch_thread, self.fetch_worker = self.worker_manager.run_in_thread(
-            SearchWorker(
-                query,
-                self.game_fetcher,
-                load_more,
-            )
-        )
-        self.fetch_worker.signals.fetch_finished.connect(self.handle_search_result)
+        worker = SearchWorker(query, self.game_fetcher, load_more)
+        worker.signals.fetch_finished.connect(self.handle_search_result)
+
+        self.worker_manager.run_in_thread(worker)
 
     def load_more(self):
         self.search(self.last_search_query, load_more=True)
 
     @Slot(list)
     def handle_search_result(self, games: list[GameData]):
-        logger.debug(f"handle_search_result called with games: {games}")
+        logger.debug(f"handle_search_result called with games: {len(games)}")
 
         if not games:
             self.set_search_state(SearchState.FETCH_FAIL)
