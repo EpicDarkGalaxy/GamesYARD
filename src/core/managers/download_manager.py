@@ -1,11 +1,11 @@
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
+
 from PySide6.QtCore import QObject, Signal, Slot
 
-from typing import TYPE_CHECKING
 from ..aio.workers import DownloadWorker, LinkExtractionWorker
 from ..downloaders import DownloaderFactory
 from ..tools.log import get_logger
-from dataclasses import dataclass, field
-from typing import Any
 
 if TYPE_CHECKING:
     from ..aio import TaskRunner

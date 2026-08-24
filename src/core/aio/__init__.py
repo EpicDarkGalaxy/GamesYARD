@@ -12,10 +12,9 @@ __all__ = [
     "ThumbnailWorkerSignals",
     "DownloadWorkerSignals",
     "UrlExtractorWorkerSignals",
-    "WorkerManager",
     "SearchWorker",
-    "WorkerPool",
+    "TaskRunner",
     "ThumbnailFetchWorker",
     "DownloadWorker",
-    "LinkExtractionWorker",
+    "BaseWorker"
 ]
