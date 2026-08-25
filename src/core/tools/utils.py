@@ -96,3 +96,25 @@ def get_filename_from_url(url: str) -> str:
 
     # 4. Fallback if no extension found
     return "downloaded_file"
+
+def parse_rawg_reqs(req_data: any) -> list[tuple[str, str]]:
+    """
+    Converts a raw string or dict-based req data into a list of (label, value) tuples.
+    """
+    items: list[tuple[str, str]] = []
+
+    # Handle if input is a dictionary (common in JSON API responses)
+    if isinstance(req_data, dict):
+        for key, value in req_data.items():
+            items.append((str(key).strip(), str(value).strip()))
+        return items
+
+    # Handle string input
+    if isinstance(req_data, str):
+        lines: list[str] = req_data.split('\n')
+        for line in lines:
+            if ':' in line:
+                label, value = line.split(':', 1)
+                items.append((label.strip(), value.strip()))
+
+    return items

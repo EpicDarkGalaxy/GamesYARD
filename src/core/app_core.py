@@ -3,7 +3,7 @@ from PySide6.QtCore import QObject
 from ..core.aio import TaskRunner
 from .managers import DownloadManager, SearchManager, ThumbnailManager
 from .signals import Signals
-from .tools import GameFetcher, get_logger
+from .tools import  get_logger
 
 logger = get_logger(__name__)
 
@@ -26,7 +26,6 @@ class AppCore(QObject):
     def __init__(self):
         super().__init__()
         self.app_state = AppState(self)
-        self.game_fetcher = GameFetcher()
 
         self.task_runner = TaskRunner()
 

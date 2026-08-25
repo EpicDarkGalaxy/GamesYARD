@@ -1,20 +1,16 @@
-from ..models import GameData
-from .log import get_logger
-from .utils import decodeBase64, parseHtml
+from typing import List
+from .base import BaseGameFetcher
+from ..models.game_data import GameData
+from ..tools.utils import parseHtml, decodeBase64, get_logger
 
 logger = get_logger(__name__)
 
-# For now the Target Url is hardcoded,
-# but in the future it will be dynamic and can be changed by the user
-TARGET_URL = "https://4fnet.org"
-
-class GameFetcher:
+class Scraper4fnetFetcher(BaseGameFetcher):
     def __init__(self):
-        self.gameList: list[GameData] = []
-        self.page = 1
-        self.has_next_page = True
+        self.TARGET_URL = "https://4fnet.org"
+        self.gameList = []
 
-    def get_game_list(self, query, requery=False):
+    def search_games(self, query: str, page: int = 1) -> list[GameData]:
         """
         Fetches the game list from the target URL based on the given query.
 
@@ -28,12 +24,7 @@ class GameFetcher:
 
         self.gameList.clear()
 
-        if not requery:
-            self.page = 1  # Reset page to 1 for a new query
-        else:
-            self.page += 1  # move to next page
-
-        search_url = f"{TARGET_URL}/page/{self.page}/?s={query}"
+        search_url = f"{self.TARGET_URL}/page/{self.page}/?s={query}"
         soup = parseHtml(search_url)
         pagination = soup.select_one(".pagination")
         self.has_next_page = pagination is not None and "next" in pagination.text.lower()
@@ -54,12 +45,23 @@ class GameFetcher:
                 img = element.select_one("img")
                 poster_link = img.get("src", "") if img else ""
 
+                p = element.select_one("p")
+                description = p.text.strip() if p else ""
+
                 # logger.info(
                 #     f"\n{'-' * 50}\nTITLE: {title} \nGAME PAGE: {main_page_link} \nPOSTER LINK: {poster_link}"
                 # )
 
                 logger.info(f"Adding game: {title}")
-                self.gameList.append(GameData(title, poster_link, main_page_link))
+                self.gameList.append(GameData(
+                    id=1,
+                    title=title,
+                    poster_url=poster_link,
+                    game_url=main_page_link,
+                    description=description,
+                    rating=0.0,
+                    metacritic=0
+                ))
 
         if (self.gameList):
             return self.gameList
@@ -67,8 +69,7 @@ class GameFetcher:
             logger.warning("No games found, returning empty list")
             return []
 
-    @staticmethod
-    def get_game_details(game_page_url: str) -> dict[str, str]:
+    def get_game_details(self, game_page_url: str) -> dict:
         """
         Fetches the game details from the game page URL where game details are located.
 
@@ -101,8 +102,7 @@ class GameFetcher:
 
         return system_requirement
 
-    @staticmethod
-    def fetch_host_urls(game_url: str="") -> list[str]:
+    def fetch_download_links(self, game_url: str) -> list[str]:
         """
         Fetches the providers links from the game page URL where download links are located.
 
@@ -134,10 +134,3 @@ class GameFetcher:
         if (download_links):
             return download_links
         return []
-
-# try:
-#     selection = GameFetcher.gameList[int(input("SelectByNum: ")) - 1]
-# except (ValueError):
-#     print("Wrong Selection")
-# except (IndexError):
-#     print("Wrong Selection")

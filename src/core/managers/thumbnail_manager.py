@@ -1,7 +1,9 @@
-from PySide6.QtCore import QObject, Signal, Slot
 from typing import TYPE_CHECKING
-from ..tools.log import get_logger
+
+from PySide6.QtCore import QObject, Signal, Slot
+
 from ..aio.workers import ThumbnailFetchWorker
+from ..tools.log import get_logger
 
 if TYPE_CHECKING:
     from ..aio import TaskRunner

@@ -5,9 +5,13 @@ from PySide6.QtGui import QPixmap
 
 @dataclass
 class GameData:
+    id: int
     title: str
-    poster_url: str
-    url: str
-    system_requirements: dict[str, str] = field(default_factory=dict)
-    downloads_links: list[str] = field(default_factory=list)
+    background_image: str | None
+    released: str | None
+    rating: float
+    metacritic: int | None
+    genres: list[str] = field(default_factory=list)
+    description: str = ""
     poster_pixmap: QPixmap | None = None
+    system_requirements: dict | None = None

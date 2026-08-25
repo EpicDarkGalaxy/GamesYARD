@@ -4,7 +4,7 @@ from PySide6.QtCore import Slot
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QMessageBox
 
-from ...core.tools import get_default_icon, get_logger
+from ...core.tools import get_default_icon, get_logger, parse_rawg_reqs
 from ..ui_signals import MainPresenterSignals
 from ..widget import GameCard, LoadMoreButton
 from ..windows import MainWindow
@@ -56,7 +56,7 @@ class MainPresenter:
             cards.append(card)
             self.cards_dict[card.get_id] = card
 
-            self.app_core.thumbnail_manager.request_thumbnail(card.get_id, data.poster_url)
+            self.app_core.thumbnail_manager.request_thumbnail(card.get_id, data.background_image)
             logger.info(f"Adding card: {data.title} with id {card.get_id}")
 
         load_more_button = LoadMoreButton(self.on_load_more)
@@ -68,9 +68,10 @@ class MainPresenter:
         logger.info(f"Card clicked: {card._data.title} of id {card.get_id}")
 
         data = card.get_data
-        data.system_requirements = self.app_core.search_manager.request_system_req(data.url)
+        sys_req = self.app_core.search_manager.request_system_req(data.id)
+        data.system_requirements = parse_rawg_reqs(sys_req)
 
-        self.view.show_game_details(card)
+        self.view.show_game(card)
         self.app_core.app_state.set_opened_card = card
 
     @Slot(str, bool)

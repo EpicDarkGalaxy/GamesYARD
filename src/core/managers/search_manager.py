@@ -1,12 +1,12 @@
-from PySide6.QtCore import QObject, Signal, Slot
 from enum import Enum, auto
 from typing import TYPE_CHECKING
 
-from ..models import GameData
+from PySide6.QtCore import QObject, Signal, Slot
 
 from ..aio.workers import SearchWorker
+from ..models import GameData
+from ..fetchers import RawgApiFetcher
 from ..tools.log import get_logger
-from ..tools.fetcher import GameFetcher
 
 logger = get_logger(__name__)
 
@@ -30,6 +30,9 @@ class SearchState(Enum):
             SearchState.FETCH_FAIL: ("Failed", True),
         }[self]
 
+
+
+
 class SearchManager(QObject):
     search_completed = Signal(list, bool)
     search_state_changed = Signal(str, bool)
@@ -42,9 +45,9 @@ class SearchManager(QObject):
         super().__init__()
         self.last_search_query: str= ""
         self.temp_load_more = False
-
         self.task_runner = task_runner
-        self.game_fetcher = GameFetcher()
+
+        self.metadata_source = RawgApiFetcher(api_key="")
 
 
     def search(self, query: str = "", load_more: bool = False):
@@ -56,7 +59,7 @@ class SearchManager(QObject):
 
         self.set_search_state(SearchState.FETCHING)
 
-        worker = SearchWorker(query, self.game_fetcher, load_more)
+        worker = SearchWorker(query, self.metadata_source, load_more)
         worker.signals.search_finished.connect(self.handle_search_result)
 
         self.task_runner.run(worker)
@@ -75,8 +78,8 @@ class SearchManager(QObject):
         self.set_search_state(SearchState.FETCHED)
         self.search_completed.emit(games, self.temp_load_more)
 
-    def get_host_urls(self, url: str) -> list[str]:
-        return self.game_fetcher.fetch_host_urls(url)
+    # def get_host_urls(self, url: str) -> list[str]:
+    #     return self.game_fetcher.fetch_host_urls(url)
 
-    def request_system_req(self, url: str) -> dict[str, str]:
-        return self.game_fetcher.get_game_details(url)
+    def request_system_req(self, game_id: int) -> dict[str, str]:
+        return self.metadata_source.get_system_requirements(game_id)
