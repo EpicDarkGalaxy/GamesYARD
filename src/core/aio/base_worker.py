@@ -1,15 +1,11 @@
 from PySide6.QtCore import QObject, QRunnable, Signal
+from .worker_signals import WorkerSignals
 
-
-class WorkerSignals(QObject):
-    finished = Signal()
-    progress = Signal(int)
-    error = Signal(str)
 
 class BaseWorker(QRunnable):
     def __init__(self):
         super().__init__()
-        self.glob_signals = WorkerSignals()
+        self.signals = WorkerSignals()
 
     def run(self):
         # Implementation in subclasses

@@ -7,6 +7,7 @@ class WorkerSignals(QObject):
     finished = Signal()  # Signal to indicate the worker has finished
     cancelled = Signal()  # Signal to indicate the worker has been cancelled
     progress = Signal(float)  # Signal to emit progress updates
+    result_ready = Signal(object, object)
 
 class ThumbnailWorkerSignals(WorkerSignals):
     thumbnail_fetch_finished = Signal(object, bytes)  # Signal to emit the list of fetched icons

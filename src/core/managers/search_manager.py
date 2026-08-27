@@ -1,85 +1,32 @@
-from enum import Enum, auto
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from ..aio.workers import SearchWorker
-from ..models import GameData
-from ..fetchers import RawgApiFetcher
+from ..aio.workers import Worker
 from ..tools.log import get_logger
 
 logger = get_logger(__name__)
 
-
 if TYPE_CHECKING:
-    from ..aio import TaskRunner
-
-
-class SearchState(Enum):
-    READY = auto()
-    FETCHING = auto()
-    FETCHED = auto()
-    FETCH_FAIL = auto()
-
-    @property
-    def ui_info(self) -> tuple[str, bool]:
-        return {
-            SearchState.READY: ("Ready", True),
-            SearchState.FETCHING: ("Searching", False),
-            SearchState.FETCHED: ("Searched", True),
-            SearchState.FETCH_FAIL: ("Failed", True),
-        }[self]
-
-
-
+    from ..aio.task_runner import TaskRunner
+    from ..fetchers.rawg_api import RawgApiFetcher
 
 class SearchManager(QObject):
-    search_completed = Signal(list, bool)
-    search_state_changed = Signal(str, bool)
+    search_completed = Signal(list)
 
-    def set_search_state(self, state: SearchState):
-        label, enabled = state.ui_info
-        self.search_state_changed.emit(label, enabled)
-
-    def __init__(self, task_runner: "TaskRunner"):
+    def __init__(self,task_runner: "TaskRunner", metadata_source: "RawgApiFetcher") -> None:
         super().__init__()
-        self.last_search_query: str= ""
-        self.temp_load_more = False
         self.task_runner = task_runner
+        self.metadata_source = metadata_source
 
-        self.metadata_source = RawgApiFetcher(api_key="")
+    def search(self, query: str="", loadmore: bool=False):
+        logger.debug(f"SearchManager: Search requested for [{query}], loadmore: [{loadmore}]")
+        search_worker = Worker(self.metadata_source.search_games, query)
+        search_worker.signals.result_ready.connect(self._handle_search_result)
+        self.task_runner.run(search_worker)
 
-
-    def search(self, query: str = "", load_more: bool = False):
-        self.temp_load_more = not load_more
-        logger.debug(f"Searching for: [{query}], Load More: {load_more}")
-
-        if not load_more:
-            self.last_search_query = query
-
-        self.set_search_state(SearchState.FETCHING)
-
-        worker = SearchWorker(query, self.metadata_source, load_more)
-        worker.signals.search_finished.connect(self.handle_search_result)
-
-        self.task_runner.run(worker)
-
-    def load_more(self):
-        self.search(self.last_search_query, load_more=True)
-
-    @Slot(list)
-    def handle_search_result(self, games: list[GameData]):
-        logger.debug(f"handle_search_result called with games: [{len(games)}]")
-
-        if not games:
-            self.set_search_state(SearchState.FETCH_FAIL)
-            return
-
-        self.set_search_state(SearchState.FETCHED)
-        self.search_completed.emit(games, self.temp_load_more)
-
-    # def get_host_urls(self, url: str) -> list[str]:
-    #     return self.game_fetcher.fetch_host_urls(url)
-
-    def request_system_req(self, game_id: int) -> dict[str, str]:
-        return self.metadata_source.get_system_requirements(game_id)
+    @Slot(list)    
+    def _handle_search_result(self, games):
+        logger.debug(f"SearchManager: Search finished with Results [{len(games)}]")
+        self.search_completed.emit(games)
+        

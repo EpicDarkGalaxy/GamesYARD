@@ -127,20 +127,22 @@ QLabel {
 #game-card {
     background-color: #1e1e1e;
     border: 1px solid #252525;
-    border-radius: 12px;
+    border-radius: 10px;
 }
 
 #game-card:hover {
     border: 1px solid #1e90ff;
     background-color: #222222;
-}
-
-#card-thumbnail {
-    border-radius: 12px;
-    background-color: transparent;
+    border-radius: 3px;
 }
 
 #card-label {
+    background-color: transparent;
+    font-weight: bold;
+    text-align: center;
+}
+
+#card-overlay {
     background: qlineargradient(
         x1: 0,
         y1: 0,
@@ -154,11 +156,11 @@ QLabel {
     font-weight: bold;
     font-size: 13px;
     /* Round the bottom corners of the label to match the card */
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
+/*    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;*/
 }
 
-#card-label:hover {
+#card-overlay:hover {
     background: rgba(0, 0, 0, 180);
 }
 

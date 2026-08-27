@@ -9,11 +9,10 @@ from PySide6.QtWidgets import (
 from ...core.tools import get_logger
 from ...ui import Ui_gameinfo
 from ..ui_signals import GameWindowSignals
-from ..views.igame_view import IGameView
 
 logger = get_logger(__name__)
 
-class GameWindow(QWidget, IGameView):
+class GameWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setGeometry(100, 100, 600, 600)

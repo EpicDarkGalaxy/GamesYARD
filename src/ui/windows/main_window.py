@@ -1,6 +1,5 @@
-from locale import YESEXPR
 
-from PySide6.QtCore import QEasingCurve, QPropertyAnimation, QRect, Qt, Slot, QTimer
+from PySide6.QtCore import QEasingCurve, QPropertyAnimation, QRect, Qt, Slot, QTimer, QSize
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QFrame,
@@ -13,7 +12,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-
+from .pages import SearchPageView, GamePageView
 from typing import TYPE_CHECKING
 from ...core import get_logger
 from ...ui import Ui_MainWindow
@@ -35,81 +34,33 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("GamesYARD")
         self.resize(800, 600)
 
-        self.main_ui.scrollArea.setWidgetResizable(True)
-        self.main_ui.game_grid_container.setSizePolicy(
-            QSizePolicy.Expanding,
-            QSizePolicy.Expanding
-        )
-        self.flow_layout = FlowLayout(self.main_ui.game_grid_container, margin=20, spacing=20)
+        self.search_grid = SearchPageView()
+        self.game_page = GamePageView()
 
         # Button-----
         self.main_ui.btn_search_2.clicked.connect(self.search_button)
-        self.main_ui.btn_back.clicked.connect(self.show_grid)
 
         # SibeBar
         self.main_ui.btn_toggle.clicked.connect(self.toggle_sidebar)
         self.main_ui.btn_search.clicked.connect(self.toggle_search_bar)
-        # Button-----
 
         # SearchBar
         self.main_ui.line_search_bar.returnPressed.connect(self.search_button)
 
-        self.show_grid()
 
     def search_button(self):
         search_query = self.main_ui.line_search_bar.text()
         self.signals.fetch_btn_clicked.emit(search_query)
-        self.show_grid()
 
-    def update_fetch_btn_state(self, text: str, state: bool):
+    def update_search_button(self, text: str, state: bool):
         self.main_ui.btn_search_2.setText(text)
         self.main_ui.btn_search_2.setEnabled(state)
 
-    def update_cards(self, cards, clear_grid: bool):
-        logger.info(f"updating grid with {len(cards)} cards")
+    def add_page(self, page) -> int:
+        return self.main_ui.stackedWidget.addWidget(page)
 
-        # The load more button at the bottom of the grid is removed before adding new cards.
-        # This is to have it always at the bottom.
-        load_more_button = self.flow_layout.takeAt(self.flow_layout.count() -1)
-        if load_more_button is not None:
-            load_more_button.widget().deleteLater()
-
-        if (clear_grid):
-            self.flow_layout.clear_layout()
-
-        for card in cards:
-            self.flow_layout.addWidget(card)
-
-    def show_game(self, game_card):
-        data = game_card.get_data
-        if data:
-            if data.poster_pixmap:
-                self.main_ui.game_poster.setPixmap(data.poster_pixmap)
-            self.main_ui.game_title.setText(data.title)
-
-        self.display_requirements(data.system_requirements)
-        self.main_ui.stackedWidget.setCurrentWidget(self.main_ui.details_page)
-
-    def display_requirements(self, req_data):
-        # 1. Clear existing items from the grid
-        layout = self.main_ui.requirments_grid # Your grid object name
-        for i in reversed(range(layout.count())):
-            layout.itemAt(i).widget().setParent(None)
-
-        for row, (label_text, value_text) in enumerate(req_data):
-            # Create the UI labels on the fly
-            label_widget = QLabel(label_text)
-            label_widget.setObjectName("req_label") # Style this in QSS
-
-            value_widget = QLabel(value_text)
-            value_widget.setWordWrap(True) # Very important for long text
-
-            layout.addWidget(label_widget, row, 0)
-            layout.addWidget(value_widget, row, 1)
-
-
-    def show_grid(self):
-        self.main_ui.stackedWidget.setCurrentWidget(self.main_ui.grid_page)
+    def show_page(self, index):
+        self.main_ui.stackedWidget.setCurrentIndex(index)
 
     def toggle_search_bar(self):
         is_expanded = self.main_ui.header.maximumHeight() > 0

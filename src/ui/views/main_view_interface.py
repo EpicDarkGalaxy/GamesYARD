@@ -1,9 +1,0 @@
-from abc import ABC, abstractmethod
-
-class MainViewInterface(ABC):
-    @abstractmethod
-    def set_presenter(self, presenter): ...
-    @abstractmethod
-    def update_cards(self, cards, clear_grid: bool): ...
-    @abstractmethod
-    def update_fetch_btn_state(self, text: str, state: bool): ...

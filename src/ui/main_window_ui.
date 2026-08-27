@@ -150,6 +150,34 @@ class Ui_MainWindow(object):
         sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.stackedWidget.sizePolicy().hasHeightForWidth())
         self.stackedWidget.setSizePolicy(sizePolicy3)
+        self.grid_page = QWidget()
+        self.grid_page.setObjectName(u"grid_page")
+        sizePolicy3.setHeightForWidth(self.grid_page.sizePolicy().hasHeightForWidth())
+        self.grid_page.setSizePolicy(sizePolicy3)
+        self.verticalLayout_10 = QVBoxLayout(self.grid_page)
+        self.verticalLayout_10.setObjectName(u"verticalLayout_10")
+        self.scrollArea = QScrollArea(self.grid_page)
+        self.scrollArea.setObjectName(u"scrollArea")
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollAreaWidgetContents = QWidget()
+        self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 98, 28))
+        sizePolicy3.setHeightForWidth(self.scrollAreaWidgetContents.sizePolicy().hasHeightForWidth())
+        self.scrollAreaWidgetContents.setSizePolicy(sizePolicy3)
+        self.verticalLayout_7 = QVBoxLayout(self.scrollAreaWidgetContents)
+        self.verticalLayout_7.setObjectName(u"verticalLayout_7")
+        self.game_grid_container = QWidget(self.scrollAreaWidgetContents)
+        self.game_grid_container.setObjectName(u"game_grid_container")
+        sizePolicy3.setHeightForWidth(self.game_grid_container.sizePolicy().hasHeightForWidth())
+        self.game_grid_container.setSizePolicy(sizePolicy3)
+
+        self.verticalLayout_7.addWidget(self.game_grid_container)
+
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+
+        self.verticalLayout_10.addWidget(self.scrollArea)
+
+        self.stackedWidget.addWidget(self.grid_page)
         self.details_page = QWidget()
         self.details_page.setObjectName(u"details_page")
         sizePolicy3.setHeightForWidth(self.details_page.sizePolicy().hasHeightForWidth())
@@ -309,7 +337,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.stackedWidget.setCurrentIndex(0)
+        self.stackedWidget.setCurrentIndex(1)
 
 
         QMetaObject.connectSlotsByName(MainWindow)

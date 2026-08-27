@@ -1,5 +1,6 @@
 import re
 from base64 import b64decode
+from socket import TCP_ULP
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
@@ -17,7 +18,7 @@ headers = {
 def get_img_data(url: str) -> bytes:
     logger.info(f"fetching img from {url}")
     try:
-        img_data = requests.get(url, timeout=4).content
+        img_data = requests.get(url, timeout=8).content
         return img_data
     except Exception as e:
         logger.warning(f"failed to fetch img from {url} \nException:({e})")
@@ -97,24 +98,45 @@ def get_filename_from_url(url: str) -> str:
     # 4. Fallback if no extension found
     return "downloaded_file"
 
-def parse_rawg_reqs(req_data: any) -> list[tuple[str, str]]:
+def parse_rawg_reqs(req_data: dict[str, str | dict[str, str]]) -> dict[str, dict[str, str]]:
     """
-    Converts a raw string or dict-based req data into a list of (label, value) tuples.
+    Converts a raw string or dict-based req data into a dictionary of system requirements.
     """
-    items: list[tuple[str, str]] = []
 
-    # Handle if input is a dictionary (common in JSON API responses)
-    if isinstance(req_data, dict):
-        for key, value in req_data.items():
-            items.append((str(key).strip(), str(value).strip()))
-        return items
+    new_req: dict[str, dict[str, str]] = {"minimum": {}, "recommended": {}}
+    if not req_data:
+        logger.warning(f"Requirement data is empty: {req_data}")
+        return new_req
 
-    # Handle string input
-    if isinstance(req_data, str):
-        lines: list[str] = req_data.split('\n')
+    minimum_json = req_data.get("minimum")
+    recommended_json = req_data.get("recommended")
+
+    def parse(string: str) -> dict[str, str]:
+        # 1. Standardize and "break" the blob
+        # This finds keywords like "OS:", "Processor:" and puts a newline before them
+        tags = ["OS", "Processor", "Memory", "Graphics", "Storage", "DirectX", "Sound Card"]
+        pattern = r'(' + '|'.join(tags) + r')[:\s]+'
+
+        # Insert a newline before every tag found
+        blob = re.sub(pattern, r'\n\1: ', string, flags=re.IGNORECASE)
+
+        # Now that we have line breaks, the rest of your logic will work
+        results = {}
+        lines = [l.strip() for l in blob.split('\n') if ':' in l]
+
         for line in lines:
-            if ':' in line:
-                label, value = line.split(':', 1)
-                items.append((label.strip(), value.strip()))
+            key, value = line.split(':', 1)
+            key = key.strip().title()
 
-    return items
+            # Filter for our allowed keys
+            for t in tags:
+                if t.lower() in key.lower():
+                    results[t] = value.strip()
+                    break
+
+        return results
+
+    new_req["minimum"] = parse(minimum_json)
+    new_req["recommended"] = parse(recommended_json)
+    logger.debug(f"New parsed req: {new_req} \nOld Data: {req_data}")
+    return new_req

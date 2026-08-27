@@ -3,7 +3,8 @@ from PySide6.QtCore import QObject
 from ..core.aio import TaskRunner
 from .managers import DownloadManager, SearchManager, ThumbnailManager
 from .signals import Signals
-from .tools import  get_logger
+from .tools import get_logger
+from .fetchers.rawg_api import RawgApiFetcher
 
 logger = get_logger(__name__)
 
@@ -29,9 +30,11 @@ class AppCore(QObject):
 
         self.task_runner = TaskRunner()
 
+        self.rawg_api = RawgApiFetcher(api_key="e0c6cd64db9d4d64b061869c2bf9138c")
+        
         self.download_manager = DownloadManager(self.task_runner)
-        self.search_manager = SearchManager(self.task_runner)
-        self.thumbnail_manager = ThumbnailManager(self.task_runner)
+        self.search_manager = SearchManager(self.task_runner, self.rawg_api)
+        self.thumb_manager = ThumbnailManager(self.task_runner, self.rawg_api)
 
         self.signals = Signals()
         self.download_signals = Signals()

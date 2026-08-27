@@ -1,7 +1,7 @@
 import logging
 
-from .windows import GameWindow, MainWindow
 from .presenters import GamePresenter, MainPresenter
+from .windows import GameWindow, MainWindow
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class WindowController:
     def show_MainWindow(self):
         logger.info("Showing Main Window")
         main_window = MainWindow()
-        main_presenter = MainPresenter(main_window, self.manager, self)
+        main_presenter = MainPresenter(self.manager, main_window)
         self._show_Window(main_window)
         self.presenter_list.append(main_presenter)
         self.window_list.append(main_window)

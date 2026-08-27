@@ -220,3 +220,6 @@ tests/
 app.log
 .vscode/settings.json
 .zed/settings.json
+pyrightconfig.json
+.sublime-project
+gx.log

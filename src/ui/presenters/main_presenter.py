@@ -1,109 +1,102 @@
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Slot
-from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QMessageBox
-
-from ...core.tools import get_default_icon, get_logger, parse_rawg_reqs
-from ..ui_signals import MainPresenterSignals
-from ..widget import GameCard, LoadMoreButton
-from ..windows import MainWindow
-
-if TYPE_CHECKING:
-    from ..window_controller import WindowController
+from ..windows.pages import (
+        SearchPageView,
+        GamePageView
+    )
+from .game_page_presenter import GamePagePresenter
+from .search_page_presenter import SearchPagePersenter
+from ...core.tools.log import get_logger
 
 logger = get_logger(__name__)
 
 if TYPE_CHECKING:
     from ...core.app_core import AppCore
     from ...core.models import GameData
-
+    from ..widget import GameCard
+    from ..windows.main_window import MainWindow
 
 class MainPresenter:
-    def __init__(self, view: MainWindow, app_core: "AppCore", window_controller: "WindowController"=None):
-        self.view: MainWindow = view
+    def __init__(self, app_core: "AppCore", view: "MainWindow") -> None:
         self.app_core = app_core
-        self.signals = MainPresenterSignals()
-        self.window_controller = window_controller
-        self.cards_dict = {}
+        self.view = view
+        self.cards = {} # {"ID", GameCard}
+
+        self.search_view = SearchPageView()
+        self.search_presenter = SearchPagePersenter(self.search_view, self.app_core)
+
+        self.game_view = GamePageView()
+        self.game_presenter = GamePagePresenter(self.game_view, self.app_core)
+
+        self.SEARCH_PAGE_INDEX = self.view.add_page(self.search_view)
+        self.GAME_PAGE_INDEX = self.view.add_page(self.game_view)
+
+        self.view.show_page(self.SEARCH_PAGE_INDEX)
 
         self.bind_signals()
 
+
     def bind_signals(self):
-        self.app_core.search_manager.search_completed.connect(self.on_game_list_ready)
-        self.app_core.search_manager.search_state_changed.connect(self.on_update_fetch_btn)
-        self.app_core.thumbnail_manager.thumbnail_ready.connect(self.on_thumbnail_fetched)
+        logger.info("MainPresenter: Binding signals")
 
-        self.view.signals.fetch_btn_clicked.connect(self.on_fetch_button)
-        self.view.signals.close.connect(self._on_close)
+        # Model Signals
+        self.app_core.search_manager.search_completed.connect(self._handle_search_result)
+        self.app_core.thumb_manager.thumb_ready.connect(self._handle_thumb_result)
 
-    @Slot(str)
-    def on_fetch_button(self, query: str=""):
-        logger.info(f"Requesting games for query: {query}")
-        self.app_core.search_manager.search(query)
+        # View Signals
+        self.view.main_ui.btn_search_2.clicked.connect(self.request_search)
+        self.view.signals.close.connect(self._on_close) # I want MainPresenter to decide weather to accept or ignore the event
+
+        # View: SearchGrid
+        self.search_view.card_created.connect(self.save_card)
+        self.search_view.card_clicked.connect(self._handle_card_click)
+
+        # Navigation
+        self.game_view.back.connect(lambda: self.view.show_page(self.SEARCH_PAGE_INDEX))
+
+    @Slot("GameCard")
+    def save_card(self, card: "GameCard"):
+        self.cards[card.id] = card
+        self.request_thumb(card.id)
 
     @Slot()
-    def on_load_more(self):
-        self.app_core.search_manager.load_more()
+    def request_search(self):
+        query = self.view.main_ui.line_search_bar.text()
+        self.app_core.search_manager.search(query=query)
 
-    @Slot(list, bool)
-    def on_game_list_ready(self, games_data: list["GameData"], clear_grid: bool):
-        logger.info(f"Received {len(games_data)} games, ({clear_grid=})")
 
-        cards = []
-        for data in games_data:
-            card = GameCard(data, on_click=self.handle_card_click)
-            cards.append(card)
-            self.cards_dict[card.get_id] = card
+    @Slot(list)
+    def _handle_search_result(self, games):
+        logger.debug(f"MainPresenter: received games [{len(games)}]")
+        self.search_presenter.add_to_grid(games)
 
-            self.app_core.thumbnail_manager.request_thumbnail(card.get_id, data.background_image)
-            logger.info(f"Adding card: {data.title} with id {card.get_id}")
 
-        load_more_button = LoadMoreButton(self.on_load_more)
-        new_cards = cards + [load_more_button]
-        self.view.update_cards(new_cards, clear_grid)
-
-    @Slot(GameCard)
-    def handle_card_click(self, card):
-        logger.info(f"Card clicked: {card._data.title} of id {card.get_id}")
-
-        data = card.get_data
-        sys_req = self.app_core.search_manager.request_system_req(data.id)
-        data.system_requirements = parse_rawg_reqs(sys_req)
-
-        self.view.show_game(card)
-        self.app_core.app_state.set_opened_card = card
-
-    @Slot(str, bool)
-    def on_update_fetch_btn(self, text: str, state: bool):
-        self.view.update_fetch_btn_state(text, state)
-
-    @Slot(str, bytes)
-    def on_thumbnail_fetched(self, card_id: str, img_data: bytes):
-        card = self.cards_dict.get(card_id)
-        if not card:
-            logger.warning(f"Card was not in list: [{card_id}]")
-            return
-
-        if img_data:
-            pixmap = QPixmap()
-            pixmap.loadFromData(img_data)
-            if pixmap.isNull():
-                logger.warning(f"Failed to load thumbnail for card {card.get_data.title}")
-                return
-            logger.info(f"Setting thumbnail for card {card.get_data.title}")
-            card.set_thumbnail = pixmap
+    def request_thumb(self, card_id: str):
+        card = self.cards.get(card_id)
+        if card:
+            img_url = card.banner_url
+            logger.debug(f"Requesting thumbnail for [{card.title}]")
+            self.app_core.thumb_manager.get_thumb(card_id, img_url)
         else:
-            logger.warning(f"No image data or card found for card {card.get_data.title}")
+            logger.warning("Can't request for thumb, Card was not found")
+
+    @Slot(str, bytes) # 1: ID, 2: img data
+    def _handle_thumb_result(self, card_id: str, img_data: bytes):
+        card = self.cards.get(card_id)
+        logger.debug(f"Recieved thumbnail for ID [{card_id}]")
+
+        if card:
+            card.thumbnail = img_data
+        else:
+            logger.warning(f"MainPresenter: Could not set Thumb, Card ID [{card_id}] was not found.")
+
+    @Slot("GameCard")
+    def _handle_card_click(self, card: "GameCard"):
+        self.game_presenter.load_card(card)
+        self.view.show_page(self.GAME_PAGE_INDEX)
 
     @Slot(object)
     def _on_close(self, event):
-        if self.app_core.download_manager.is_downloading:
-            reply = self.view.show_confirm_box()
-            logger.info(f"Close reply: {reply}")
-            if reply == QMessageBox.No:
-                logger.info("User cancelled close")
-                event.ignore()
-                return
-        self.window_controller.close_AllWindows()
-        self.app_core.cleanup(event)
+        self.app_core.cleanup()
+        event.accept()

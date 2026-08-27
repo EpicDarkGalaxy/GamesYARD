@@ -1,4 +1,4 @@
-from PySide6.QtCore import QObject, QThreadPool
+from PySide6.QtCore import QObject, QRunnable, QThreadPool
 
 
 class TaskRunner(QObject):
@@ -7,5 +7,5 @@ class TaskRunner(QObject):
         self.pool = QThreadPool.globalInstance()
         self.pool.setMaxThreadCount(4)
 
-    def run(self, worker):
+    def run(self, worker: QRunnable):
         self.pool.start(worker)

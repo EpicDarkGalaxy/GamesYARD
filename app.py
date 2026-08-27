@@ -8,6 +8,7 @@ from src.core.app_core import AppCore
 from src.ui.presenters import MainPresenter
 from src.ui.windows.main_window import MainWindow
 
+os.environ["QT_QPA_PLATFORM"] = "xcb"
 
 def load_stylesheet(app: QApplication):
     # Construct path to style.qss
@@ -24,6 +25,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     load_stylesheet(app)
     manager = AppCore()
-    controller = WindowController(manager)
-    controller.show_MainWindow()
+    main_view = MainWindow()
+    main_presenter = MainPresenter(manager, main_view)
+    main_view.show()
     sys.exit(app.exec())

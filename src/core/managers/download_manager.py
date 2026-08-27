@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from ..aio.workers import DownloadWorker, LinkExtractionWorker
+from ..aio.workers import DownloadWorker, Worker
 from ..downloaders import DownloaderFactory
 from ..tools.log import get_logger
 
@@ -63,8 +63,8 @@ class DownloadManager(QObject):
         download = Download(save_path=save_path, download_id=download_id, host_url=provider_url)
         self._add_to_queue(download)
 
-        link_worker = LinkExtractionWorker(provider.get_method(), provider_url, download_id)
-        link_worker.signals.link_extracted.connect(self.handle_url_extracted)
+        link_worker = Worker(provider.get_method(), provider_url, download_id)
+        link_worker.signals.result_ready.connect(self.handle_url_extracted)
         self.task_runner.run(link_worker)
 
     @Slot(str, str)
