@@ -1,5 +1,3 @@
-from typing import override
-
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QLabel,
