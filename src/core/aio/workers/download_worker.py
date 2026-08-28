@@ -2,7 +2,7 @@ import os
 
 from curl_cffi import requests as r
 
-from ...tools.log import get_logger
+from ...utils.log import get_logger
 from ..base_worker import BaseWorker
 from ..worker_signals import DownloadWorkerSignals
 

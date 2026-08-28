@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, Any
 from PySide6.QtCore import QObject, Signal, Slot
 
 from ..aio.workers import DownloadWorker, Worker
-from ..downloaders import DownloaderFactory
-from ..tools.log import get_logger
+from ..services.providers import ProviderFactory
+from ..utils.log import get_logger
 
 if TYPE_CHECKING:
     from ..aio import TaskRunner
@@ -55,7 +55,7 @@ class DownloadManager(QObject):
         """
         Attempts to download a game from the given host URL.
         """
-        provider = DownloaderFactory.get_provider(url=provider_url)
+        provider = ProviderFactory.get_provider(url=provider_url)
         if not provider:
             logger.error(f"no provider found for {provider_url}, skipping download")
             return

@@ -1,10 +1,13 @@
+import os
+
+import dotenv
 from PySide6.QtCore import QObject
 
 from ..core.aio import TaskRunner
-from .managers import DownloadManager, SearchManager, ThumbnailManager
+from .managers import DownloadManager, AssetManager, SearchManager
+from .services.rawg_service import RawgAPI
 from .signals import Signals
-from .tools import get_logger
-from .fetchers.rawg_api import RawgApiFetcher
+from .utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -23,6 +26,8 @@ class AppState:
         self._opened_card = card
         self._manager.signals.opened_card_changed.emit(card)
 
+dotenv.load_dotenv()
+
 class AppCore(QObject):
     def __init__(self):
         super().__init__()
@@ -30,11 +35,11 @@ class AppCore(QObject):
 
         self.task_runner = TaskRunner()
 
-        self.rawg_api = RawgApiFetcher(api_key="") # Use your RAWG api
+        self.rawg_api = RawgAPI(api_key=os.getenv("RAWG_API_KEY", "")) # Use your RAWG api
 
         self.download_manager = DownloadManager(self.task_runner)
         self.search_manager = SearchManager(self.task_runner, self.rawg_api)
-        self.thumb_manager = ThumbnailManager(self.task_runner, self.rawg_api)
+        self.asset_manager = AssetManager(self.task_runner, self.rawg_api)
 
         self.signals = Signals()
         self.download_signals = Signals()

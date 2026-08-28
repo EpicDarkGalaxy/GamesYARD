@@ -6,13 +6,13 @@ from PySide6.QtWidgets import QApplication
 from src.ui.window_controller import WindowController
 from src.core.app_core import AppCore
 from src.ui.presenters import MainPresenter
-from src.ui.windows.main_window import MainWindow
+from src.ui.views.main_window import MainWindow
 
 os.environ["QT_QPA_PLATFORM"] = "xcb"
 
 def load_stylesheet(app: QApplication):
     # Construct path to style.qss
-    style_path = os.path.join(os.path.dirname(__file__), "src", "ui", "style.qss")
+    style_path = os.path.join(os.path.dirname(__file__), "src", "ui", "styles", "style.qss")
 
     if os.path.exists(style_path):
         with open(style_path, "r") as f:

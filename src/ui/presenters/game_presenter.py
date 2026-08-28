@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QFileDialog
 
-from ...core.tools import get_filename_from_url, get_logger, get_site_name
-from ..widget import GameCard, ProviderButton
-from ..windows.game_window import GameWindow
+from ...core.utils import get_filename_from_url, get_logger, get_site_name
+from ..components import GameCard, ProviderButton
+from ..views.game_window import GameWindow
 
 if TYPE_CHECKING:
     from ...core.app_core import AppCore

@@ -1,0 +1,26 @@
+from abc import ABC, abstractmethod
+
+
+class BaseProvider(ABC): # Inherit from ABC
+
+    @abstractmethod
+    def can_handle(self, url: str) -> bool:
+        """
+        Returns True if this provider can handle the given URL.
+        """
+        pass
+
+    @abstractmethod
+    def extract_dl_url(self, provider_url: str) -> str | None:
+        """
+        Resolves the provider url and returns the final direct file download URL.
+        """
+        pass
+
+
+    @abstractmethod
+    def get_method(self) -> object:
+        """
+        Returns the extraction logic function.
+        """
+        pass

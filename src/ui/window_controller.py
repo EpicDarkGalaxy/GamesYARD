@@ -1,7 +1,7 @@
 import logging
 
 from .presenters import GamePresenter, MainPresenter
-from .windows import GameWindow, MainWindow
+from .views import GameWindow, MainWindow
 
 logger = logging.getLogger(__name__)
 
