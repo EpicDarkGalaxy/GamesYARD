@@ -7,9 +7,9 @@ from src.core.aio.workers import Worker
 from src.core.utils.log import get_logger
 
 if TYPE_CHECKING:
-    from src.core import AppCoordinator, AppCore
-    from src.ui.components import GameCard
-    from src.ui.views.pages import GameDetailsView
+	from src.core import AppCoordinator, AppCore
+	from src.ui.components import GameCard
+	from src.ui.views.pages import GameDetailsView
 
 logger = get_logger(__name__)
 
@@ -28,16 +28,18 @@ class GameDetailsViewModel(QObject):
 	def __init__(self, model, navigator) -> None:
 		super().__init__()
 		self.model: "AppCore" = model
-		self.nav = navigator
-		self.coordinator: "AppCoordinator"
-		self.current_game_id: str
+		self.nav: object = navigator
+		# will be initialized via initialize()
+		self.coordinator: "AppCoordinator" | None = None
+		# id of the currently viewed game
+		self.current_game_id: str | None = None
 		self.bind_signals()
 
 	def initialize(self, coordinator):
 		self.coordinator = coordinator
 
 	def bind_signals(self):
-	    pass
+		pass
 
 	@Slot(dict, str)
 	def handle_system_req(self, reqs: dict, game_id: str):
@@ -61,13 +63,13 @@ class GameDetailsViewModel(QObject):
 	@Slot(object)
 	def load_card(self, card: "GameCard"):
 		if card:
-			self.current_game_id = card.id # The card user is viewing
-			title = card.title
-			rating = card.rating
-			released = card.released,
-			genres = card.genres
-			metacritic = card.metacritic
-			banner = card.banner
+			self.current_game_id = card.id  # The card user is viewing
+			title: str = card.title
+			rating: float = card.rating
+			released: str = card.released
+			genres: list[str] = card.genres
+			metacritic: int = card.metacritic
+			banner: bytes = card.banner
 
 			self.set_title.emit(title)
 			self.set_rating.emit(rating, self._get_rating_color(rating))

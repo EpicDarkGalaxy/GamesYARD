@@ -46,7 +46,8 @@ class MainView(QMainWindow):
     def bind_signals(self):
         # MainView -> View Model
         self.main_ui.btn_search_2.clicked.connect(
-            lambda: self.view_model.request_search(self.main_ui.line_search_bar.text())
+            lambda: self.view_model.request_search(self.main_ui.line_search_bar.text()),
+            lambda: self.navigator.go_to("search")
         )
 
         # MainView <- View Model
