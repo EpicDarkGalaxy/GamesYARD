@@ -24,7 +24,7 @@ class GamePresenter():
         self.view.signals.fetch_btn_clicked.connect(self.on_fetch_btn)
         self.view.signals.close.connect(self._on_close)
 
-        self.app_core.signals.opened_card_changed.connect(self.view_card)
+        # self.app_core.signals.opened_card_changed.connect(self.view_card)
 
         self.app_core.download_manager.download_finished.connect(self.on_download_finish)
         self.app_core.download_manager.download_failed.connect(self.on_download_fail)

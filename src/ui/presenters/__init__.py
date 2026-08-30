@@ -1,4 +1,0 @@
-from .main_presenter import MainPresenter
-from .game_presenter import GamePresenter
-from .search_page_presenter import SearchPagePersenter
-from .game_page_presenter import GamePagePresenter

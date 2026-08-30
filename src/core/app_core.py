@@ -1,12 +1,12 @@
 import os
 
 import dotenv
-from PySide6.QtCore import QObject
+# from PySide6.QtCore import QObject
 
 from ..core.aio import TaskRunner
 from .managers import DownloadManager, AssetManager, SearchManager
 from .services.rawg_service import RawgAPI
-from .signals import Signals
+# from .signals import Signals
 from .utils import get_logger
 
 logger = get_logger(__name__)
@@ -28,21 +28,21 @@ class AppState:
 
 dotenv.load_dotenv()
 
-class AppCore(QObject):
+class AppCore:
     def __init__(self):
-        super().__init__()
-        self.app_state = AppState(self)
+        # super().__init__()
+        self.app_state: AppState = AppState(self)
+        self.task_runner: TaskRunner = TaskRunner()
 
-        self.task_runner = TaskRunner()
+        self.rawg_api: RawgAPI = RawgAPI(api_key=os.getenv("RAWG_API_KEY", ""))  # Use your RAWG api
 
-        self.rawg_api = RawgAPI(api_key=os.getenv("RAWG_API_KEY", "")) # Use your RAWG api
+        self.download_manager: DownloadManager = DownloadManager(self.task_runner)
+        self.search_manager: SearchManager = SearchManager(self.task_runner, self.rawg_api)
+        self.asset_manager: AssetManager = AssetManager(self.task_runner, self.rawg_api)
 
-        self.download_manager = DownloadManager(self.task_runner)
-        self.search_manager = SearchManager(self.task_runner, self.rawg_api)
-        self.asset_manager = AssetManager(self.task_runner, self.rawg_api)
-
-        self.signals = Signals()
-        self.download_signals = Signals()
+        # self.signals: Signals = Signals()
+        # self.signals.
+        # self.download_signals: Signals = Signals()
 
     def cleanup(self, event=None):
         logger.info("AppCore cleanup starting...")

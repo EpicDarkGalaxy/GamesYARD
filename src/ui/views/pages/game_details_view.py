@@ -9,24 +9,33 @@ from ....core.utils import get_logger, get_icon_from_url, get_asset
 
 if TYPE_CHECKING:
     from ...components import GameCard
+    from ...view_models import GameDetailsViewModel
 
 logger = get_logger(__name__)
 
 class GameDetailsView(QWidget):
-    back = Signal()
-
-    def __init__(self):
+    def __init__(self, view_model: "GameDetailsViewModel"):
         super().__init__()
         self.ui = Ui_GamePage()
         self.ui.setupUi(self)
+        self.view_model = view_model
         self.sys_req_widget = []
         self.gallery_widget = []
 
         self.bind_signals()
 
     def bind_signals(self):
-        self.ui.btn_back.clicked.connect(self.back.emit)
+        self.ui.btn_back.clicked.connect(lambda: self.view_model.nav.go_to("search"))
         self.ui.btn_back.clicked.connect(self._hide_all_widgets)
+
+        # ViewModel
+        self.view_model.set_title.connect(self.set_title)
+        self.view_model.set_rating.connect(self.set_rating)
+        self.view_model.set_release.connect(self.set_release)
+        self.view_model.set_genres.connect(self.set_genres)
+        self.view_model.set_poster.connect(self.set_poster)
+        self.view_model.update_gallery.connect(self.populate_gallery)
+        self.view_model.update_sys_req.connect(self.populate_requirements)
 
     def _ensure_widget(self, name: str, parent_layout, row: int, col: int) -> QLabel:
         """Creates a QLabel if it doesn't exist on the UI, adds it to the layout, and returns it."""
@@ -160,7 +169,7 @@ class GameDetailsView(QWidget):
                 self.ui.requirements_grid.addWidget(lbl_val, row, 1)
                 row += 1
 
-    def update_gallery(self, screenshots: list[bytes]):
+    def populate_gallery(self, screenshots: list[bytes]):
         # Hide all existing gallery widgets to reuse them (pooling)
         for widget in self.gallery_widget:
             widget.hide()

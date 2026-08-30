@@ -6,6 +6,16 @@ class UiSignals(QObject):
     update_btn = Signal(QPushButton)
     close = Signal(object)
 
+class MainViewModelSignals(UiSignals):
+    search_result_ready = Signal(list)
+
+MAIN_MODEL_SIGNALS = MainViewModelSignals()
+
+class SearchCatalogViewModelSignals(UiSignals):
+    card_clicked = Signal(object)
+
+SEARCH_MODEL_SIGNALS = SearchCatalogViewModelSignals()
+
 class MainPresenterSignals(UiSignals):
     show_game_info_window = Signal()
     on_card_clicked = Signal(object)

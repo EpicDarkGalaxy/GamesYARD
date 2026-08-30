@@ -1,2 +1,2 @@
-from .catalog_page import SearchCatalogView
-from .details_page import GameDetailsView
+from .search_catalog_view import SearchCatalogView
+from .game_details_view import GameDetailsView

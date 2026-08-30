@@ -2,11 +2,7 @@ import os
 import sys
 
 from PySide6.QtWidgets import QApplication
-
-from src.ui.window_controller import WindowController
-from src.core.app_core import AppCore
-from src.ui.presenters import MainPresenter
-from src.ui.views.main_window import MainWindow
+from src.core.app_container import AppContainer
 
 os.environ["QT_QPA_PLATFORM"] = "xcb"
 
@@ -24,8 +20,6 @@ def load_stylesheet(app: QApplication):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     load_stylesheet(app)
-    manager = AppCore()
-    main_view = MainWindow()
-    main_presenter = MainPresenter(manager, main_view)
-    main_view.show()
+    app_container = AppContainer()
+    app_container._main_view.show()
     sys.exit(app.exec())
