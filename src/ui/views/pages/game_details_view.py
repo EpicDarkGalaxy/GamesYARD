@@ -1,20 +1,15 @@
-from PySide6.QtCore import Qt, Signal, Slot, QTimer
+from typing import TYPE_CHECKING
+
+from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import QGridLayout, QLabel, QWidget
 
-from PySide6.QtWidgets import QWidget, QLabel, QGridLayout
-from  typing import TYPE_CHECKING
+from src.core.utils import get_asset, get_icon_from_url, get_logger
+from src.ui.components import GameCard
 from src.ui.generated import Ui_GamePage
-from src.core.utils import get_logger, get_icon_from_url, get_asset
-
 
 if TYPE_CHECKING:
-<<<<<<< HEAD
-    from src.ui.components import GameCard
     from src.ui.view_models import GameDetailsViewModel
-=======
-    from ...components import GameCard
-    from ...view_models import GameDetailsViewModel
->>>>>>> 49411a3e9ffa7ace8a740fca7c33696c699c18bc
 
 logger = get_logger(__name__)
 

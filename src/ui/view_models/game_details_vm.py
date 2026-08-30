@@ -2,21 +2,14 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QObject, Signal, Slot
 from PySide6.QtGui import QPixmap
-<<<<<<< HEAD
 
 from src.core.aio.workers import Worker
 from src.core.utils.log import get_logger
-=======
-from ...core.aio.workers import Worker
-from ...core.utils.log import get_logger
->>>>>>> 49411a3e9ffa7ace8a740fca7c33696c699c18bc
 
 if TYPE_CHECKING:
-	from src.core import AppCore
-
-	from ...core.app_coordinator import AppCoordinator
-	from ..components import GameCard
-	from ..views.pages.game_details_view import GameDetailsView
+    from src.core import AppCoordinator, AppCore
+    from src.ui.components import GameCard
+    from src.ui.views.pages import GameDetailsView
 
 logger = get_logger(__name__)
 

@@ -1,17 +1,10 @@
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
-<<<<<<< HEAD
 from src.core.utils import get_logger
-from src.ui.layouts import FlowLayout
-from src.ui.generated import Ui_SearchGrid
 from src.ui.components import GameCard, LoadMoreButton
-=======
-from ....core.utils.log import get_logger
-from ...layouts import FlowLayout
-from ...generated import Ui_SearchGrid
-from ...components import GameCard, LoadMoreButton
->>>>>>> 49411a3e9ffa7ace8a740fca7c33696c699c18bc
+from src.ui.generated import Ui_SearchGrid
+from src.ui.layouts import FlowLayout
 
 logger = get_logger(__name__)
 

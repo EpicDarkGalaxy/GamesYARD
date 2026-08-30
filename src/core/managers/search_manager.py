@@ -1,8 +1,7 @@
 from enum import Enum, auto
-<<<<<<< HEAD
+
 from typing import TYPE_CHECKING
-=======
->>>>>>> 49411a3e9ffa7ace8a740fca7c33696c699c18bc
+
 
 from src.core.aio.workers import Worker
 from src.core.utils import get_logger

@@ -1,7 +1,6 @@
 import os
 
 import dotenv
-<<<<<<< HEAD
 
 # from PySide6.QtCore import QObject
 from src.core.aio import TaskRunner
@@ -10,15 +9,6 @@ from src.core.services import RawgAPI
 
 # from .signals import Signals
 from src.core.utils import get_logger
-=======
-# from PySide6.QtCore import QObject
-
-from ..core.aio import TaskRunner
-from .managers import DownloadManager, AssetManager, SearchManager
-from .services.rawg_service import RawgAPI
-# from .signals import Signals
-from .utils import get_logger
->>>>>>> 49411a3e9ffa7ace8a740fca7c33696c699c18bc
 
 logger = get_logger(__name__)
 
