@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QObject, Signal, Slot
@@ -9,16 +8,6 @@ from src.core.utils import get_logger
 
 if TYPE_CHECKING:
  from src.core.app_coordinator import AppCoordinator
-=======
-from PySide6.QtCore import QObject, Signal, Slot
-from PySide6.QtGui import QPixmap
-from ...core.utils import get_logger
-from typing import TYPE_CHECKING
-from ...core.aio.workers import Worker
-
-if TYPE_CHECKING:
- from ...core.app_coordinator import AppCoordinator
->>>>>>> 49411a3e9ffa7ace8a740fca7c33696c699c18bc
 
 logger = get_logger(__name__)
 

@@ -9,11 +9,10 @@ from ..views.game_window import GameWindow
 
 if TYPE_CHECKING:
     from ...core.app_core import AppCore
-    from PySide6.QtGui import QCloseEvent
 
 logger = get_logger(__name__)
 
-class GamePresenter():
+class GamePresenter:
     def __init__(self, view: GameWindow, app_core: "AppCore"):
         self.view = view
         self.app_core = app_core

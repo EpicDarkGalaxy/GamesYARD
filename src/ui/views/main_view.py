@@ -25,12 +25,7 @@ from src.core.utils.log import get_logger
 from src.ui.generated import Ui_MainWindow
 
 if TYPE_CHECKING:
-<<<<<<< HEAD
     from src.ui.navigator import Navigator
-=======
-    from ...core.models import GameData
-    from ..navigator import Navigator
->>>>>>> 49411a3e9ffa7ace8a740fca7c33696c699c18bc
 
 logger = get_logger(__name__)
 
