@@ -1,9 +1,19 @@
 from typing import TYPE_CHECKING
+<<<<<<< HEAD
 from src.core.utils import get_logger, download_icon
 
 if TYPE_CHECKING:
 	from src.core.aio.task_runner import TaskRunner
 	from src.core.services.rawg_service import RawgAPI
+=======
+
+from ..aio.workers import Worker
+from ..utils import get_logger, download_icon
+
+if TYPE_CHECKING:
+	from ..aio.task_runner import TaskRunner
+	from ..services.rawg_service import RawgAPI
+>>>>>>> 49411a3e9ffa7ace8a740fca7c33696c699c18bc
 
 logger = get_logger(__name__)
 
@@ -25,7 +35,11 @@ class AssetManager:
 		super().__init__()
 		self.task_runner = task_runner
 		self.metadata_source = metadata_source
+<<<<<<< HEAD
 		self._cache: dict[str, bytes | None] = {}  # {"ID": img_data (bytes)}
+=======
+		self._cache = {}  # {"ID": img_data (bytes)}
+>>>>>>> 49411a3e9ffa7ace8a740fca7c33696c699c18bc
 		self._icon_cache = {} # {"name or ID": QIcon}
 
 	def get_thumbnail(self, game_id: str, img_url: str):

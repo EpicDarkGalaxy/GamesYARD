@@ -8,8 +8,13 @@ from src.core.utils import get_logger, get_icon_from_url, get_asset
 
 
 if TYPE_CHECKING:
+<<<<<<< HEAD
     from src.ui.components import GameCard
     from src.ui.view_models import GameDetailsViewModel
+=======
+    from ...components import GameCard
+    from ...view_models import GameDetailsViewModel
+>>>>>>> 49411a3e9ffa7ace8a740fca7c33696c699c18bc
 
 logger = get_logger(__name__)
 

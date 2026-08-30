@@ -3,16 +3,29 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import Slot, QObject, Signal
 from PySide6.QtWidgets import QWidget
 
+<<<<<<< HEAD
 from src.core.utils.log import get_logger
 from src.core.aio import TaskRunner
 from src.core.aio.workers import Worker
+=======
+from ...core.utils.log import get_logger
+from ...core.aio.task_runner import TaskRunner
+from ...core.aio.workers import Worker
+from ..ui_signals import MAIN_MODEL_SIGNALS
+>>>>>>> 49411a3e9ffa7ace8a740fca7c33696c699c18bc
 
 logger = get_logger(__name__)
 
 if TYPE_CHECKING:
+<<<<<<< HEAD
     from src.core import AppCore
     from src.ui.components import GameCard
     from src.core import AppCoordinator
+=======
+    from ...core.app_core import AppCore
+    from ..components import GameCard
+    from ...core.app_coordinator import AppCoordinator
+>>>>>>> 49411a3e9ffa7ace8a740fca7c33696c699c18bc
 
 class MainViewModel(QObject):
     search_state_changed = Signal(str, bool)
