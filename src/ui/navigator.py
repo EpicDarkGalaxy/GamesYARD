@@ -1,5 +1,6 @@
 from PySide6.QtCore import QObject, Signal
-from ..core.utils import get_logger
+
+from src.core.utils.log import get_logger
 
 logger = get_logger(__name__)
 

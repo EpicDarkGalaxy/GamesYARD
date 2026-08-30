@@ -2,8 +2,9 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QObject, Signal, Slot
 from PySide6.QtGui import QPixmap
-from ...core.aio.workers import Worker
-from ...core.utils.log import get_logger
+
+from src.core.aio.workers import Worker
+from src.core.utils.log import get_logger
 
 if TYPE_CHECKING:
 	from src.core import AppCore

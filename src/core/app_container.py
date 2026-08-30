@@ -1,11 +1,10 @@
 from typing_extensions import final
 
-from ..ui.navigator import Navigator
-from ..ui.view_models import *
-from ..ui.views import *
-from ..ui.views.pages import *
-from .app_coordinator import AppCoordinator
-from .app_core import AppCore
+from src.core import AppCoordinator, AppCore
+from src.ui import Navigator
+from src.ui.view_models import *
+from src.ui.views import *
+from src.ui.views.pages import *
 
 
 @final

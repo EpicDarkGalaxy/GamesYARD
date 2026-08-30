@@ -1,5 +1,5 @@
 from PySide6.QtCore import QObject, QRunnable, QThreadPool
-from .workers import Worker
+
 
 class TaskRunner(QObject):
     def __init__(self):

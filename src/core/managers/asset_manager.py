@@ -1,11 +1,9 @@
 from typing import TYPE_CHECKING
-
-from ..aio.workers import Worker
-from ..utils import get_logger, download_icon
+from src.core.utils import get_logger, download_icon
 
 if TYPE_CHECKING:
-	from ..aio.task_runner import TaskRunner
-	from ..services.rawg_service import RawgAPI
+	from src.core.aio.task_runner import TaskRunner
+	from src.core.services.rawg_service import RawgAPI
 
 logger = get_logger(__name__)
 

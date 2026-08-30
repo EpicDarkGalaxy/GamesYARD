@@ -21,15 +21,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ...core import get_logger
-from ...ui.generated import Ui_MainWindow
-from ...ui.layouts.flow_layout import FlowLayout
-from ..ui_signals import MainWindowSignals
-from .pages import GameDetailsView, SearchCatalogView
+from src.core.utils.log import get_logger
+from src.ui.generated import Ui_MainWindow
 
 if TYPE_CHECKING:
-    from ...core.models import GameData
-    from ..navigator import Navigator
+    from src.ui.navigator import Navigator
 
 logger = get_logger(__name__)
 
@@ -43,7 +39,6 @@ class MainView(QMainWindow):
 
         self.view_model = view_model
         self.navigator = navigator
-        self.signals = MainWindowSignals()
 
         self.bind_signals()
         self.navigator.go_to("search")

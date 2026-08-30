@@ -1,5 +1,6 @@
 from PySide6.QtCore import QObject, QRunnable, Signal
-from .worker_signals import WorkerSignals
+
+from src.core.aio.worker_signals import WorkerSignals
 
 
 class BaseWorker(QRunnable):

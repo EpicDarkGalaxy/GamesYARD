@@ -1,7 +1,9 @@
+from uuid import uuid4
+
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QHBoxLayout, QProgressBar, QPushButton, QWidget
-from uuid import uuid4
-from ...core.utils.log import get_logger
+
+from src.core.utils import get_logger
 
 logger = get_logger(__name__)
 

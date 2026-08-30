@@ -3,13 +3,13 @@ from PySide6.QtGui import QPixmap
 
 from PySide6.QtWidgets import QWidget, QLabel, QGridLayout
 from  typing import TYPE_CHECKING
-from ...generated import Ui_GamePage
-from ....core.utils import get_logger, get_icon_from_url, get_asset
+from src.ui.generated import Ui_GamePage
+from src.core.utils import get_logger, get_icon_from_url, get_asset
 
 
 if TYPE_CHECKING:
-    from ...components import GameCard
-    from ...view_models import GameDetailsViewModel
+    from src.ui.components import GameCard
+    from src.ui.view_models import GameDetailsViewModel
 
 logger = get_logger(__name__)
 

@@ -18,7 +18,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QFrame
 
-from ...core.utils.log import get_logger
+from src.core.utils import get_logger
 
 logger = get_logger(__name__)
 
