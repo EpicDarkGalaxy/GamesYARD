@@ -60,8 +60,4 @@ class SearchManager:
 
         # Store in cache
         self._game_reqs[game_id] = req
-<<<<<<< HEAD
         return req
-=======
-        return req
->>>>>>> 49411a3e9ffa7ace8a740fca7c33696c699c18bc

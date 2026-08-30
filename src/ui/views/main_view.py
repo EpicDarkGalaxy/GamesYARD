@@ -39,10 +39,6 @@ class MainView(QMainWindow):
 
         self.view_model = view_model
         self.navigator = navigator
-<<<<<<< HEAD
-=======
-        self.signals = MainWindowSignals()
->>>>>>> 49411a3e9ffa7ace8a740fca7c33696c699c18bc
 
         self.bind_signals()
         self.navigator.go_to("search")

@@ -2,7 +2,7 @@ import os
 import sys
 
 from PySide6.QtWidgets import QApplication
-from src.core.app_container import AppContainer
+from src.core import AppContainer
 
 os.environ["QT_QPA_PLATFORM"] = "xcb"
 

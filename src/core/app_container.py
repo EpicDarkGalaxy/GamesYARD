@@ -1,6 +1,7 @@
 from typing_extensions import final
 
-from src.core import AppCoordinator, AppCore
+from src.core.app_coordinator import AppCoordinator
+from src.core.app_core import AppCore
 from src.ui import Navigator
 from src.ui.view_models import *
 from src.ui.views import *
