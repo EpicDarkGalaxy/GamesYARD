@@ -29,48 +29,74 @@ from .pages import GameDetailsView, SearchCatalogView
 
 if TYPE_CHECKING:
     from ...core.models import GameData
+    from ..navigator import Navigator
 
 logger = get_logger(__name__)
 
-class MainWindow(QMainWindow):
-    def __init__(self):
+class MainView(QMainWindow):
+    def __init__(self, view_model, navigator: "Navigator"):
         super().__init__()
         self.main_ui = Ui_MainWindow()
         self.main_ui.setupUi(self)
-        self.signals = MainWindowSignals()
-
         self.setWindowTitle("GamesYARD")
         self.resize(800, 600)
 
-        self.search_grid = SearchCatalogView()
-        self.game_page = GameDetailsView()
+        self.view_model = view_model
+        self.navigator = navigator
+        self.signals = MainWindowSignals()
 
-        # Button-----
-        self.main_ui.btn_search_2.clicked.connect(self.search_button)
+        self.bind_signals()
+        self.navigator.go_to("search")
+
+    def bind_signals(self):
+        # MainView -> View Model
+        self.main_ui.btn_search_2.clicked.connect(
+            lambda: self.view_model.request_search(self.main_ui.line_search_bar.text())
+        )
+
+        # MainView <- View Model
+        self.view_model.search_state_changed.connect(self.update_search_button)
+
+        # Navigator
+        self.navigator.request_page_change.connect(self._perform_switch)
 
         # SibeBar
-        self.main_ui.btn_toggle.clicked.connect(self.toggle_sidebar)
-        self.main_ui.btn_search.clicked.connect(self.toggle_search_bar)
+        self.main_ui.btn_toggle.clicked.connect(self._toggle_sidebar)
+        self.main_ui.btn_search.clicked.connect(self._toggle_search_bar)
 
         # SearchBar
-        self.main_ui.line_search_bar.returnPressed.connect(self.search_button)
+        self.main_ui.line_search_bar.returnPressed.connect(
+            lambda: self.view_model.request_search(self.main_ui.line_search_bar.text())
+        )
 
+    def init_views(self, search_view, details_view):
+        logger.info("Initializing search and details views")
 
-    def search_button(self):
-        search_query = self.main_ui.line_search_bar.text()
-        self.signals.fetch_btn_clicked.emit(search_query)
+        self.add_page("search", search_view)
+        self.add_page("details", details_view)
+        self.navigator.go_to("search") # Set Default viewe to search catalog
 
+    def add_page(self, key: str, page: QWidget):
+        logger.info(f"Adding page '{key}' to stacked widget: {page.__class__.__name__}")
+        self.navigator.register_page(key, page)
+        self.main_ui.stackedWidget.addWidget(page)
+
+    @Slot(str)
+    def _perform_switch(self, key: str):
+        logger.info(f"Attempting to switch to page: {key}")
+        widget = self.navigator._page_registry.get(key)
+        if widget:
+            logger.info(f"Now at page: [{key}]")
+            self.main_ui.stackedWidget.setCurrentWidget(widget)
+        else:
+            logger.warning(f"Failed to find page with key: {key}")
+
+    @Slot(str, bool)
     def update_search_button(self, text: str, state: bool):
         self.main_ui.btn_search_2.setText(text)
         self.main_ui.btn_search_2.setEnabled(state)
 
-    def add_page(self, page) -> int:
-        return self.main_ui.stackedWidget.addWidget(page)
-
-    def show_page(self, index):
-        self.main_ui.stackedWidget.setCurrentIndex(index)
-
-    def toggle_search_bar(self):
+    def _toggle_search_bar(self):
         is_expanded = self.main_ui.header.maximumHeight() > 0
         target_height = 0 if is_expanded else 60
 
@@ -81,13 +107,13 @@ class MainWindow(QMainWindow):
         self.anim_max.setEasingCurve(QEasingCurve.Type.OutCubic)
         self.anim_max.start()
 
-    def toggle_sidebar(self):
+    def _toggle_sidebar(self):
         # Determine if expanding or collapsing
         is_expanding = self.main_ui.side_bar.maximumWidth() < 200
 
         # 1. Swap button styles immediately if collapsing
         if not is_expanding:
-            self.set_buttons_icon_only(True)
+            self._set_buttons_icon_only(True)
 
         # 2. Start width animation
         target_width = 200 if is_expanding else 60
@@ -110,9 +136,9 @@ class MainWindow(QMainWindow):
 
         # 3. If expanding, wait for animation to complete before showing text
         if is_expanding:
-            QTimer.singleShot(250, lambda: self.set_buttons_icon_only(False))
+            QTimer.singleShot(250, lambda: self._set_buttons_icon_only(False))
 
-    def set_buttons_icon_only(self, icon_only: bool):
+    def _set_buttons_icon_only(self, icon_only: bool):
         # Toggle between icon-only and text-beside-icon
         style = Qt.ToolButtonIconOnly if icon_only else Qt.ToolButtonTextBesideIcon
 
@@ -122,6 +148,7 @@ class MainWindow(QMainWindow):
         self.main_ui.btn_library.setToolButtonStyle(style)
         self.main_ui.btn_downloads.setToolButtonStyle(style)
 
+    @Slot()
     def show_confirm_box(self):
         from PySide6.QtWidgets import QMessageBox
         reply = QMessageBox.question(
@@ -132,4 +159,4 @@ class MainWindow(QMainWindow):
         return reply
 
     def closeEvent(self, event):
-        self.signals.close.emit(event)
+        self.view_model._on_close(event)
