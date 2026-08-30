@@ -35,7 +35,8 @@ class AssetManager:
 
 		logger.debug(f"Fetching thumbnail for ID: [{game_id}] from source")
 		img_data = self.metadata_source.get_thumbnail(img_url)
-		self._cache[game_id] = img_data
+		if isinstance(img_data, bytes) and img_data:
+			self._cache[game_id] = img_data
 		return img_data
 
 	def get_screenshots(self, game_id: str):
