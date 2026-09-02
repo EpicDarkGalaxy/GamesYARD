@@ -5,7 +5,7 @@ from socket import TCP_ULP
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
-from curl_cffi import requests
+import requests
 from PySide6.QtGui import QColor, QPixmap, QIcon
 
 from .log import get_logger
@@ -82,22 +82,30 @@ def clean_filename(filename: str):
     # Remove characters that are illegal in file names
     return re.sub(r'[\\/*?:"<>|]', "", filename)
 
+import requests
+from urllib.parse import urlparse
+
 def get_filename_from_url(url: str) -> str:
-    # 1. Parse the URL
-    parsed = urlparse(url)
-    path = parsed.path  # Result: "/file/pq2gf5st6u8ajxb/PVZGOTY2009.rar/file"
+    try:
+        # 1. Try to get filename from Content-Disposition header
+        # Using a HEAD request avoids downloading the whole file
+        response = requests.head(url, allow_redirects=True, timeout=5)
+        disposition = response.headers.get('Content-Disposition')
+        if disposition and 'filename=' in disposition:
+            # Extract filename from header
+            return disposition.split('filename=')[-1].strip('"').strip("'")
 
-    # 2. Split into parts: ['', 'file', 'pq2gf5st6u8ajxb', 'PVZGOTY2009.rar', 'file']
-    parts = path.split('/')
+        # 2. Fallback: Parse from URL path
+        path = urlparse(url).path
+        filename = path.split('/')[-1]
+        if filename:
+            return filename
 
-    # 3. Look for the part that ends in a known extension
-    extensions = ('.rar', '.zip', '.7z', '.exe', '.msi')
-    for part in parts:
-        if part.lower().endswith(extensions):
-            return part
+    except Exception as e:
+        print(f"Error fetching filename: {e}")
 
-    # 4. Fallback if no extension found
-    return "downloaded_file"
+    return "game_download.zip" # Fallback
+
 
 def parse_rawg_reqs(req_data: dict[str, str | dict[str, str]]) -> dict[str, dict[str, str]]:
     """

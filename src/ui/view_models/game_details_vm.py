@@ -1,107 +1,171 @@
+from ast import Return
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QObject, Signal, Slot
 from PySide6.QtGui import QPixmap
 
-from src.core.aio.workers import Worker
 from src.core.utils.log import get_logger
 
 if TYPE_CHECKING:
-	from src.core import AppCoordinator, AppCore
-	from src.ui.components import GameCard
-	from src.ui.views.pages import GameDetailsView
+    from src.core import AppCoordinator
 
 logger = get_logger(__name__)
 
+
 class GameDetailsViewModel(QObject):
-	update_gallery = Signal(list)
-	update_sys_req = Signal(dict)
-	update_metadata = Signal(dict)
+    update_gallery = Signal(list)
+    update_sys_req = Signal(dict)
+    update_metadata = Signal(dict)
+    reset = Signal()
 
-	set_title = Signal(str)
-	set_rating = Signal(float, str)
-	set_release = Signal(str)
-	set_genres = Signal(list)
-	set_metacritic = Signal(int, str)
-	set_poster = Signal(bytes)
+    show_providers = Signal(dict)
+    get_providers_failed = Signal(str) #  MSG or Status
 
-	def __init__(self, model, navigator) -> None:
-		super().__init__()
-		self.model: "AppCore" = model
-		self.nav: object = navigator
-		# will be initialized via initialize()
-		self.coordinator: "AppCoordinator" | None = None
-		# id of the currently viewed game
-		self.current_game_id: str | None = None
-		self.bind_signals()
+    set_title = Signal(str)
+    set_rating = Signal(float, str)
+    set_release = Signal(str)
+    set_genres = Signal(list)
+    set_metacritic = Signal(int, str)
+    set_poster = Signal(bytes)
 
-	def initialize(self, coordinator):
-		self.coordinator = coordinator
+    def __init__(self) -> None:
+        super().__init__()
+        # will be initialized via initialize()
+        self.coordinator: AppCoordinator
 
-	def bind_signals(self):
-		pass
+        # id of the currently viewed game
+        self.current_game_id: str | None = None
 
-	@Slot(dict, str)
-	def handle_system_req(self, reqs: dict, game_id: str):
-		if self.current_game_id == game_id:
-			logger.debug(f"Received and populating system requirements for [{game_id}]")
-			self.update_sys_req.emit(reqs)
-		else:
-			logger.info(f"Received requirements for [{game_id}], but current game is [{self.current_game_id}]. Ignoring.")
+    def initialize(self, coordinator):
+        self.coordinator = coordinator
+        self.bind_signals()
 
-	def _get_sys_req(self, game_id: str):
-		logger.debug(f"Fetching system requirements for game_id: {game_id}")
-		req = Worker(self.model.search_manager.get_system_req, game_id, context=game_id)
-		_ = req.signals.result_ready.connect(self.handle_system_req)
-		self.model.task_runner.thumb_pool.start(req)
+    def bind_signals(self):
+        self.coordinator.model.download_manager.found_providers.connect(
+            self._handle_provider
+        )
 
-	def _get_gallery(self, game_id: str):
-		gall_worker = Worker(self.model.asset_manager.get_screenshots, game_id, context=game_id)
-		_= gall_worker.signals.result_ready.connect(self.load_gallery)
-		self.model.task_runner.gallery_pool.start(gall_worker)
+    @Slot(dict, str)
+    def _handle_system_req(self, reqs: dict, game_id: str):
+        if self.current_game_id == game_id:
+            logger.debug(f"Received and populating system requirements for [{game_id}]")
+            self.update_sys_req.emit(reqs)
+        else:
+            logger.info(
+                f"Received requirements for [{game_id}], but current game is [{self.current_game_id}]. Ignoring."
+            )
 
-	@Slot(object)
-	def load_card(self, card: "GameCard"):
-		if card:
-			self.current_game_id = card.id  # The card user is viewing
-			title: str = card.title
-			rating: float = card.rating
-			released: str = card.released
-			genres: list[str] = card.genres
-			metacritic: int = card.metacritic
-			banner: bytes = card.banner
+    def _get_sys_req(self, game_id: str):
+        logger.debug(f"Fetching system requirements for game_id: {game_id}")
+        self.coordinator.task_runner.run(
+            self.coordinator.model.search_manager.get_system_req,
+            self._handle_system_req,
+            game_id,
+            return_value=game_id,
+        )
 
-			self.set_title.emit(title)
-			self.set_rating.emit(rating, self._get_rating_color(rating))
-			self.set_release.emit(released[0])
-			self.set_genres.emit(genres)
-			self.set_metacritic.emit(metacritic, self._get_metacritic_color(metacritic))
-			self.set_poster.emit(banner)
-			self._get_gallery(card.id)
-			if card.sys_req:
-				self.handle_system_req(card.sys_req, card.id)
-			else:
-				self._get_sys_req(card.id)
+    def _get_poster(self, game_id: str, url: str):
+        logger.debug(f"Fetching poster for game_id: {game_id}")
+        self.coordinator.task_runner.run(
+            self.coordinator.model.asset_manager.get_thumbnail,
+            self.handle_poster,
+            game_id,
+            url,
+            return_value=game_id,
+        )
 
-	def _get_color(self, value: float=-1, max_val: float=-1) -> str:
-		if value and max_val:
-			percentage = (value / max_val) * 100
-			if percentage >= 75:
-				return "#66cc33"  # Green
-			elif percentage >= 50:
-				return "#ffcc33"  # Yellow
-			else:
-				return "#ff3333"  # Red
+    @Slot(bytes, str)
+    def handle_poster(self, poster_data: bytes, game_id: str):
+        if self.current_game_id == game_id:
+            self.set_poster.emit(poster_data)
+        else:
+            logger.info(
+                f"Received poster for [{game_id}], but current game is [{self.current_game_id}]. Ignoring."
+            )
 
-	def _get_rating_color(self, rating: float) -> str:
-		return self._get_color(rating, 5.0)
+    def _get_gallery(self, game_id: str):
+        logger.debug(f"Fetching gallery for game_id: {game_id}")
+        self.coordinator.task_runner.run(
+            self.coordinator.model.asset_manager.get_screenshots,
+            self.load_gallery,
+            game_id,
+            return_value=game_id,
+        )
 
-	def _get_metacritic_color(self, score: int) -> str:
-		return self._get_color(score, 100.0)
+    @Slot(object)
+    def load_card(self, card):
+        self.reset.emit()
+        if card:
+            self.current_game_id = str(card.id)  # The card user is viewing
+            title: str = card.title
+            rating: float = card.rating
+            released: str = card.released
+            genres: list[str] = card.genres
+            metacritic: int = card.metacritic
+            banner: QPixmap = card.poster_pixmap
 
-	@Slot(list, str)
-	def load_gallery(self, screenshots: list[bytes], game_id: str):
-		if self.current_game_id == game_id:
-			self.update_gallery.emit(screenshots)
-		else:
-			logger.info(f"Received screenshots for {game_id}, but current game is {self.current_game_id}. Ignoring.")
+            self.set_title.emit(title)
+            self.set_rating.emit(rating, self._get_rating_color(rating))
+            self.set_release.emit(released)
+            self.set_genres.emit(genres)
+            self.set_metacritic.emit(metacritic, self._get_metacritic_color(metacritic))
+            self._get_gallery(card.id)
+            if isinstance(banner, QPixmap) and not banner.isNull():
+                logger.debug(f"Using cached banner for game: {card.id}")
+                self.set_poster.emit(banner)
+            else:
+                logger.debug(f"Fetching remote poster for game: {card.id}")
+                self._get_poster(card.id, card.background_image)
+
+            if card.system_requirements:
+                logger.debug(f"Using cached system requirements for: {card.id}")
+                self._handle_system_req(card.system_requirements, card.id)
+            else:
+                logger.debug(f"Fetching remote system requirements for: {card.id}")
+                self._get_sys_req(card.id)
+
+    def _get_color(self, value: float = -1, max_val: float = -1) -> str:
+        if value and max_val:
+            percentage = (value / max_val) * 100
+            if percentage >= 75:
+                return "#66cc33"  # Green
+            elif percentage >= 50:
+                return "#ffcc33"  # Yellow
+            else:
+                return "#ff3333"  # Red
+
+    def _get_rating_color(self, rating: float) -> str:
+        return self._get_color(rating, 5.0)
+
+    def _get_metacritic_color(self, score: int) -> str:
+        return self._get_color(score, 100.0)
+
+    @Slot(list, str)
+    def load_gallery(self, screenshots: list[bytes], game_id: str):
+        if self.current_game_id == game_id:
+            self.update_gallery.emit(screenshots)
+        else:
+            logger.info(
+                f"Received screenshots for {game_id}, but current game is {self.current_game_id}. Ignoring."
+            )
+
+
+    @Slot(dict)
+    def _handle_provider(self, providers: dict):
+        if providers:
+            self.show_providers.emit(providers)
+        else:
+            self.get_providers_failed.emit("Retry")
+
+    @Slot()
+    def get_providers(self):
+        game_title = self.coordinator.model.search_manager._games_list.get(
+            self.current_game_id
+        ).title
+        if game_title:
+            logger.debug(f"Fetching providers for game: {game_title}")
+            self.coordinator.model.download_manager.get_download_providers(game_title)
+        else:
+            logger.warning(
+                f"Could not find title for game_id: {self.current_game_id} to fetch providers."
+            )

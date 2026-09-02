@@ -1,0 +1,8 @@
+/* Variables */
+* {
+    --primary-blue: #1e90ff;
+    --bg-dark: #121212;
+    --bg-card: #1e1e1e;
+    --text-main: #e0e0e0;
+    --text-dim: #aaaaaa;
+}

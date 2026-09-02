@@ -1,53 +1,28 @@
-/* src/ui/style.qss */
+/* =========================================================================
+   GAMESYARD THEME - DARK MODE
+   ========================================================================= */
 
-/* Global Window styling */
+/* Base Window Styling */
 QWidget {
     background-color: #121212;
     color: #e0e0e0;
-    font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+    font-family: "Segoe UI", "Inter", sans-serif;
     font-size: 14px;
 }
 
-/* Sidebar and Main Content areas */
+/* Sidebar & Navigation */
 #side_bar {
-    background-color: #121212; /* Slightly darker than main */
-    border-right: 1px solid #252525;
-}
-
-#req_label {
-    color: #1e90ff; /* Accent color */
-    font-weight: bold;
-    padding-right: 20px; /* Space between label and value */
-}
-
-/* The Value labels */
-QLabel {
-    color: #cccccc;
-}
-
-
-#main_entry {
-    background-color: #181818; /* The "Store" canvas */
-}
-
-/* Make the Search bar look modern */
-#line_search_bar {
     background-color: #0d0d0d;
-    border: 1px solid #333333;
-    border-radius: 8px;
-    padding: 5px 15px;
+    border-right: 1px solid #333333;
 }
 
 #side_bar QToolButton {
     background-color: transparent;
-    border: none;
-    border-radius: 8;
-    padding: 12px 0px; /* Use vertical padding, remove hardcoded horizontal padding */
-    font-size: 14px;
     color: #aaaaaa;
-    text-align: center;
-    /* This centers the button's content internally (icon or text) */
-    qproperty-toolButtonStyle: ToolButtonTextBesideIcon;
+    border: none;
+    padding: 12px;
+    font-weight: bold;
+    text-align: left;
 }
 
 #side_bar QToolButton:hover {
@@ -55,169 +30,63 @@ QLabel {
     background-color: #1e90ff;
 }
 
-
-/* Padding for the detail page container */
-#details_page {
-    padding: 30px;
+/* Main Content Area */
+#main_entry {
+    background-color: #121212;
 }
 
-/* Style the Hero area */
-#hero_frame {
-    background-color: #1e1e1e;
-    border-radius: 12px;
-    padding: 15px;
+#header {
+    background-color: #121212;
+    border-bottom: 1px solid #333333;
 }
 
-/* Make title stand out */
-#game_title {
-    font-size: 24px;
-    font-weight: bold;
-    color: #ffffff;
-}
-
-/* Metadata color */
-#game_metadata {
-    color: #888888;
-    margin-bottom: 20px;
-}
-
-#info_area {
-    border-radius: 12px;
-}
-
-/* Styling for the description container */
-#description_frame {
-    margin-top: 20px;
-    padding: 10px 0;
-    color: #cccccc;
-    line-height: 1.5;
-}
-
-#description_frame QLabel {
-    font-size: 14px;
-    color: #cccccc;
-}
-
-/* Styling for the game image container */
-#gallery_container {
-    background-color: #1a1a1a;
-    border: 1px solid #333333;
-    border-radius: 8px;
-    padding: 10px;
-}
-
-/* 1. Make the requirements container pop */
-#requirements_container {
-    background-color: #1a1a1a;
-    border: 1px solid #333333;
-    border-radius: 8px;
-    padding: 10px;
-}
-
-/* 2. Styling the headers within the box */
-#requirements_container QLabel[is_header="true"] {
-    color: #1e90ff; /* Accent blue for the labels */
-    font-weight: bold;
-    font-size: 13px;
-    text-transform: uppercase;
-}
-
-/* 3. General text styling */
-#requirements_container QLabel {
-    color: #cccccc;
-    font-size: 13px;
-    padding: 2px;
-}
-
-#provider-btn {
-    background-color: transparent;
-    border: 1px solid #333333;
-    color: #e0e0e0;
-    font-weight: bold;
-    border-radius: 4px;
-    padding: 6px 12px;
-}
-
-#provider-btn:hover {
-    border: 1px solid #1e90ff;
-    background-color: rgba(30, 144, 255, 0.1);
-}
-
-
-/* Game Card Widget Styling */
-#game-card {
-    background-color: #1e1e1e;
-    border: 1px solid #252525;
-    border-radius: 10px;
-}
-
-#game-card:hover {
-    border: 1px solid #1e90ff;
-    background-color: #222222;
-    border-radius: 3px;
-}
-
-#card-label {
-    background-color: transparent;
-    font-weight: bold;
-    text-align: center;
-}
-
-#card-overlay {
-    background: qlineargradient(
-        x1: 0,
-        y1: 0,
-        x2: 0,
-        y2: 1,
-        stop: 0 transparent,
-        stop: 1 rgba(0, 0, 0, 240)
-    );
-    color: #ffffff;
-    padding: 12px 10px;
-    font-weight: bold;
-    font-size: 13px;
-    /* Round the bottom corners of the label to match the card */
-/*    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;*/
-}
-
-#card-overlay:hover {
-    background: rgba(0, 0, 0, 180);
-}
-
-
-/* Button Styling */
+/* Buttons */
 QPushButton {
     background-color: #1e90ff;
-    color: #ffffff;
+    color: white;
     border: none;
     border-radius: 6px;
     padding: 8px 16px;
     font-weight: bold;
 }
 
-QToolButton:hover {
-    background-color: #4faaff;
+QPushButton:hover { background-color: #4faaff; }
+QPushButton:pressed { background-color: #0066cc; }
+QPushButton:disabled { background-color: #333333; color: #777777; }
+
+/* Input Fields */
+QLineEdit {
+    background-color: #0d0d0d;
+    border: 1px solid #333333;
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: #ffffff;
 }
 
-QToolButton:pressed {
-    background-color: #0066cc;
+/* Game Cards */
+#game-card:hover {
+    border: 1px solid #1e90ff;
 }
 
-QPushButton:hover {
-    background-color: #4faaff;
+/* Requirements & Info Panels */
+#requirements_container, #hero_frame {
+    background-color: #1e1e1e;
+    border: 1px solid #333333;
+    border-radius: 10px;
+    padding: 15px;
 }
 
-QPushButton:pressed {
-    background-color: #0066cc;
+/*Home Catalog Styling*/
+#section_title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #ffffff;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    padding-left: 5px;
 }
 
-QPushButton:disabled {
-    background-color: #333333;
-    color: #777777;
-}
-
-/* QScrollArea Styling */
+/* Scrollbars */
 QScrollArea {
     background-color: transparent;
     border: none;
@@ -227,45 +96,31 @@ QScrollArea {
 QScrollBar:vertical {
     background: #121212;
     width: 8px;
-    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: #333333;
+    border-radius: 4px;
 }
 
 QScrollBar:horizontal {
     background: #121212;
     height: 8px;
-    margin: 0px;
 }
 
-QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+QScrollBar::handle:horizontal {
     background: #333333;
     border-radius: 4px;
-    min-height: 20px;
 }
 
-QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+QScrollBar::handle:horizontal:hover {
+    background: #1e90ff;
+}
+
+QScrollBar::handle:vertical:hover {
     background: #1e90ff;
 }
 
 QScrollBar::add-line, QScrollBar::sub-line {
     background: none;
-    border: none;
-}
-
-/* QProgressBar styling */
-QProgressBar {
-    background-color: #1e1e1e;
-    border: 1px solid #333333;
-    border-radius: 6px;
-    text-align: center;
-    color: #ffffff;
-    font-weight: bold;
-    height: 24px;
-}
-
-QProgressBar::chunk {
-    background-color: qlineargradient(
-        x1: 0, y1: 0, x2: 1, y2: 0,
-        stop: 0 #1e90ff, stop: 1 #63b3ff
-    );
-    border-radius: 5px;
 }

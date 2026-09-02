@@ -2,7 +2,7 @@ from typing_extensions import final
 
 from src.core.app_coordinator import AppCoordinator
 from src.core.app_core import AppCore
-from src.ui import Navigator
+from src.ui.navigator import Navigator
 from src.ui.view_models import *
 from src.ui.views import *
 from src.ui.views.pages import *
@@ -11,28 +11,38 @@ from src.ui.views.pages import *
 @final
 class AppContainer:
     def __init__(self) -> None:
-        self._model = AppCore()
-        self._navigator = Navigator()
+        self._APP_CORE = AppCore()
+        self._NAVIGATOR = Navigator()
 
-        # View Modles
-        self._search_vm = SearchCatalogViewModel(self._model, self._navigator)
-        self._game_details_vm = GameDetailsViewModel(self._model, self._navigator)
-        self._main_vm: MainViewModel = MainViewModel(self._model, self._navigator)
+        # View Models
+        self._view_models = {
+            "search": SearchCatalogViewModel(),
+            "details": GameDetailsViewModel(),
+            "main": MainViewModel(),
+            "home": HomeCatalogViewModel(),
+        }
 
         # Views
-        self._main_view = MainView(self._main_vm, self._navigator)
-        self._game_details_view = GameDetailsView(self._game_details_vm)
-        self._search_catalog_view = SearchCatalogView(self._search_vm)
-
-        # Init
-        self._main_view.init_views(self._search_catalog_view, self._game_details_view)
+        self._main_view = MainView(self._view_models["main"], self._NAVIGATOR)
+        self._views = [
+            SearchCatalogView(self._view_models["search"]),
+            GameDetailsView(self._view_models["details"]),
+            HomeCatalogView(self._view_models["home"]),
+        ]
 
         self._coordinator = AppCoordinator(
-            self._search_vm,
-            self._game_details_vm,
-            self._navigator
+            self._view_models["main"],
+            self._view_models["search"],
+            self._view_models["details"],
+            self._view_models["home"],
+            self._NAVIGATOR,
+            self._APP_CORE
         )
 
-        self._search_vm.initialize(self._coordinator)
-        self._game_details_vm.initialize(self._coordinator)
-        self._main_vm.initialize(self._coordinator)
+        for vm in self._view_models.values():
+            vm.initialize(self._coordinator)
+
+        self._main_view.initialize(*self._views)
+
+        for view in self._views:
+            view.initialize()

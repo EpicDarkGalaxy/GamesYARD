@@ -1,17 +1,14 @@
 import re
-from typing import Optional
 
 import requests
-from pydantic import BaseModel, Field
-from PySide6.QtCore import QUrl
 
-from ..models.game import GameData
-from ..utils import get_img_data, get_logger
-from .base_fetcher import BaseGameFetcher
+from src.core.models import GameData
+from src.core.utils import get_img_data, get_logger
 
 logger = get_logger(__name__)
 
-class RawgAPI(BaseGameFetcher):
+
+class RawgAPI:
     def __init__(self, api_key: str):
         self.api_key = api_key
         if not api_key:
@@ -22,12 +19,7 @@ class RawgAPI(BaseGameFetcher):
 
     def search_games(self, query: str, page: int = 1) -> list[GameData]:
         url = f"{self.base_url}/games"
-        params = {
-            "key": self.api_key,
-            "search": query,
-            "page": page,
-            "page_size": 15
-        }
+        params = {"key": self.api_key, "search": query, "page": page, "page_size": 15}
 
         try:
             response = self.session.get(url, params=params, timeout=5)
@@ -37,21 +29,51 @@ class RawgAPI(BaseGameFetcher):
 
             games: list[GameData] = []
             for item in results:
-                games.append(GameData(
-                    id=item.get("id"),
-                    title=item.get("name"),
-                    background_image=item.get("background_image"),
-                    released=item.get("released"),
-                    rating=item.get("rating", 0.0),
-                    metacritic=item.get("metacritic"),
-                    genres=[g.get("name") for g in item.get("genres", []) if isinstance(g, dict)],
-                    description="",  # Populated when detail view is called
-                ))
+                games.append(self.wrap(item))
             logger.info(f"Successfully fetched {len(games)} games for query: {query}")
             return games
         except requests.RequestException as e:
             logger.error(f"Failed to fetch games from RAWG API: {e}")
             return []
+
+    def wrap(self, data) -> GameData:
+        wrapper = GameData(
+            id=str(data.get("id")),
+            title=data.get("name"),
+            background_image=data.get("background_image"),
+            released=data.get("released"),
+            rating=data.get("rating", 0.0),
+            metacritic=data.get("metacritic"),
+            genres=[
+                g.get("name") for g in data.get("genres", []) if isinstance(g, dict)
+            ],
+            description="",  # Populated when detail view is called
+        )
+        return wrapper
+
+    def get_home_catalog(self) -> dict[str, list[GameData]]:
+        sections = {
+            "featured": f"{self.base_url}/games?key={self.api_key}&ordering=-added&page_size=5",
+            "trending": f"{self.base_url}/games?key={self.api_key}&ordering=-relevance&page_size=5",
+            "newest": f"{self.base_url}/games?key={self.api_key}&ordering=-released&page_size=5",
+            "best_rated": f"{self.base_url}/games?key={self.api_key}&ordering=-rating&page_size=5",
+        }
+
+        home_catalog: dict[str, list[GameData]] = {key: [] for key in sections}
+
+        for catg, url in sections.items():
+            try:
+                response = self.session.get(url, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+                results: list[dict] = data.get("results", [])
+                for item in results:
+                    home_catalog[catg].append(self.wrap(item))
+                logger.info(f"Successfully fetched catalog section: {catg}")
+            except requests.RequestException as e:
+                logger.error(f"Failed to fetch catalog section {catg}: {e}")
+
+        return home_catalog
 
     def get_game_details(self, game_id: str) -> dict:
         """Fetch detailed information about a specific game."""
@@ -98,7 +120,6 @@ class RawgAPI(BaseGameFetcher):
         except requests.RequestException as e:
             logger.error(f"Error fetching screenshots: {e}")
             return []
-
 
     def parse_requirements_text(self, raw_text: str) -> dict:
         """Extracts specs from RAWG's unformatted requirement text block."""
@@ -151,7 +172,9 @@ class RawgAPI(BaseGameFetcher):
         raw_min = pc_requirements.get("minimum", "")
         raw_rec = pc_requirements.get("recommended", "")
 
-        logger.info(f"Successfully processed system requirements for: {game_data.get('name')}")
+        logger.info(
+            f"Successfully processed system requirements for: {game_data.get('name')}"
+        )
         logger.debug(f"Minimun: {raw_min} \nRecommended: {raw_rec}")
 
         return {

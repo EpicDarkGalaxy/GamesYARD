@@ -41,14 +41,25 @@ class MainView(QMainWindow):
         self.navigator = navigator
 
         self.bind_signals()
-        self.navigator.go_to("search")
+
+    def initialize(self, search_view, details_view, home_view):
+        self.init_views(search_view, details_view, home_view)
+        self.bind_signals()
+
+    def init_views(self, search_view, details_view, home_view):
+        logger.info("Initializing Views for navigation")
+
+        self.add_page("search", search_view)
+        self.add_page("details", details_view)
+        self.add_page("home", home_view)
+        self.navigator.go_to("home") # Set Default view to home catalog
 
     def bind_signals(self):
         # MainView -> View Model
         self.main_ui.btn_search_2.clicked.connect(
-            lambda: self.view_model.request_search(self.main_ui.line_search_bar.text()),
-            lambda: self.navigator.go_to("search")
+            lambda: self.view_model.request_search(self.main_ui.line_search_bar.text())
         )
+        self.main_ui.btn_search_2.clicked.connect(lambda: self.navigator.go_to("search"))
 
         # MainView <- View Model
         self.view_model.search_state_changed.connect(self.update_search_button)
@@ -59,18 +70,13 @@ class MainView(QMainWindow):
         # SibeBar
         self.main_ui.btn_toggle.clicked.connect(self._toggle_sidebar)
         self.main_ui.btn_search.clicked.connect(self._toggle_search_bar)
+        self.main_ui.btn_search.clicked.connect(lambda: self.navigator.go_to("search"))
+        self.main_ui.btn_home.clicked.connect(lambda: self.navigator.go_to("home"))
 
         # SearchBar
         self.main_ui.line_search_bar.returnPressed.connect(
             lambda: self.view_model.request_search(self.main_ui.line_search_bar.text())
         )
-
-    def init_views(self, search_view, details_view):
-        logger.info("Initializing search and details views")
-
-        self.add_page("search", search_view)
-        self.add_page("details", details_view)
-        self.navigator.go_to("search") # Set Default viewe to search catalog
 
     def add_page(self, key: str, page: QWidget):
         logger.info(f"Adding page '{key}' to stacked widget: {page.__class__.__name__}")

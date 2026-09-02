@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING
 from src.core.utils import get_logger, download_icon
 
 if TYPE_CHECKING:
-	from src.core.aio import TaskRunner
-	from src.core.services import RawgAPI
+
+	from src.core.services.metadata import RawgAPI
 
 logger = get_logger(__name__)
 
@@ -21,9 +21,8 @@ ICON_MAP: dict[str, str] = {
 }
 
 class AssetManager:
-	def __init__(self, task_runner: "TaskRunner", metadata_source: "RawgAPI"):
+	def __init__(self, metadata_source: "RawgAPI"):
 		super().__init__()
-		self.task_runner = task_runner
 		self.metadata_source = metadata_source
 		self._cache: dict[str, bytes | None] = {}  # {"ID": img_data (bytes)}
 		self._icon_cache = {} # {"name or ID": QIcon}

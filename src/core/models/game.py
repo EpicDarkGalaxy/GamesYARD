@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 @dataclass(frozen=True)
 class GameData:
-    id: int = 0
+    id: str = "" # Using STR becuse that's what i want (;)
     title: str = ""
     background_image: str = ""
     released: str = ""

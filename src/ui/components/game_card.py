@@ -7,6 +7,7 @@ from PySide6.QtCore import (
 	QRectF,
 	Qt,
 	Signal,
+	Slot
 )
 from PySide6.QtGui import (
 	QColor,
@@ -19,6 +20,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import QFrame
 
 from src.core.utils import get_logger
+from src.core.aio.workers import Worker
 
 logger = get_logger(__name__)
 
@@ -27,7 +29,7 @@ class GameCard(QFrame):
 	thumb_loaded = Signal(QPixmap)
 	clicked = Signal(object)
 
-	def __init__(self, game_data):
+	def __init__(self, game_data, model):
 		super().__init__()
 		self.setFixedSize(320, 180)  # Native 16:9 banner size
 		self.setObjectName("game-card")
@@ -40,6 +42,9 @@ class GameCard(QFrame):
 		self.genres: list = game_data.genres
 		self.metacritic: int = game_data.metacritic
 		self.banner: QPixmap = QPixmap()
+
+		self.model = model
+		self.worker_dispatched = False
 
 		self._hover_opacity = 0.0
 		self.setMouseTracking(True)
@@ -71,60 +76,11 @@ class GameCard(QFrame):
 		else:
 			logger.warning(f"IMG data is null for ID [{self.title}]")
 
-	def paintEvent(self, event):
-		painter = QPainter(self)
-		painter.setRenderHints(
-			QPainter.RenderHint.Antialiasing |
-			QPainter.RenderHint.SmoothPixmapTransform |
-			QPainter.RenderHint.TextAntialiasing
-		)
+	@Slot(bytes, str)
+	def _handle_thumb(self, img_data: bytes, card_id):
+		if card_id == self.id:
+			self.thumbnail = img_data
 
-		rect = QRectF(0, 0, self.width(), self.height())
-
-		# 1. Rounded Card Borders (10px radius)
-		clip_path = QPainterPath()
-		clip_path.addRoundedRect(rect, 10.0, 10.0)
-		painter.setClipPath(clip_path)
-
-		# 2. Draw Scaled Background Image
-		if not self.banner.isNull():
-			scaled = self.banner.scaled(
-				self.size(),
-				Qt.AspectRatioMode.KeepAspectRatioByExpanding,
-				Qt.TransformationMode.SmoothTransformation
-			)
-			x = (self.width() - scaled.width()) / 2.0
-			y = (self.height() - scaled.height()) / 2.0
-			painter.drawPixmap(int(x), int(y), scaled)
-		else:
-			painter.fillRect(rect, QColor("#1e1e24"))
-
-		# 2.5 Animated Hover Overlay
-		if self._hover_opacity > 0:
-			painter.fillRect(rect, QColor(0, 0, 0, int(178 * self._hover_opacity)))
-
-		# 3. Draw Bottom Gradient Overlay for Text Readability
-		gradient = QLinearGradient(0, self.height() * 0.35, 0, self.height())
-		gradient.setColorAt(0.0, QColor(0, 0, 0, 0))        # Transparent
-		gradient.setColorAt(0.6, QColor(0, 0, 0, 160))      # Semi-dark
-		gradient.setColorAt(1.0, QColor(0, 0, 0, 230))      # Dark backdrop
-		painter.fillRect(rect, gradient)
-
-		# 4. Draw Game Title
-		painter.setPen(QColor("#FFFFFF")) # White
-		painter.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
-		title_rect = QRectF(14, self.height() - 52, self.width() - 28, 22)
-
-		# Elide (truncate with "...") if title is too long
-		metrics = painter.fontMetrics()
-		elided_title = metrics.elidedText(self.title, Qt.TextElideMode.ElideRight, int(title_rect.width()))
-		painter.drawText(title_rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, elided_title)
-
-		# 5. Draw Rating
-		painter.setPen(QColor("#FBBF24"))  # Gold accent
-		painter.setFont(QFont("Segoe UI", 9, QFont.Weight.DemiBold))
-		rating_rect = QRectF(14, self.height() - 28, self.width() - 28, 18)
-		painter.drawText(rating_rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, f"★ {self.rating:.1f}")
 
 	def enterEvent(self, event):
 		self.anim.setStartValue(self._hover_opacity)
@@ -145,6 +101,9 @@ class GameCard(QFrame):
 
 	@override
 	def showEvent(self, event) -> None:
-		if not self.banner:
-			self.request_thumbnail.emit(self.id, self.banner_url)
+		if self.isVisible() and self.banner.isNull() and not self.worker_dispatched:
+			self.worker_dispatched = True
+			worker = Worker(self.model.asset_manager.get_thumbnail, self.id, self.banner_url, context=self.id)
+			_ = worker.signals.result_ready.connect(self._handle_thumb)
+			self.model.task_runner.run(worker)
 		return super().showEvent(event)

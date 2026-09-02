@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QObject, Signal, Slot
 
+from src.core.services.scrapers.scraper_4fnet import FourFNetScraper
+
 from ..aio.workers import DownloadWorker, Worker
 from ..services.providers import ProviderFactory
 from ..utils.log import get_logger
@@ -28,6 +30,8 @@ class DownloadManager(QObject):
     download_failed = Signal(str)
     download_cancelled = Signal()
 
+    found_providers = Signal(dict)
+
     def __init__(self, task_runner: "TaskRunner"):
         super().__init__()
         self.download_queue: dict[str, Download] = {}
@@ -50,6 +54,22 @@ class DownloadManager(QObject):
                 return download.metadata
         logger.warning(f"No metadata found for URL: {host_url}")
         return {}
+
+    def get_download_providers(self, game_title: str):
+        logger.info(f"Searching for game: {game_title}")
+        scraper = FourFNetScraper()
+        self.task_runner.run(scraper.find_game_page, self._handle_game_page, game_title)
+
+    def _handle_game_page(self, game_page: str):
+        logger.info(f"Fetching download links for page: {game_page}")
+        scraper = FourFNetScraper()
+        self.task_runner.run(
+            scraper.fetch_download_links,
+            self._handle_found_providers,
+            game_page)
+
+    def _handle_found_providers(self, result: dict):
+        self.found_providers.emit(result)
 
     def queue_download(self, save_path: str, provider_url: str, download_id: str):
         """

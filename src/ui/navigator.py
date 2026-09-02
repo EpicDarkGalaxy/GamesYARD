@@ -10,6 +10,7 @@ class Navigator(QObject):
     def __init__(self) -> None:
         super().__init__()
         self._page_registry = {}
+        self.nav_history = []
 
     def register_page(self, key: str, widget):
         logger.info(f"Registering page: {key}")
@@ -17,4 +18,9 @@ class Navigator(QObject):
 
     def go_to(self, key: str):
         logger.info(f"Navigating to page: {key}")
+        self.nav_history.append(key)
         self.request_page_change.emit(key)
+
+    def go_to_last_nav(self):
+        last_nav = self.nav_history[-1 - 1]
+        self.go_to(last_nav)

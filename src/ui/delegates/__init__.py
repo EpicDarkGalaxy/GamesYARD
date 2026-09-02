@@ -1,0 +1,1 @@
+from .game_card_delegate import GameCardDelegate
