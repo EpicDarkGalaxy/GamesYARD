@@ -36,7 +36,7 @@ class GameListModel(QAbstractListModel):
             logger.info(f"Fetching thumbnail for row {row}, game_id {game_id}")
             self.thumbnails[row] = QPixmap()  # Avoid duplicate worker initiation
 
-            self.coordinator.task_runner.run(
+            self.coordinator.task_runner.run_task(
                 self.coordinator.asset_manager.get_thumbnail,
                 self._handle_thumbnail,
                 game_id,

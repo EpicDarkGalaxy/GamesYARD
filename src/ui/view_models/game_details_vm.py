@@ -20,6 +20,11 @@ class GameDetailsViewModel(QObject):
 
     show_providers = Signal(dict)
     get_providers_failed = Signal(str) #  MSG or Status
+    download_started = Signal(str)
+    download_finished = Signal(str)
+    download_failed = Signal(str)
+    download_canceled = Signal(str)
+    download_progress = Signal(str, int)
 
     set_title = Signal(str)
     set_rating = Signal(float, str)
@@ -44,53 +49,11 @@ class GameDetailsViewModel(QObject):
         self.coordinator.model.download_manager.found_providers.connect(
             self._handle_provider
         )
-
-    @Slot(dict, str)
-    def _handle_system_req(self, reqs: dict, game_id: str):
-        if self.current_game_id == game_id:
-            logger.debug(f"Received and populating system requirements for [{game_id}]")
-            self.update_sys_req.emit(reqs)
-        else:
-            logger.info(
-                f"Received requirements for [{game_id}], but current game is [{self.current_game_id}]. Ignoring."
-            )
-
-    def _get_sys_req(self, game_id: str):
-        logger.debug(f"Fetching system requirements for game_id: {game_id}")
-        self.coordinator.task_runner.run(
-            self.coordinator.model.search_manager.get_system_req,
-            self._handle_system_req,
-            game_id,
-            return_value=game_id,
-        )
-
-    def _get_poster(self, game_id: str, url: str):
-        logger.debug(f"Fetching poster for game_id: {game_id}")
-        self.coordinator.task_runner.run(
-            self.coordinator.model.asset_manager.get_thumbnail,
-            self.handle_poster,
-            game_id,
-            url,
-            return_value=game_id,
-        )
-
-    @Slot(bytes, str)
-    def handle_poster(self, poster_data: bytes, game_id: str):
-        if self.current_game_id == game_id:
-            self.set_poster.emit(poster_data)
-        else:
-            logger.info(
-                f"Received poster for [{game_id}], but current game is [{self.current_game_id}]. Ignoring."
-            )
-
-    def _get_gallery(self, game_id: str):
-        logger.debug(f"Fetching gallery for game_id: {game_id}")
-        self.coordinator.task_runner.run(
-            self.coordinator.model.asset_manager.get_screenshots,
-            self.load_gallery,
-            game_id,
-            return_value=game_id,
-        )
+        self.coordinator.download_manager.download_started.connect(self.download_started.emit)
+        self.coordinator.download_manager.download_finished.connect(self.download_finished.emit)
+        self.coordinator.download_manager.download_failed.connect(self.download_failed.emit)
+        self.coordinator.download_manager.download_canceled.connect(self.download_canceled.emit)
+        self.coordinator.download_manager.download_progress.connect(self.download_progress.emit)
 
     @Slot(object)
     def load_card(self, card):
@@ -124,21 +87,52 @@ class GameDetailsViewModel(QObject):
                 logger.debug(f"Fetching remote system requirements for: {card.id}")
                 self._get_sys_req(card.id)
 
-    def _get_color(self, value: float = -1, max_val: float = -1) -> str:
-        if value and max_val:
-            percentage = (value / max_val) * 100
-            if percentage >= 75:
-                return "#66cc33"  # Green
-            elif percentage >= 50:
-                return "#ffcc33"  # Yellow
-            else:
-                return "#ff3333"  # Red
+    @Slot(dict, str)
+    def _handle_system_req(self, reqs: dict, game_id: str):
+        if self.current_game_id == game_id:
+            logger.debug(f"Received and populating system requirements for [{game_id}]")
+            self.update_sys_req.emit(reqs)
+        else:
+            logger.info(
+                f"Received requirements for [{game_id}], but current game is [{self.current_game_id}]. Ignoring."
+            )
 
-    def _get_rating_color(self, rating: float) -> str:
-        return self._get_color(rating, 5.0)
+    def _get_sys_req(self, game_id: str):
+        logger.debug(f"Fetching system requirements for game_id: {game_id}")
+        self.coordinator.task_runner.run_task(
+            self.coordinator.model.search_manager.get_system_req,
+            self._handle_system_req,
+            game_id,
+            return_value=game_id,
+        )
 
-    def _get_metacritic_color(self, score: int) -> str:
-        return self._get_color(score, 100.0)
+    def _get_poster(self, game_id: str, url: str):
+        logger.debug(f"Fetching poster for game_id: {game_id}")
+        self.coordinator.task_runner.run_task(
+            self.coordinator.model.asset_manager.get_thumbnail,
+            self.handle_poster,
+            game_id,
+            url,
+            return_value=game_id,
+        )
+
+    @Slot(bytes, str)
+    def handle_poster(self, poster_data: bytes, game_id: str):
+        if self.current_game_id == game_id:
+            self.set_poster.emit(poster_data)
+        else:
+            logger.info(
+                f"Received poster for [{game_id}], but current game is [{self.current_game_id}]. Ignoring."
+            )
+
+    def _get_gallery(self, game_id: str):
+        logger.debug(f"Fetching gallery for game_id: {game_id}")
+        self.coordinator.task_runner.run_task(
+            self.coordinator.model.asset_manager.get_screenshots,
+            self.load_gallery,
+            game_id,
+            return_value=game_id,
+        )
 
     @Slot(list, str)
     def load_gallery(self, screenshots: list[bytes], game_id: str):
@@ -148,7 +142,6 @@ class GameDetailsViewModel(QObject):
             logger.info(
                 f"Received screenshots for {game_id}, but current game is {self.current_game_id}. Ignoring."
             )
-
 
     @Slot(dict)
     def _handle_provider(self, providers: dict):
@@ -169,3 +162,25 @@ class GameDetailsViewModel(QObject):
             logger.warning(
                 f"Could not find title for game_id: {self.current_game_id} to fetch providers."
             )
+                                                # download id is game id
+    def request_download(self, save_path: str, provider_url: str, download_id: str):
+        self.coordinator.download_manager.queue_download(save_path, provider_url, download_id)
+
+    def cancel_download(self, download_id: str):
+        self.coordinator.download_manager.stop_download(download_id)
+
+    def _get_color(self, value: float = -1, max_val: float = -1) -> str:
+        if value and max_val:
+            percentage = (value / max_val) * 100
+            if percentage >= 75:
+                return "#66cc33"  # Green
+            elif percentage >= 50:
+                return "#ffcc33"  # Yellow
+            else:
+                return "#ff3333"  # Red
+
+    def _get_rating_color(self, rating: float) -> str:
+        return self._get_color(rating, 5.0)
+
+    def _get_metacritic_color(self, score: int) -> str:
+        return self._get_color(score, 100.0)

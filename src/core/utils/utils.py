@@ -1,12 +1,12 @@
-import re
 import os
+import re
 from base64 import b64decode
 from socket import TCP_ULP
 from urllib.parse import urlparse
 
-from bs4 import BeautifulSoup
 import requests
-from PySide6.QtGui import QColor, QPixmap, QIcon
+from bs4 import BeautifulSoup
+from PySide6.QtGui import QColor, QIcon, QPixmap
 
 from .log import get_logger
 
@@ -32,7 +32,6 @@ def parseHtml(url) -> BeautifulSoup:
 
         response = requests.get(
             url,
-            impersonate="chrome124",
             timeout=10
         )
         if response.status_code == 200:
@@ -81,9 +80,6 @@ def get_direct_link(url: str) -> str:
 def clean_filename(filename: str):
     # Remove characters that are illegal in file names
     return re.sub(r'[\\/*?:"<>|]', "", filename)
-
-import requests
-from urllib.parse import urlparse
 
 def get_filename_from_url(url: str) -> str:
     try:

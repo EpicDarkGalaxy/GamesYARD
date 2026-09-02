@@ -30,8 +30,8 @@ class HomeCatalogViewModel(QObject):
 
     def get_home_catalog(self):
         logger.info("Fetching home catalog...")
-        self.coordinator.task_runner.run(
-            self.coordinator.model.search_manager.get_home_catalog, 
+        self.coordinator.task_runner.run_task(
+            self.coordinator.model.search_manager.get_home_catalog,
             self._handle_home_catalog
             )
 

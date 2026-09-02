@@ -29,7 +29,7 @@ class MainViewModel(QObject):
 
     @Slot(str)
     def request_search(self, query=""):
-        self.coordinator.task_runner.run(
+        self.coordinator.task_runner.run_task(
             self.coordinator.model.search_manager.perform_search,
             self._handle_search_result,
             query

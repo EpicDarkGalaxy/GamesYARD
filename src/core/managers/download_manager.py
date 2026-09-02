@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
+from uuid import uuid1
 
 from PySide6.QtCore import QObject, Signal, Slot
 
@@ -28,7 +29,7 @@ class DownloadManager(QObject):
     download_finished = Signal(str)
     download_progress = Signal(str ,int)
     download_failed = Signal(str)
-    download_cancelled = Signal()
+    download_canceled = Signal(str)
 
     found_providers = Signal(dict)
 
@@ -58,12 +59,12 @@ class DownloadManager(QObject):
     def get_download_providers(self, game_title: str):
         logger.info(f"Searching for game: {game_title}")
         scraper = FourFNetScraper()
-        self.task_runner.run(scraper.find_game_page, self._handle_game_page, game_title)
+        self.task_runner.run_task(scraper.find_game_page, self._handle_game_page, game_title)
 
     def _handle_game_page(self, game_page: str):
         logger.info(f"Fetching download links for page: {game_page}")
         scraper = FourFNetScraper()
-        self.task_runner.run(
+        self.task_runner.run_task(
             scraper.fetch_download_links,
             self._handle_found_providers,
             game_page)
@@ -82,13 +83,10 @@ class DownloadManager(QObject):
 
         download = Download(save_path=save_path, download_id=download_id, host_url=provider_url)
         self._add_to_queue(download)
-
-        link_worker = Worker(provider.get_method(), provider_url, download_id)
-        link_worker.signals.result_ready.connect(self.handle_url_extracted)
-        self.task_runner.run(link_worker)
+        self.task_runner.run_task(provider.extract_dl_url, self._handle_url_extracted, provider_url, return_value=download_id)
 
     @Slot(str, str)
-    def handle_url_extracted(self, download_url, download_id):
+    def _handle_url_extracted(self, download_url, download_id):
         download = self.download_queue[download_id]
         download.download_url = download_url
         self.start_download(download)
@@ -97,12 +95,12 @@ class DownloadManager(QObject):
         logger.info(f"Starting download: [{download.download_id}] to [{download.save_path}]")
 
         download_worker = DownloadWorker(download.download_url, download.save_path, download.download_id)
-        download_worker.signals.download_finished.connect(self.handle_download_success)
-        download_worker.signals.download_fail.connect(self.handle_download_failure)
-        download_worker.signals.download_progress.connect(self.handle_download_progress)
-        self.task_runner.run(download_worker)
-
+        download_worker.signals.download_finished.connect(self._handle_download_success)
+        download_worker.signals.download_fail.connect(self._handle_download_failure)
+        download_worker.signals.download_progress.connect(self._handle_download_progress)
+        self.task_runner.run_worker(download_worker)
         self.active_workers[download.download_id] = download_worker
+        self.download_started.emit(download.download_id)
 
     def stop_download(self, download_id: str):
         """
@@ -115,8 +113,8 @@ class DownloadManager(QObject):
         if worker:
             worker.is_cancelled = True
             logger.info(f"Stopping worker for download: {download_id}")
-        self._remove_from_queue(download_id)
-        self.download_cancelled.emit()
+            self.download_canceled.emit(download_id)
+            self._remove_from_queue(download_id)
 
     def stop_all_downloads(self):
         """
@@ -125,10 +123,16 @@ class DownloadManager(QObject):
         for dl_id, worker in self.active_workers.items():
             worker.is_cancelled = True
             logger.info(f"Stopping worker for download: {dl_id}")
+            self.download_canceled.emit(dl_id)
         self.active_workers.clear()
         self.download_queue.clear()
         self.update_download_state()
-        self.download_cancelled.emit()
+
+    def pause_download(self, ):
+        pass
+
+    def resume_download(self, ):
+        pass
 
     def update_download_state(self):
         if (self.download_queue):
@@ -151,23 +155,17 @@ class DownloadManager(QObject):
         self.update_download_state()
 
     @Slot(str, int)
-    def handle_download_progress(self, download_id: str, progress: int):
+    def _handle_download_progress(self, download_id: str, progress: int):
         self.download_progress.emit(download_id, progress)
 
     @Slot(str)
-    def handle_download_failure(self, download_id: str):
+    def _handle_download_failure(self, download_id: str):
         logger.info(f"Download Failed: [{download_id}]")
         self._remove_from_queue(download_id=download_id)
         self.download_failed.emit(download_id)
 
     @Slot(str)
-    def handle_download_success(self, download_id: str):
+    def _handle_download_success(self, download_id: str):
         logger.info(f"Download Completed: [{download_id}]")
         self._remove_from_queue(download_id=download_id)
         self.download_finished.emit(download_id)
-
-    def pause_download(self, ):
-        pass
-
-    def resume_download(self, ):
-        pass

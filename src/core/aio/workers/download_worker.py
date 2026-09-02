@@ -23,8 +23,6 @@ class DownloadWorker(BaseWorker):
     def run(self):
         logger.debug(f"Download Started for ID: [{self.download_id}]")
         try:
-            # For now, i am keeping the download logic here.
-            # I may move it to a seprate file, or keep it here forever
             response = r.get(self.url, stream=True, impersonate="chrome124")
             response.raise_for_status()
             total_size = int(response.headers.get('content-length', 0))
