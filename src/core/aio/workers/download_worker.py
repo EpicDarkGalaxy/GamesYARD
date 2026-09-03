@@ -1,4 +1,5 @@
 import os
+import time  # <--- Add time import
 
 from curl_cffi import requests as r
 
@@ -28,6 +29,9 @@ class DownloadWorker(BaseWorker):
             total_size = int(response.headers.get('content-length', 0))
             downloaded_size = 0
 
+            # --- Speed Tracking Variables ---
+            start_time = time.time()
+
             with open(self.save_path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     if (self.is_cancelled):
@@ -38,11 +42,25 @@ class DownloadWorker(BaseWorker):
                         logger.info(f"Download Cancelled: {self.download_id}")
                         self.signals.cancelled.emit()
                         return
+
                     f.write(chunk)
                     downloaded_size += len(chunk)
+
+                    # Calculate speed based on total time elapsed
+                    elapsed_time = time.time() - start_time
+                    speed_bytes_per_sec = 0.0
+                    if elapsed_time > 0:
+                        speed_bytes_per_sec = downloaded_size / elapsed_time
+
                     if total_size:
                         percent = int(downloaded_size / total_size * 100)
-                        self.signals.download_progress.emit(self.download_id ,percent)
+                        self.signals.download_progress.emit({
+                            "download_id": self.download_id,
+                            "percent": percent,
+                            "downloaded_size": downloaded_size,
+                            "total_size": total_size,
+                            "speed": speed_bytes_per_sec
+                        })
             response.close()
             self.signals.download_finished.emit(self.download_id)
             self.signals.finished.emit()

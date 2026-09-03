@@ -167,6 +167,19 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
+        <widget class="QLabel" name="current_view_name">
+         <property name="font">
+          <font>
+           <family>Sans</family>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>HOME</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QFrame" name="header">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">

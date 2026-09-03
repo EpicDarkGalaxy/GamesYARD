@@ -20,21 +20,24 @@ class AppContainer:
             "details": GameDetailsViewModel(),
             "main": MainViewModel(),
             "home": HomeCatalogViewModel(),
+            "downloads": DownloadViewModel(),
         }
 
         # Views
         self._main_view = MainView(self._view_models["main"], self._NAVIGATOR)
-        self._views = [
-            SearchCatalogView(self._view_models["search"]),
-            GameDetailsView(self._view_models["details"]),
-            HomeCatalogView(self._view_models["home"]),
-        ]
+        self._views = {
+            "search": SearchCatalogView(self._view_models["search"]),
+            "details": GameDetailsView(self._view_models["details"]),
+            "home": HomeCatalogView(self._view_models["home"]),
+            "downloads": DownloadView(self._view_models["downloads"])
+        }
 
         self._coordinator = AppCoordinator(
             self._view_models["main"],
             self._view_models["search"],
             self._view_models["details"],
             self._view_models["home"],
+            self._view_models["downloads"],
             self._NAVIGATOR,
             self._APP_CORE
         )
@@ -42,7 +45,7 @@ class AppContainer:
         for vm in self._view_models.values():
             vm.initialize(self._coordinator)
 
-        self._main_view.initialize(*self._views)
+        self._main_view.initialize(self._views)
 
-        for view in self._views:
+        for view in self._views.values():
             view.initialize()

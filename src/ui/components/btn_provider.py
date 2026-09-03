@@ -117,7 +117,9 @@ class ProviderButton(QWidget):
     def get_state(self):
         return self._is_downloading, self._is_downloaded, self._has_failed
 
-    def set_state(self, is_downloading: bool = False, is_downloaded: bool = False, has_failed: bool = False):
+    def set_state(self, progress: int=0, is_downloading: bool = False, is_downloaded: bool = False, has_failed: bool = False):
+        if progress > 0:
+            self.update_progress(progress)
         self._is_downloading = is_downloading
         self._is_downloaded = is_downloaded
         self._has_failed = has_failed

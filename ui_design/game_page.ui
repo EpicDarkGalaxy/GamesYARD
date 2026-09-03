@@ -182,7 +182,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QFrame" name="download_container">
+                <widget class="QFrame" name="providers_container">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
                    <horstretch>0</horstretch>
@@ -197,7 +197,7 @@
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_8">
                   <item>
-                   <layout class="QVBoxLayout" name="download_layout"/>
+                   <layout class="QVBoxLayout" name="providers_layout"/>
                   </item>
                  </layout>
                 </widget>
