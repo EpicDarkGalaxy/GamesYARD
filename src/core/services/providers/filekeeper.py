@@ -8,9 +8,6 @@ class FileKeeperProvider(BaseProvider):
     def can_handle(self, url: str) -> bool:
         return "filekeeper.net" in url
 
-    def get_method(self) -> object:
-        return self.extract_dl_url
-
     def extract_dl_url(self, provider_url) -> str | None:
         # 1. Fetch the landing page
         soup = parseHtml(provider_url)

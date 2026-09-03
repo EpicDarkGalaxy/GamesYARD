@@ -22,5 +22,5 @@ class Navigator(QObject):
         self.request_page_change.emit(key)
 
     def go_to_last_nav(self):
-        last_nav = self.nav_history[-1 - 1]
+        last_nav = self.nav_history[-1 - 1] # Second last Destination
         self.go_to(last_nav)

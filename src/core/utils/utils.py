@@ -153,3 +153,11 @@ def download_icon(url: str) -> QIcon:
         pixmap.loadFromData(img_data)
         return QIcon(pixmap)
     return QIcon(get_default_icon())
+
+def format_speed(bytes_per_sec: float) -> str:
+    if bytes_per_sec < 1024:
+        return f"{bytes_per_sec:.1f} B/s"
+    elif bytes_per_sec < 1024 * 1024:
+        return f"{bytes_per_sec / 1024:.1f} KB/s"
+    else:
+        return f"{bytes_per_sec / (1024 * 1024):.1f} MB/s"

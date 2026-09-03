@@ -42,26 +42,21 @@ class MainView(QMainWindow):
 
         self.bind_signals()
 
-    def initialize(self, search_view, details_view, home_view):
-        self.init_views(search_view, details_view, home_view)
+    def initialize(self, views: dict[str, QWidget]):
+        self.init_views(views)
         self.bind_signals()
 
-    def init_views(self, search_view, details_view, home_view):
+    def init_views(self, views: dict[str, QWidget]):
         logger.info("Initializing Views for navigation")
 
-        self.add_page("search", search_view)
-        self.add_page("details", details_view)
-        self.add_page("home", home_view)
+        for view_name, view in views.items():
+            self.add_page(view_name, view)
         self.navigator.go_to("home") # Set Default view to home catalog
 
     def bind_signals(self):
-        # MainView -> View Model
-        self.main_ui.btn_search_2.clicked.connect(
-            lambda: self.view_model.request_search(self.main_ui.line_search_bar.text())
-        )
-        self.main_ui.btn_search_2.clicked.connect(lambda: self.navigator.go_to("search"))
+        self.main_ui.btn_search_2.clicked.connect(self.button_search)
 
-        # MainView <- View Model
+        # Main View
         self.view_model.search_state_changed.connect(self.update_search_button)
 
         # Navigator
@@ -70,13 +65,11 @@ class MainView(QMainWindow):
         # SibeBar
         self.main_ui.btn_toggle.clicked.connect(self._toggle_sidebar)
         self.main_ui.btn_search.clicked.connect(self._toggle_search_bar)
-        self.main_ui.btn_search.clicked.connect(lambda: self.navigator.go_to("search"))
         self.main_ui.btn_home.clicked.connect(lambda: self.navigator.go_to("home"))
+        self.main_ui.btn_downloads.clicked.connect(lambda: self.navigator.go_to("downloads"))
 
         # SearchBar
-        self.main_ui.line_search_bar.returnPressed.connect(
-            lambda: self.view_model.request_search(self.main_ui.line_search_bar.text())
-        )
+        self.main_ui.line_search_bar.returnPressed.connect(self.button_search)
 
     def add_page(self, key: str, page: QWidget):
         logger.info(f"Adding page '{key}' to stacked widget: {page.__class__.__name__}")
@@ -89,9 +82,16 @@ class MainView(QMainWindow):
         widget = self.navigator._page_registry.get(key)
         if widget:
             logger.info(f"Now at page: [{key}]")
+            self.main_ui.current_view_name.setText(key.upper())
             self.main_ui.stackedWidget.setCurrentWidget(widget)
         else:
             logger.warning(f"Failed to find page with key: {key}")
+
+    @Slot()
+    def button_search(self):
+        query = self.main_ui.line_search_bar.text()
+        self.view_model.request_search(query)
+        self.navigator.go_to("search")
 
     @Slot(str, bool)
     def update_search_button(self, text: str, state: bool):

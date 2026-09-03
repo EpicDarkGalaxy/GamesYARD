@@ -9,9 +9,11 @@ from .utils import (
     get_img_data,
     get_site_name,
     parse_rawg_reqs,
+    format_speed
 )
 
 __all__ = [
+    "format_speed",
     "download_icon",
     "get_asset",
     "get_default_icon",

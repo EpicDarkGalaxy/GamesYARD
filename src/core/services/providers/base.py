@@ -16,11 +16,3 @@ class BaseProvider(ABC): # Inherit from ABC
         Resolves the provider url and returns the final direct file download URL.
         """
         pass
-
-
-    @abstractmethod
-    def get_method(self) -> object:
-        """
-        Returns the extraction logic function.
-        """
-        pass

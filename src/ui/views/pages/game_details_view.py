@@ -22,13 +22,13 @@ class GameDetailsView(QWidget):
         super().__init__()
         self.ui = Ui_GamePage()
         self.ui.setupUi(self)
-        self.ui.download_container.hide()
+        self.ui.providers_container.hide()
 
         self.view_model = view_model
 
         self.sys_req_widget: list[QLabel] = []
         self.gallery_widget: list[QLabel] = []
-        self.providers = {}
+        self.providers: dict[str, ProviderButton] = {}
 
     def initialize(self):
         self.bind_signals()
@@ -51,18 +51,8 @@ class GameDetailsView(QWidget):
 
         self.view_model.show_providers.connect(self.show_providers)
         self.view_model.get_providers_failed.connect(self.set_get_state)
+        self.view_model.provider_state_changed.connect(self.update_provider_state)
         self.view_model.reset.connect(self.reset)
-
-        self.view_model.download_started.connect(
-            lambda id: self.update_provider_state(id, downloading=True)
-        )
-        self.view_model.download_progress.connect(self.update_provider_progress)
-        self.view_model.download_finished.connect(
-            lambda id: self.update_provider_state(id, downloaded=True)
-        )
-        self.view_model.download_failed.connect(
-            lambda id: self.update_provider_state(id, failed=True)
-        )
 
     # Buttons
     @Slot()
@@ -72,8 +62,8 @@ class GameDetailsView(QWidget):
 
     def reset(self):
         self.ui.btn_get.show()
-        self.ui.download_container.hide()
-        self._clear_layout(self.ui.download_layout)
+        self.ui.providers_container.hide()
+        self._clear_layout(self.ui.providers_layout)
         self.set_get_state("Get", enabled=True)
         self._hide_all_widgets()
 
@@ -85,44 +75,38 @@ class GameDetailsView(QWidget):
     @Slot(dict)
     def show_providers(self, providers: dict):
         self.ui.btn_get.hide()
-        self._clear_layout(self.ui.download_layout)
+        self._clear_layout(self.ui.providers_layout)
 
         for provider_name, provider_url in providers.items():
             btn = ProviderButton(provider_name, provider_url)
             btn.download_requested.connect(self.prompt_for_save_path)
             btn.cancel_requested.connect(self.view_model.cancel_download)
             self.providers[btn.get_id] = btn
-            self.ui.download_layout.addWidget(btn)
-        self.ui.download_container.show()
+            self.ui.providers_layout.addWidget(btn)
+        self.ui.providers_container.show()
 
-    @Slot(str, int)
-    def update_provider_progress(self, provider_id: str, progress: int):
-        provider: ProviderButton = self.providers.get(provider_id)
-        if provider:
-            provider.update_progress(progress)
-
-    @Slot(str)
-    def update_provider_state(
-        self,
-        provider_id: str,
-        downloading: bool = False,
-        downloaded: bool = False,
-        failed: bool = False,
-    ):
-        provider: ProviderButton = self.providers.get(provider_id)
+    @Slot(dict)
+    def update_provider_state(self, state: dict):
+        provider = self.providers.get(state.get("id", "NOIDEA"), None)
         if provider:
             provider.set_state(
-                is_downloading=downloading,
-                is_downloaded=downloaded,
-                has_failed=failed,
+                progress=state.get("progress", 0),
+                is_downloading=state.get("is_downloading", False),
+                is_downloaded=state.get("has_finished", False),
+                has_failed=state.get("has_failed", False),
             )
+            logger.info(f"Updated provider {state.get('id', 'Unknown')} with state: {state}")
+        else:
+            logger.warning(f"Provider with ID {state.get('id', 'Unknown')} not found in providers dictionary.")
 
     @Slot(str, str)
     def prompt_for_save_path(self, url: str, provider_id: str) -> str:
         suggested_name = get_filename_from_url(url)
         file_path = QFileDialog.getSaveFileName(self, "Save Game", suggested_name)
         if file_path[0] != "":
-            self.view_model.request_download(file_path[0], url, provider_id)
+            game_title = getattr(self.ui, "game_title", None)
+            game_title_text = game_title.text() if game_title else ""
+            self.view_model.request_download(file_path[0], url, provider_id, game_title_text)
             return file_path[0]
         return ""
 

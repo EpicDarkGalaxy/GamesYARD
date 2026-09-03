@@ -108,24 +108,24 @@ class Ui_GamePage(object):
 
         self.verticalLayout_2.addWidget(self.btn_get, 0, Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignVCenter)
 
-        self.download_container = QFrame(self.info_area)
-        self.download_container.setObjectName(u"download_container")
+        self.providers_container = QFrame(self.info_area)
+        self.providers_container.setObjectName(u"download_container")
         sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         sizePolicy5.setHorizontalStretch(0)
         sizePolicy5.setVerticalStretch(0)
-        sizePolicy5.setHeightForWidth(self.download_container.sizePolicy().hasHeightForWidth())
-        self.download_container.setSizePolicy(sizePolicy5)
-        self.download_container.setFrameShape(QFrame.Shape.NoFrame)
-        self.download_container.setFrameShadow(QFrame.Shadow.Raised)
-        self.verticalLayout_8 = QVBoxLayout(self.download_container)
+        sizePolicy5.setHeightForWidth(self.providers_container.sizePolicy().hasHeightForWidth())
+        self.providers_container.setSizePolicy(sizePolicy5)
+        self.providers_container.setFrameShape(QFrame.Shape.NoFrame)
+        self.providers_container.setFrameShadow(QFrame.Shadow.Raised)
+        self.verticalLayout_8 = QVBoxLayout(self.providers_container)
         self.verticalLayout_8.setObjectName(u"verticalLayout_8")
-        self.download_layout = QVBoxLayout()
-        self.download_layout.setObjectName(u"download_layout")
+        self.providers_layout = QVBoxLayout()
+        self.providers_layout.setObjectName(u"download_layout")
 
-        self.verticalLayout_8.addLayout(self.download_layout)
+        self.verticalLayout_8.addLayout(self.providers_layout)
 
 
-        self.verticalLayout_2.addWidget(self.download_container)
+        self.verticalLayout_2.addWidget(self.providers_container)
 
 
         self.verticalLayout_5.addLayout(self.verticalLayout_2)
@@ -256,4 +256,3 @@ class Ui_GamePage(object):
         self.game_img_sec_label.setText(QCoreApplication.translate("GamePage", u"Screenshots", None))
         self.sys_req_sec_label.setText(QCoreApplication.translate("GamePage", u"System Requirements", None))
     # retranslateUi
-

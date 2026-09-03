@@ -40,6 +40,13 @@ QWidget {
     border-bottom: 1px solid #333333;
 }
 
+/*Download Area*/
+#download_page_root_container {
+    border: 1px solid #333333;
+    border-radius: 10px;
+    padding: 15px;
+}
+
 /* Buttons */
 QPushButton {
     background-color: #1e90ff;

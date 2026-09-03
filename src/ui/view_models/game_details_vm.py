@@ -1,6 +1,4 @@
-from ast import Return
 from typing import TYPE_CHECKING
-
 from PySide6.QtCore import QObject, Signal, Slot
 from PySide6.QtGui import QPixmap
 
@@ -20,11 +18,9 @@ class GameDetailsViewModel(QObject):
 
     show_providers = Signal(dict)
     get_providers_failed = Signal(str) #  MSG or Status
-    download_started = Signal(str)
-    download_finished = Signal(str)
-    download_failed = Signal(str)
-    download_canceled = Signal(str)
-    download_progress = Signal(str, int)
+    download_requested = Signal(str, str, str, str) # save_path, url, id, name
+    download_cancelled = Signal(str)
+    provider_state_changed = Signal(dict)
 
     set_title = Signal(str)
     set_rating = Signal(float, str)
@@ -46,14 +42,9 @@ class GameDetailsViewModel(QObject):
         self.bind_signals()
 
     def bind_signals(self):
-        self.coordinator.model.download_manager.found_providers.connect(
+        self.coordinator.model.download_manager.providers_found.connect(
             self._handle_provider
         )
-        self.coordinator.download_manager.download_started.connect(self.download_started.emit)
-        self.coordinator.download_manager.download_finished.connect(self.download_finished.emit)
-        self.coordinator.download_manager.download_failed.connect(self.download_failed.emit)
-        self.coordinator.download_manager.download_canceled.connect(self.download_canceled.emit)
-        self.coordinator.download_manager.download_progress.connect(self.download_progress.emit)
 
     @Slot(object)
     def load_card(self, card):
@@ -86,6 +77,37 @@ class GameDetailsViewModel(QObject):
             else:
                 logger.debug(f"Fetching remote system requirements for: {card.id}")
                 self._get_sys_req(card.id)
+
+    @Slot()
+    def get_providers(self):
+        game_title = self.coordinator.model.search_manager._games_list.get(
+            self.current_game_id
+        ).title
+        if game_title:
+            logger.debug(f"Fetching providers for game: {game_title}")
+            self.coordinator.model.download_manager.get_providers(game_title)
+        else:
+            logger.warning(
+                f"Could not find title for game_id: {self.current_game_id} to fetch providers."
+            )
+                                                # download id is game id
+    def request_download(self, save_path: str, provider_url: str, download_id: str, download_name: str="NONAME"):
+        self.download_requested.emit(save_path, provider_url, download_id, download_name)
+
+    def cancel_download(self, download_id: str):
+        self.download_cancelled.emit(download_id)
+
+    @Slot(object)
+    def update_provider_state(self, download_model):
+        logger.debug(f"Updating provider state for {download_model.id}")
+        state = {
+            "id": download_model.id,
+            "progress": download_model.progress,
+            "is_downloading": download_model.is_downloading,
+            "has_finished": download_model.has_finished,
+            "has_failed": download_model.has_failed,
+        }
+        self.provider_state_changed.emit(state)
 
     @Slot(dict, str)
     def _handle_system_req(self, reqs: dict, game_id: str):
@@ -149,25 +171,6 @@ class GameDetailsViewModel(QObject):
             self.show_providers.emit(providers)
         else:
             self.get_providers_failed.emit("Retry")
-
-    @Slot()
-    def get_providers(self):
-        game_title = self.coordinator.model.search_manager._games_list.get(
-            self.current_game_id
-        ).title
-        if game_title:
-            logger.debug(f"Fetching providers for game: {game_title}")
-            self.coordinator.model.download_manager.get_download_providers(game_title)
-        else:
-            logger.warning(
-                f"Could not find title for game_id: {self.current_game_id} to fetch providers."
-            )
-                                                # download id is game id
-    def request_download(self, save_path: str, provider_url: str, download_id: str):
-        self.coordinator.download_manager.queue_download(save_path, provider_url, download_id)
-
-    def cancel_download(self, download_id: str):
-        self.coordinator.download_manager.stop_download(download_id)
 
     def _get_color(self, value: float = -1, max_val: float = -1) -> str:
         if value and max_val:

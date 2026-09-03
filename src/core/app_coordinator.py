@@ -11,6 +11,7 @@ class AppCoordinator:
         search_vm: Any,
         game_details_vm: Any,
         home_vm: Any,
+        download_vm: Any,
         nav: Any,
         app_core: Any
     ) -> None:
@@ -18,6 +19,7 @@ class AppCoordinator:
         self.search_vm: Any = search_vm
         self.game_details_vm: Any = game_details_vm
         self.home_vm: Any = home_vm
+        self.download_vm: Any = download_vm
         self._nav: Any = nav
         self.model: Any = app_core
 
@@ -32,9 +34,13 @@ class AppCoordinator:
         # Connects to game_details_vm
         self.search_vm.card_clicked.connect(self.game_details_vm.load_card)
         self.home_vm.card_clicked.connect(self.game_details_vm.load_card)
+        self.download_vm.update_view.connect(self.game_details_vm.update_provider_state)
 
         # Connects to search_vm
         self.main_vm.search_finished.connect(self.search_vm.add_to_grid)
+
+        # Connects to download_vm
+        self.game_details_vm.download_requested.connect(self.download_vm.download)
 
     def navigate(self, key: str) -> None:
         self._nav.go_to(key)
