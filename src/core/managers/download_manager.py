@@ -26,6 +26,8 @@ class Download:
     total_size: int = 0
     downloaded_size: int = 0
     progress: int = 0
+    paused: bool = False
+    resume_supported: bool = False
     is_downloading: bool = False
     has_finished: bool = False
     has_failed: bool = False
@@ -67,7 +69,7 @@ class DownloadManager(QObject):
             dl_worker.signals.download_finished.connect(self._handle_download_finished)
             download.is_downloading = True
 
-            self._handle_download_started(download_id)
+            self.active_workers[download_id] = dl_worker
             self.task_runner.run_worker(dl_worker)
 
     def stop_download(self, download_id: str):
@@ -85,24 +87,28 @@ class DownloadManager(QObject):
 
     def stop_all_downloads(self):
         for download_id, worker in list(self.active_workers.items()):
-            worker.stop()
+            worker.cancel()
         self.active_workers.clear()
         for download in self.download_queue.values():
-            if download.is_downloading:
+            if download:
                 download.is_downloading = False
                 download.has_failed = True
                 self.download_state_changed.emit(download)
                 self.download_canceled.emit(download.id)
         self.task_runner.pool.clear()
 
+    def pause_download(self, download_id: str):
+        worker = self.active_workers.get(download_id)
+        if worker:
+            worker.pause()
+            self.active_workers.pop(download_id, None)
+
+    def resume_download(self, download_id: str):
+        self.start_download(download_id)
+
     def get_providers(self, game_title: str):
         scraper = FourFNetScraper()
         self.task_runner.run_task(scraper.find_game_page, self._handle_game_page, game_title)
-
-    def _handle_download_started(self, download_id: str):
-        download = self.download_queue.get(download_id)
-        if download:
-            self.download_state_changed.emit(download)
 
     @Slot(str)
     def _handle_game_page(self, game_page: str):
@@ -120,6 +126,9 @@ class DownloadManager(QObject):
             download.progress = download_progress["percent"]
             download.total_size = download_progress["total_size"]
             download.downloaded_size = download_progress["downloaded_size"]
+            download.paused = download_progress["paused"]
+            download.is_downloading = download_progress["is_downloading"]
+            download.resume_supported = download_progress["resume_supported"]
             download.speed = download_progress["speed"]
             self.download_state_changed.emit(download)
 

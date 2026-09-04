@@ -95,7 +95,7 @@ class GameDetailsView(QWidget):
                 is_downloaded=state.get("has_finished", False),
                 has_failed=state.get("has_failed", False),
             )
-            logger.debug(f"Updated provider {state.get('id', 'Unknown')} with state: {state}")
+            logger.debug(f"Updated provider {state.get('id', 'Unknown')}")
         else:
             logger.warning(f"Provider with ID {state.get('id', 'Unknown')} not found in providers dictionary.")
 

@@ -20,6 +20,7 @@ class DownloadWorkerSignals(WorkerSignals):
     download_finished = Signal(str)  # Signal to indicate the download has finished
     download_fail = Signal(str)  # Signal to indicate the download has failed
     download_progress = Signal(dict) # Sisnal to indicate download progress for spcific id
+    download_paused = Signal(str)  # Signal to indicate the download has been paused
 
 class UrlExtractorWorkerSignals(WorkerSignals):
     link_extracted = Signal(str, str)  # Signal to emit the extracted link and the URL

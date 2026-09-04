@@ -20,6 +20,8 @@ class DownloadModel:
     progress: int = 0
     speed: float = 0
     downloaded_size: int = 0
+    resume_supported: bool = False
+    paused: bool = False
     is_downloading: bool = False
     has_finished: bool = False
     has_failed: bool = False
@@ -53,14 +55,17 @@ class DownloadViewModel(QObject):
         download_model.is_downloading = bool(download.is_downloading)
         download_model.has_failed = bool(download.has_failed)
         download_model.has_finished = bool(download.has_finished)
+        download_model.paused = bool(download.paused)
+        self.update_view.emit(download_model)
 
     def add_download(self, download):
         logger.debug(f"Adding download: {download}")
         download_id = str(download.id)
-        download_model = DownloadModel(
-            id=download_id,
-            name=download.name,
-            total_size=download.total_size,
+        download_model = DownloadModel( # Non-changing properties
+            id=str(download_id),
+            name=str(download.name),
+            total_size=int(download.total_size),
+            resume_supported=bool(download.resume_supported),
             banner=self._banners.get(download_id, None),
         )
 
@@ -91,15 +96,21 @@ class DownloadViewModel(QObject):
         self._app_coordinator.download_manager.stop_download(download_id)
 
     def pause_download(self, download_id: str):
-        pass
+        logger.debug(f"Pausing download: id={download_id}")
+        self._app_coordinator.download_manager.pause_download(download_id)
+
+    def resume_download(self, download_id: str):
+        logger.debug(f"Resuming download: id={download_id}")
+        self._app_coordinator.download_manager.resume_download(download_id)
 
     @Slot(object)
     def _handle_download_state_changed(self, download):
-        if download.id not in self._downloads and download.is_downloading:
+        logger.debug(f"Download state changed: id={download.id}, is_downloading={download.is_downloading}")
+
+        if download.id not in self._downloads and download.is_downloading:  # Download started
             self.add_download(download)
-        elif download.id in self._downloads and not download.is_downloading:
+        elif download.id in self._downloads and not download.is_downloading and not download.paused:  # Download finished or cancelled
             self.remove_card.emit(download.id)
-        else:
+        else:  # Download in progress
             download_model = self._downloads[download.id]
             self._update_download_model(download_model, download)
-            self.update_view.emit(download_model)

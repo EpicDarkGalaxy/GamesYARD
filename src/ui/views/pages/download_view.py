@@ -12,50 +12,11 @@ logger = get_logger(__name__)
 if TYPE_CHECKING:
     from src.ui.view_models.download_vm import DownloadViewModel
 
-
-class DownloadModel:
-    def __init__(
-        self,
-        id: str,
-        name: str,
-        downloaded_size: int,
-        total_size: int,
-        progress: int,
-        speed: int,
-    ):
-        self.id: str = id
-        self.name: str = name
-        self.downloaded_size: int = downloaded_size
-        self.total_size: int = total_size
-        self.progress: int = progress
-        self.speed: int = speed
-        self.banner: Optional[object] = None
-
-
 class DownloadView(QWidget):
     def __init__(self, view_model: "DownloadViewModel"):
         super().__init__()
         self.ui: Ui_downloads_page = Ui_downloads_page()
         self.ui.setupUi(self)
-
-        # Tests
-        self.add: QPushButton = QPushButton("Add Download", self)
-        _ = self.add.clicked.connect(
-            lambda: self.handle_add_card(
-                DownloadModel("half_life_2", "Half Life 2", 0, 0, 0, 0)
-            )
-        )
-
-        self.add_prog: QPushButton = QPushButton("Progress", self)
-        _ = self.add_prog.clicked.connect(
-            lambda: self.handle_update_card(
-                DownloadModel("half_life_2", "Half Life 2", 25000, 100000, 60, 0)
-            )
-        )
-
-        self.ui.downloads_layout_2.addWidget(self.add)
-        self.ui.downloads_layout_2.addWidget(self.add_prog)
-
         self.view_model: DownloadViewModel = view_model
         self.cards: dict[str, DownloadCard] = {}
         self.no_downloads_label: QLabel
@@ -82,19 +43,23 @@ class DownloadView(QWidget):
         _ = self.view_model.remove_card.connect(self.handle_remove_card)
 
     @Slot(object)
-    def handle_add_card(self, download_model: DownloadModel):
+    def handle_add_card(self, download_model):
         card = DownloadCard(
             download_model.id,
             download_model.name,
             file_size=0,
+            resume_supported=download_model.resume_supported,
             thumbnail=download_model.banner,
         )
         _ = card.cancel.connect(self.view_model.cancel_download)
+        _ = card.pause.connect(self.view_model.pause_download)
+        _ = card.resume.connect(self.view_model.resume_download)
         self.cards[download_model.id] = card
         self.ui.downloads_layout_2.addWidget(card)
+        logger.info(f"Added card for download {download_model.id}")
 
     @Slot(object)
-    def handle_update_card(self, download_model: DownloadModel):
+    def handle_update_card(self, download_model):
         card_id = download_model.id
         if not card_id:
             logger.error("Download model has no id")
@@ -107,6 +72,7 @@ class DownloadView(QWidget):
                 download_model.total_size,
                 download_model.progress,
                 download_model.speed,
+                download_model.paused,
             )
 
     @Slot(str)

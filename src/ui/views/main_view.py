@@ -72,13 +72,13 @@ class MainView(QMainWindow):
         self.main_ui.line_search_bar.returnPressed.connect(self.button_search)
 
     def add_page(self, key: str, page: QWidget):
-        logger.info(f"Adding page '{key}' to stacked widget: {page.__class__.__name__}")
+        logger.debug(f"Adding page '{key}' to stacked widget: {page.__class__.__name__}")
         self.navigator.register_page(key, page)
         self.main_ui.stackedWidget.addWidget(page)
 
     @Slot(str)
     def _perform_switch(self, key: str):
-        logger.info(f"Attempting to switch to page: {key}")
+        logger.debug(f"Attempting to switch to page: {key}")
         widget = self.navigator._page_registry.get(key)
         if widget:
             logger.info(f"Now at page: [{key}]")
