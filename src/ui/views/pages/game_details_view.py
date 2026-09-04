@@ -1,14 +1,14 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Final
 
 from PySide6.QtCore import Qt, QTimer, Slot
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QFileDialog, QLabel, QWidget
+from PySide6.QtWidgets import QFileDialog, QGridLayout, QLabel, QLayout, QWidget
 
 from src.core.utils import (
     get_filename_from_url,
     get_logger,
 )
-from src.ui.components import ProviderButton
+from src.ui.components.btn_provider import ProviderButton
 from src.ui.generated import Ui_GamePage
 
 if TYPE_CHECKING:
@@ -18,6 +18,9 @@ logger = get_logger(__name__)
 
 
 class GameDetailsView(QWidget):
+    ui: Ui_GamePage
+    view_model: "GameDetailsViewModel"
+
     def __init__(self, view_model: "GameDetailsViewModel"):
         super().__init__()
         self.ui = Ui_GamePage()
@@ -34,25 +37,22 @@ class GameDetailsView(QWidget):
         self.bind_signals()
 
     def bind_signals(self):
-        self.ui.btn_back.clicked.connect(
+        _ = self.ui.btn_back.clicked.connect(
             lambda: self.view_model.coordinator.navigate_back()
         )
-        self.ui.btn_get.clicked.connect(self.button_get)
-        self.ui.btn_back.clicked.connect(self._hide_all_widgets)
+        _ = self.ui.btn_get.clicked.connect(self.button_get)
+        _ = self.ui.btn_back.clicked.connect(self._hide_all_widgets)
 
         # ViewModel
-        self.view_model.set_title.connect(self.set_title)
-        self.view_model.set_rating.connect(self.set_rating)
-        self.view_model.set_release.connect(self.set_release)
-        self.view_model.set_genres.connect(self.set_genres)
-        self.view_model.set_poster.connect(self.set_poster)
-        self.view_model.update_gallery.connect(self.populate_gallery)
-        self.view_model.update_sys_req.connect(self.populate_requirements)
+        _ = self.view_model.set_metadata.connect(self.set_metadata)
+        _ = self.view_model.set_poster.connect(self.set_poster)
+        _ = self.view_model.update_gallery.connect(self.populate_gallery)
+        _ = self.view_model.update_sys_req.connect(self.populate_requirements)
 
-        self.view_model.show_providers.connect(self.show_providers)
-        self.view_model.get_providers_failed.connect(self.set_get_state)
-        self.view_model.provider_state_changed.connect(self.update_provider_state)
-        self.view_model.reset.connect(self.reset)
+        _ = self.view_model.show_providers.connect(self.show_providers)
+        _ = self.view_model.get_providers_failed.connect(self.set_get_state)
+        _ = self.view_model.provider_state_changed.connect(self.update_provider_state)
+        _ = self.view_model.reset.connect(self.reset)
 
     # Buttons
     @Slot()
@@ -68,25 +68,25 @@ class GameDetailsView(QWidget):
         self._hide_all_widgets()
 
     @Slot(str, bool)
-    def set_get_state(self, status: str, enabled=True):
+    def set_get_state(self, status: str, enabled: bool = True):
         self.ui.btn_get.setText(status)
         self.ui.btn_get.setEnabled(enabled)
 
     @Slot(dict)
-    def show_providers(self, providers: dict):
+    def show_providers(self, providers: dict[str, str]):
         self.ui.btn_get.hide()
         self._clear_layout(self.ui.providers_layout)
 
         for provider_name, provider_url in providers.items():
             btn = ProviderButton(provider_name, provider_url)
-            btn.download_requested.connect(self.prompt_for_save_path)
-            btn.cancel_requested.connect(self.view_model.cancel_download)
+            _ = btn.download_requested.connect(self.prompt_for_save_path)
+            _ = btn.cancel_requested.connect(self.view_model.cancel_download)
             self.providers[btn.get_id] = btn
             self.ui.providers_layout.addWidget(btn)
         self.ui.providers_container.show()
 
     @Slot(dict)
-    def update_provider_state(self, state: dict):
+    def update_provider_state(self, state: dict[str, Any]):
         provider = self.providers.get(state.get("id", "NOIDEA"), None)
         if provider:
             provider.set_state(
@@ -95,7 +95,7 @@ class GameDetailsView(QWidget):
                 is_downloaded=state.get("has_finished", False),
                 has_failed=state.get("has_failed", False),
             )
-            logger.info(f"Updated provider {state.get('id', 'Unknown')} with state: {state}")
+            logger.debug(f"Updated provider {state.get('id', 'Unknown')} with state: {state}")
         else:
             logger.warning(f"Provider with ID {state.get('id', 'Unknown')} not found in providers dictionary.")
 
@@ -106,9 +106,18 @@ class GameDetailsView(QWidget):
         if file_path[0] != "":
             game_title = getattr(self.ui, "game_title", None)
             game_title_text = game_title.text() if game_title else ""
-            self.view_model.request_download(file_path[0], url, provider_id, game_title_text)
+            self.view_model.request_download(file_path[0], url, provider_id, game_title_text, self.ui.game_poster.pixmap())
             return file_path[0]
         return ""
+
+    @Slot(dict)
+    def set_metadata(self, metadata: dict):
+        self.set_title(metadata.get("title", ""))
+        self.set_rating(metadata.get("rating", ""), metadata.get("rating_color", ""))
+        self.set_genres(metadata.get("genres", []))
+        self.set_release(metadata.get("released", ""))
+        self.set_metacritic(metadata.get("metacritic", ""), metadata.get("metacritic_color", ""))
+
 
     # Setters
     def set_poster(self, poster_data: bytes):
@@ -117,7 +126,7 @@ class GameDetailsView(QWidget):
             return
 
         poster_pixmap = QPixmap()
-        poster_pixmap.loadFromData(poster_data)
+        _ = poster_pixmap.loadFromData(poster_data)
         self.ui.game_poster.setFixedSize(320, 180)
         scaled_pixmap = poster_pixmap.scaled(
             320,
@@ -155,6 +164,7 @@ class GameDetailsView(QWidget):
         widget.setStyleSheet("color: #4da6ff; font-style: italic;")
 
     def set_release(self, year: int | str | None):
+        logger.info(f"set_release: year={year!s}")
         widget = self._ensure_widget("game_release_date", self.ui.meta_info, 3, 0)
         widget.setText(f"📅 Release Date: {year!s}")
         widget.setStyleSheet("color: #cccccc; font-size: 14px;")
@@ -171,17 +181,18 @@ class GameDetailsView(QWidget):
             widget.setStyleSheet("color: #aaaaaa; font-size: 14px;")
 
     # System Requirements & Gallery
-    def populate_requirements(self, req_dict: dict, game_id: str = ""):
+    def populate_requirements(self, req_dict: dict[str, Any], game_id: str = ""):
+        _ = game_id
         for widget in self.sys_req_widget:
             widget.hide()
 
-        reqs = req_dict.get("requirements", {})
+        reqs: dict[str, Any] = req_dict.get("requirements", {})
         if min_req := reqs.get("minimum"):
             self.add_section_to_grid("Minimum", min_req)
         if rec_req := reqs.get("recommended"):
             self.add_section_to_grid("Recommended", rec_req)
 
-    def add_section_to_grid(self, section_name: str, specs: dict):
+    def add_section_to_grid(self, section_name: str, specs: dict[str, Any]):
         row = self.ui.requirements_grid.rowCount()
         header = self._get_pooled_label(
             section_name, "font-weight: bold; color: #1e90ff; padding-top: 10px;"
@@ -206,7 +217,7 @@ class GameDetailsView(QWidget):
 
     def _add_pixmap_to_gallery(self, shot_bytes: bytes):
         pixmap = QPixmap()
-        pixmap.loadFromData(shot_bytes)
+        _ = pixmap.loadFromData(shot_bytes)
         label = next((w for w in self.gallery_widget if not w.isVisible()), None)
         if label is None:
             label = QLabel()
@@ -224,7 +235,7 @@ class GameDetailsView(QWidget):
         label.show()
 
     # Helpers
-    def _ensure_widget(self, name: str, parent_layout, row: int, col: int) -> QLabel:
+    def _ensure_widget(self, name: str, parent_layout: QGridLayout, row: int, col: int) -> QLabel:
         if not hasattr(self.ui, name):
             new_widget = QLabel()
             setattr(self.ui, name, new_widget)
@@ -243,7 +254,7 @@ class GameDetailsView(QWidget):
         self.sys_req_widget.append(new_label)
         return new_label
 
-    def _clear_layout(self, layout):
+    def _clear_layout(self, layout: QLayout | None):
         if layout is None:
             return
         for i in reversed(range(layout.count())):

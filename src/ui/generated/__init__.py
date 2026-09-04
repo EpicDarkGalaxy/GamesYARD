@@ -3,7 +3,7 @@ from .gameinfo_ui import Ui_gameinfo
 from .main_window_ui import Ui_MainWindow
 from .search_grid_ui import Ui_SearchGrid
 from .home_catalog import Ui_home_catalog
-from .download_page_ui import Ui_download_page
+from .downloads_page_ui import Ui_downloads_page
 
 __all__ = [
     "Ui_GamePage",
@@ -11,5 +11,5 @@ __all__ = [
     "Ui_SearchGrid",
     "Ui_gameinfo",
     "Ui_home_catalog",
-    "Ui_download_page"
+    "Ui_downloads_page"
 ]

@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+
 from PySide6.QtCore import QObject, Signal, Slot
 from PySide6.QtGui import QPixmap
 
@@ -17,17 +18,15 @@ class GameDetailsViewModel(QObject):
     reset = Signal()
 
     show_providers = Signal(dict)
-    get_providers_failed = Signal(str) #  MSG or Status
-    download_requested = Signal(str, str, str, str) # save_path, url, id, name
+    get_providers_failed = Signal(str)  #  MSG or Status
+    download_requested = Signal(
+        str, str, str, str, object
+    )  # save_path, url, id, name, banner
     download_cancelled = Signal(str)
     provider_state_changed = Signal(dict)
 
-    set_title = Signal(str)
-    set_rating = Signal(float, str)
-    set_release = Signal(str)
-    set_genres = Signal(list)
-    set_metacritic = Signal(int, str)
     set_poster = Signal(bytes)
+    set_metadata = Signal(dict)
 
     def __init__(self) -> None:
         super().__init__()
@@ -58,11 +57,19 @@ class GameDetailsViewModel(QObject):
             metacritic: int = card.metacritic
             banner: QPixmap = card.poster_pixmap
 
-            self.set_title.emit(title)
-            self.set_rating.emit(rating, self._get_rating_color(rating))
-            self.set_release.emit(released)
-            self.set_genres.emit(genres)
-            self.set_metacritic.emit(metacritic, self._get_metacritic_color(metacritic))
+            metadata_dict = {
+                "title": title,
+                "rating": rating,
+                "rating_color": self._get_rating_color(rating),
+                "released": released,
+                "genres": genres,
+                "metacritic": metacritic,
+                "metacritic_color": self._get_metacritic_color(metacritic),
+                "description": card.description,
+
+            }
+            self.set_metadata.emit(metadata_dict)
+
             self._get_gallery(card.id)
             if isinstance(banner, QPixmap) and not banner.isNull():
                 logger.debug(f"Using cached banner for game: {card.id}")
@@ -90,9 +97,18 @@ class GameDetailsViewModel(QObject):
             logger.warning(
                 f"Could not find title for game_id: {self.current_game_id} to fetch providers."
             )
-                                                # download id is game id
-    def request_download(self, save_path: str, provider_url: str, download_id: str, download_name: str="NONAME"):
-        self.download_requested.emit(save_path, provider_url, download_id, download_name)
+
+    def request_download(
+        self,
+        save_path: str,
+        provider_url: str,
+        download_id: str,  # Provider id is USED
+        download_name: str = "NONAME",
+        banner: QPixmap | None = None,
+    ):
+        self.download_requested.emit(
+            save_path, provider_url, download_id, download_name, banner
+        )
 
     def cancel_download(self, download_id: str):
         self.download_cancelled.emit(download_id)

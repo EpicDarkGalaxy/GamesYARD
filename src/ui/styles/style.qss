@@ -47,6 +47,35 @@ QWidget {
     padding: 15px;
 }
 
+
+/* Requirements & Info Panels */
+#requirements_container, #hero_frame {
+    background-color: #1e1e1e;
+    border: 1px solid #333333;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+/*Home Catalog Styling*/
+#section_title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #ffffff;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    padding-left: 5px;
+}
+
+#home_section_list_view {
+    border: none;
+}
+
+/* Scrollbars */
+QScrollArea {
+    background-color: transparent;
+    border: none;
+}
+
 /* Buttons */
 QPushButton {
     background-color: #1e90ff;
@@ -68,35 +97,6 @@ QLineEdit {
     border-radius: 6px;
     padding: 6px 12px;
     color: #ffffff;
-}
-
-/* Game Cards */
-#game-card:hover {
-    border: 1px solid #1e90ff;
-}
-
-/* Requirements & Info Panels */
-#requirements_container, #hero_frame {
-    background-color: #1e1e1e;
-    border: 1px solid #333333;
-    border-radius: 10px;
-    padding: 15px;
-}
-
-/*Home Catalog Styling*/
-#section_title {
-    font-size: 20px;
-    font-weight: bold;
-    color: #ffffff;
-    margin-top: 20px;
-    margin-bottom: 10px;
-    padding-left: 5px;
-}
-
-/* Scrollbars */
-QScrollArea {
-    background-color: transparent;
-    border: none;
 }
 
 /* Scrollbar styling */

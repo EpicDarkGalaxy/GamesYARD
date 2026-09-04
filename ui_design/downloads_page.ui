@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>download_page</class>
- <widget class="QWidget" name="download_page">
+ <class>downloads_page</class>
+ <widget class="QWidget" name="downloads_page">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -14,21 +14,6 @@
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
-   <property name="spacing">
-    <number>1</number>
-   </property>
-   <property name="leftMargin">
-    <number>1</number>
-   </property>
-   <property name="topMargin">
-    <number>1</number>
-   </property>
-   <property name="rightMargin">
-    <number>1</number>
-   </property>
-   <property name="bottomMargin">
-    <number>1</number>
-   </property>
    <item>
     <widget class="QFrame" name="download_page_root_container">
      <property name="frameShape">
@@ -65,8 +50,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>392</width>
-             <height>292</height>
+             <width>376</width>
+             <height>276</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_3">

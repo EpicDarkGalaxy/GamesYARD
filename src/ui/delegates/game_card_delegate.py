@@ -28,7 +28,9 @@ class GameCardDelegate(QStyledItemDelegate):
 		painter.setClipPath(clip_path)
 
 		# 2. Draw Background
-		thumb = index.model().thumbnails.get(index.row())
+		thumb_dict = index.model().thumbnails.get(index.row())
+		thumb = thumb_dict.get(game.id) if thumb_dict else None
+
 		if thumb and not thumb.isNull():
 			# logger.debug(f"Drawing thumbnail for row: {index.row()}")
 			painter.drawPixmap(rect.toRect(), thumb)
@@ -56,6 +58,16 @@ class GameCardDelegate(QStyledItemDelegate):
 		painter.setFont(QFont("Segoe UI", 9, QFont.Weight.DemiBold))
 		rating_rect = QRectF(rect.x() + 14, rect.bottom() - 20, rect.width() - 28, 18)
 		painter.drawText(rating_rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, f"★ {game.rating:.1f}")
+
+        # 6. Draw Hover Effect
+		if index.isValid():
+			if option.state & QStyle.State_MouseOver:
+				hover_overlay = QLinearGradient(0, 0, rect.width(), rect.height()) # Cover Full CARD
+				hover_overlay.setColorAt(0.0, QColor(0, 0, 0, 0)) # Transparent
+				hover_overlay.setColorAt(1.0, QColor(0, 0, 0, 100))# Dark overlay
+				hover_overlay.setColorAt(0.5, QColor(0, 0, 0, 50)) # Mid-dark
+
+				painter.fillRect(rect, hover_overlay)
 
 		painter.restore()
 

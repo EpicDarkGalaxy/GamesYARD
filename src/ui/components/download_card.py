@@ -1,118 +1,159 @@
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QFont, QLinearGradient, QPainter, QPen
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QSizePolicy
+from typing import Optional
 
-from src.core.utils import get_logger, format_speed
+from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QColor, QFont, QPainter, QPen, QPixmap
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QPushButton, QSizePolicy
+from PySide6.QtGui import QEnterEvent, QPaintEvent
+from PySide6.QtCore import QEvent
+
+from src.core.utils import format_speed, get_logger
 
 logger = get_logger(__name__)
 
 class DownloadCard(QFrame):
-    def __init__(self, id: str, title: str, file_size: int):
+    cancel: Signal = Signal(str)
+    pause: Signal = Signal(str)
+
+    def __init__(self, id: str, title: str, file_size: int, thumbnail: QPixmap | None = None):
         super().__init__()
-        self.setFixedHeight(30)  # Slightly taller to comfortably fit text
+        self.setFixedSize(300, 180)
         self.setSizePolicy(
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Fixed,
         )
+        self.button_layout: QHBoxLayout = QHBoxLayout(self)
+        self.button_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.button_layout.addStretch()
 
-        self.id = id
-        self.title = title
-        self.total_size = file_size
-        self.downloaded_size = 0
-        self.progress = 0
+        self.button_height: float = (self.height() / 100) * 20
 
-        self._init_ui()
+        self.cancel_button: QPushButton = QPushButton("Cancel", self)
+        self.cancel_button.setFixedHeight(int(self.button_height))
+        self.cancel_button.setStyleSheet("""
+            QPushButton {
+                background-color: #ff4d4d;
+                border-radius: none;
+            }
+        """)
+        self.cancel_button.hide()
+        _ = self.cancel_button.clicked.connect(lambda: self.cancel.emit(self.id))
 
-    def _init_ui(self):
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(15, 0, 15, 0)
 
-        # Title Label matching app font color (#e0e0e0)
-        self.title_label = QLabel(self.title, self)
-        font = QFont("Segoe UI", 10, QFont.Weight.Bold)
-        self.title_label.setFont(font)
-        self.title_label.setStyleSheet("color: #e0e0e0; background: transparent;")
-        layout.addWidget(self.title_label)
+        self.pause_button: QPushButton = QPushButton("Pause", self)
+        self.pause_button.setFixedHeight(int(self.button_height))
+        self.pause_button.setStyleSheet("""
+            QPushButton {
+                background-color: #1e90ff;
+                border-radius: none;
+            }
+        """)
 
-        layout.addStretch()
 
-        # Speed Label matching muted text style (#888888)
-        self.speed_label = QLabel("0 MB/s")
-        speed_font = QFont("Segoe UI", 9)
-        self.speed_label.setFont(speed_font)
-        self.speed_label.setStyleSheet("color: #888888; background: transparent;")
-        layout.addWidget(self.speed_label)
+        self.pause_button.hide()
+        _ = self.pause_button.clicked.connect(lambda: self.pause.emit(self.id))
 
-        layout.addSpacing(10)
+        self.button_layout.addWidget(self.pause_button)
+        self.button_layout.addWidget(self.cancel_button)
 
-        # File Size Label matching muted text style (#888888)
-        self.size_label = QLabel("0/0 MB")
-        size_font = QFont("Segoe UI", 9)
-        self.size_label.setFont(size_font)
-        self.size_label.setStyleSheet("color: #888888; background: transparent;")
-        layout.addWidget(self.size_label)
+        self.id: str = id
+        self.title: str = title
+        self.total_size: int = file_size
+        self.thumbnail: Optional[QPixmap] = thumbnail
+        self.downloaded_size: int = 0
+        self.progress: int = 0
+        self.uniform_size: str = "40 / 900 MB"
+        self.speed: str = ""
 
-        layout.addSpacing(10)
+        self.anim_offset: float = 0.0
 
-        # Percentage / Status Label matching accent blue (#1e90ff)
-        self.status_label = QLabel("0%", self)
-        status_font = QFont("Segoe UI", 10, QFont.Weight.Bold)
-        self.status_label.setFont(status_font)
-        self.status_label.setStyleSheet("color: #1e90ff; background: transparent;")
-        layout.addWidget(self.status_label)
+        self.anim_timer: QTimer = QTimer(self)
+        self.anim_timer.setInterval(16)
+        _ = self.anim_timer.timeout.connect(self._anim_tick)
+        self.anim_timer.start()
+
+        self.padding: int = 20
+        self.is_hovered: bool = False
+
+    def _anim_tick(self):
+        self.anim_offset += 2.0
+        if self.anim_offset > 300:
+            self.anim_offset = 0.0
+        self.update()
 
     def update_data(self, downloaded_size: int, total_size: int, progress: int, speed: float = 0.0):
         self.downloaded_size = downloaded_size
         self.total_size = total_size
         self.progress = progress
+        self.speed = format_speed(speed)
 
-        # Update status and size text
-        self.status_label.setText(f"{self.progress}%")
-        self.speed_label.setText(format_speed(speed))
-
-        # Convert bytes/sizes nicely if needed, assuming bytes or MB based on original init
-        # For simplicity, format downloaded/total if total is available
         if self.total_size > 0:
             dl_mb = self.downloaded_size / (1024 * 1024)
             tot_mb = self.total_size / (1024 * 1024)
-            self.size_label.setText(f"{dl_mb:.1f} / {tot_mb:.1f} MB")
+            self.uniform_size = f"{dl_mb:.1f} / {tot_mb:.1f} MB"
         else:
             dl_mb = self.downloaded_size / (1024 * 1024)
-            self.size_label.setText(f"{dl_mb:.1f} MB")
+            self.uniform_size = f"{dl_mb:.1f} MB"
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, event: QPaintEvent):
         painter = QPainter(self)
         painter.setRenderHints(QPainter.RenderHint.Antialiasing)
 
-        # Background matching app's card style (#1e1e1e with subtle gradient)
-        gradient = QLinearGradient(0, 0, 0, self.height())
-        gradient.setColorAt(0, QColor(30, 30, 30))  # #1e1e1e
-        gradient.setColorAt(1, QColor(22, 22, 22))
-        painter.setBrush(gradient)
+        # 1. Background Thumbnail or Dark Grey
+        if self.thumbnail:
+            scaled = self.thumbnail.scaled(self.width(), self.height(), Qt.AspectRatioMode.KeepAspectRatioByExpanding)
+            painter.drawPixmap(0, 0, scaled)
+        else:
+            painter.fillRect(0, 0, self.width(), self.height(), QColor(30, 30, 30))
 
-        # Border matching app border style (#333333)
-        pen = QPen(QColor(51, 51, 51), 1)
-        painter.setPen(pen)
-        painter.drawRoundedRect(0, 0, self.width() - 1, self.height() - 1, 8, 8)
+        # 2. Dark Overlay for readability
+        painter.fillRect(0, 0, self.width(), self.height(), QColor(20, 20, 20, 140))
 
-        # Progress overlay matching the app's accent gradient (#1e90ff)
-        progress_width = int((self.width() - 2) * self.progress / 100)
-        if progress_width > 0:
-            progress_gradient = QLinearGradient(0, 0, progress_width, 0)
-            # Uses your app's primary blue theme with smooth transparency
-            progress_gradient.setColorAt(0, QColor(30, 144, 255, 60))  # #1e90ff faded
-            progress_gradient.setColorAt(
-                1, QColor(30, 144, 255, 100)
-            )  # #1e90ff slightly bolder
+        # 3. Progress Bar
+        if self.progress > 0:
+            progress_width = int(self.width() * self.progress / 100)
+            painter.fillRect(0, 0, progress_width, self.height(), QColor(30, 144, 255, 70)) # Translucent Accent Blue
 
-            painter.setBrush(progress_gradient)
-            painter.setPen(Qt.PenStyle.NoPen)
-            # Draw inside the border (1px offset)
-            painter.drawRoundedRect(1, 1, progress_width, self.height() - 2, 7, 7)
+        # 4. Card Title (bottom-Left, Bold, Header-style)
+        title_font = QFont("Segoe UI", 15, QFont.Weight.Bold)
+        painter.setFont(title_font)
+        painter.setPen(QColor(224, 224, 224))
+        painter.drawText(15, self.height() - self.padding, self.title)
 
-        # Let Qt handle child layouts (labels)
+        # 5. Card Size (bottom-Right, DemiBold, Subtle)
+        size_font = QFont("Segoe UI", 10, QFont.Weight.DemiBold)
+        painter.setFont(size_font)
+        painter.setPen(QColor(224, 224, 224))
+        text = f"{self.uniform_size}"
+        text_width = painter.fontMetrics().horizontalAdvance(text)
+        painter.drawText(self.width() - text_width - 15, self.height() - self.padding, text)
+
+        # 6. Card Speed (top-left, Normal, Subtle, outlined)
+        speed_font = QFont("Segoe UI", 10, QFont.Weight.Normal)
+        painter.setFont(speed_font)
+        text = f"{self.speed}"
+
+        # Draw outline
+        painter.setPen(QPen(QColor(0, 0, 0), 2))
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                if dx != 0 or dy != 0:
+                    painter.drawText(15 + dx, self.padding + 5 + dy, text)
+
+        # Draw main text
+        painter.setPen(QColor(30, 144, 255))  # Accent Blue
+        painter.drawText(15, self.padding + 5, text)
+
         super().paintEvent(event)
 
-    def enterEvent(self, event):
-        return super().enterEvent(event)
+    def enterEvent(self, event: QEnterEvent):
+        self.is_hovered = True
+        self.pause_button.show()
+        self.cancel_button.show()
+        self.update()
+
+    def leaveEvent(self, event: QEvent):
+        self.is_hovered = False
+        self.pause_button.hide()
+        self.cancel_button.hide()
+        self.update()

@@ -25,7 +25,7 @@ class HomeCatalogView(QWidget):
         self.ui = Ui_home_catalog()
         self.ui.setupUi(self)
         self.view_model = view_model
-        self.ui.verticalLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.ui.verticalLayout.setAlignment(Qt.AlignmentFlag.AlignTop) # Align everything to the top
 
         # Store models so we can update them when data arrives
         self.models = {}
@@ -51,6 +51,7 @@ class HomeCatalogView(QWidget):
 
         # 3. QListView
         list_view = HoverableListView()
+        list_view.setObjectName("home_section_list_view")
         list_view.setViewMode(QListView.ViewMode.IconMode)
         list_view.setFlow(QListView.Flow.LeftToRight)
         list_view.setWrapping(False)

@@ -46,8 +46,8 @@ class DownloadManager(QObject):
         super().__init__()
         self.download_queue: dict[str, Download] = {}
         self.is_downloading: bool = False
-        self.task_runner = task_runner
         self.active_workers: dict[str, Any] = {}
+        self.task_runner = task_runner
 
     def add_download(self, save_path: str, provider_url: str, download_id: str, download_name: str="NONAME"):
         providers = ProviderFactory()
@@ -69,6 +69,19 @@ class DownloadManager(QObject):
 
             self._handle_download_started(download_id)
             self.task_runner.run_worker(dl_worker)
+
+    def stop_download(self, download_id: str):
+        download = self.download_queue.pop(download_id)
+        if download:
+            logger.debug(f"Stopped download: id={download_id}")
+            download.is_downloading = False
+            download.has_failed = True
+            self.download_state_changed.emit(download)
+            self.download_canceled.emit(download.id)
+            self.active_workers.pop(download_id, None)
+        else:
+            logger.warning(f"Download not found: id={download_id}")
+
 
     def stop_all_downloads(self):
         for download_id, worker in list(self.active_workers.items()):
