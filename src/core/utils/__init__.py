@@ -8,7 +8,6 @@ from .utils import (
     get_filename_from_url,
     get_img_data,
     get_site_name,
-    parse_rawg_reqs,
     format_speed
 )
 
@@ -23,6 +22,5 @@ __all__ = [
     "get_img_data",
     "get_logger",
     "get_site_name",
-    "parse_rawg_reqs",
     "decodeBase64",
 ]

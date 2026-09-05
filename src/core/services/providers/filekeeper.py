@@ -1,16 +1,16 @@
 from curl_cffi import requests
 
 from ...utils.utils import parseHtml
-from .base import BaseProvider
+from .base_provider import BaseProvider
 
 
 class FileKeeperProvider(BaseProvider):
     def can_handle(self, url: str) -> bool:
-        return "filekeeper.net" in url
+        return url.startswith("https://filekeeper.net/")
 
-    def extract_dl_url(self, provider_url) -> str | None:
+    def extract_dl_url(self, url: str) -> str | None:
         # 1. Fetch the landing page
-        soup = parseHtml(provider_url)
+        soup = parseHtml(url)
 
         # 2. Find the countdown element
         countdown_element = soup.select_one("#download-countdown")
@@ -36,7 +36,7 @@ class FileKeeperProvider(BaseProvider):
         # 5. Perform the POST request to the same URL
         # We use the same 'scraper' session to keep cookies intact
         post_response = requests.post(
-            provider_url, data=payload, impersonate="chrome124", stream=True
+            url, data=payload, impersonate="chrome124", stream=True
         )
 
         # print(f"Status: {post_response.status_code}")

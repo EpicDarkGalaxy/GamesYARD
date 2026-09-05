@@ -44,6 +44,8 @@ class DownloadView(QWidget):
 
     @Slot(object)
     def handle_add_card(self, download_model):
+        self.no_downloads_label.setVisible(False)
+
         if self._cards.get(download_model.id, None):
             logger.info(f"Download Card for id {download_model.id} already exists, skipped adding.")
             return # Prevent from creating duplicate card
@@ -55,9 +57,9 @@ class DownloadView(QWidget):
             resume_supported=download_model.resume_supported,
             thumbnail=download_model.banner,
         )
-        _ = card.cancel.connect(self.view_model.cancel_download)
-        _ = card.pause.connect(self.view_model.pause_download)
-        _ = card.resume.connect(self.view_model.resume_download)
+        _ = card.cancel_requested.connect(self.view_model.cancel_download)
+        _ = card.pause_requested.connect(self.view_model.pause_download)
+        _ = card.resume_requested.connect(self.view_model.resume_download)
         self._cards[download_model.id] = card
         self.ui.downloads_layout_2.addWidget(card)
         logger.info(f"Added card for download {download_model.id}")
@@ -72,16 +74,20 @@ class DownloadView(QWidget):
         card = self._cards.get(card_id, None)
         if card:
             card.update_data(
-                download_model.downloaded_size,
-                download_model.total_size,
-                download_model.progress,
-                download_model.speed,
-                download_model.paused,
-                download_model.resume_supported
+                downloaded_size=download_model.downloaded_size,
+                total_size=download_model.total_size,
+                progress=download_model.progress,
+                speed=download_model.speed,
+                paused=download_model.paused,
+                resume_supported=download_model.resume_supported
             )
 
     @Slot(str)
     def handle_remove_card(self, card_id: str):
+        if not self._cards:
+            self.no_downloads_label.setVisible(True)
+            return
+
         card = self._cards.get(card_id, None)
         if card:
             self.ui.downloads_layout_2.removeWidget(card)

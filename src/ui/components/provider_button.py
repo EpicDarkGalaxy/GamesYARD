@@ -62,8 +62,7 @@ class ProviderButton(QWidget):
                 background-color: green;
             }
             """)
-        self.btn.setText("Donwload completed, click to redownload")
-        self.btn.setVisible(True)
+        self.btn.setText("Download completed, click to redownload")
         self.progress_bar.setVisible(False)
 
     def _set_failed_display(self):
@@ -73,7 +72,7 @@ class ProviderButton(QWidget):
                 background-color: darkred;
             }
             """)
-        self.btn.setText("Download FAILED!, click to redownload")
+        self.btn.setText("Failed")
         self.progress_bar.setVisible(False)
 
     def enterEvent(self, event):
@@ -93,7 +92,7 @@ class ProviderButton(QWidget):
                     background-color: red;
                 }
                 """)
-            self.btn.setText("Click to Cancle")
+            self.btn.setText("Click to Cancel")
             self.progress_bar.setVisible(False)
             self.btn.setVisible(True)
             super().enterEvent(event)
@@ -105,16 +104,16 @@ class ProviderButton(QWidget):
             super().leaveEvent(event)
 
     @property
-    def get_id(self):
+    def id(self):
         return self._id
 
-    @get_id.setter
-    def set_id(self, id: str):
+    @id.setter
+    def id(self, id: str):
         if (id):
             self._id = id
 
     @property
-    def get_state(self):
+    def state(self):
         return self._is_downloading, self._is_downloaded, self._has_failed
 
     def set_state(self, progress: int=0, is_downloading: bool = False, is_downloaded: bool = False, has_failed: bool = False):

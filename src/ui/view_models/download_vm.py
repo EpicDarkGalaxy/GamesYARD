@@ -37,7 +37,6 @@ class DownloadViewModel(QObject):
         super().__init__()
         self._app_coordinator: AppCoordinator = None
         self._downloads: dict[str, DownloadModel] = {}
-        self._banners: dict[str, QPixmap] = {}
 
     def initialize(self, coordinator):
         self._app_coordinator = coordinator
@@ -48,12 +47,12 @@ class DownloadViewModel(QObject):
             self._handle_download_state_changed
         )
         self._app_coordinator.download_manager.download_started.connect(self.add_download)
-        self._app_coordinator.download_manager.download_canceled.connect(self._handle_download_canceled)
+        self._app_coordinator.download_manager.download_cancelled.connect(self._handle_download_cancelled)
 
     def _update_download_model(self, download_model: DownloadModel, download) -> None:
         download_model.downloaded_size = int(download.downloaded_size)
         download_model.progress = int(download.progress)
-        DownloadModel.total_size = int(download.total_size)
+        download_model.total_size = int(download.total_size)
         download_model.speed = float(download.speed)
         download_model.is_downloading = bool(download.is_downloading)
         download_model.has_failed = bool(download.has_failed)
@@ -89,20 +88,20 @@ class DownloadViewModel(QObject):
             save_path, url, download_id, download_name
         )
 
-    def cancel_download(self, download_id: str):
+    def requesting_cancel_download(self, download_id: str):
         logger.debug(f"Cancelling download: id={download_id}")
         self._app_coordinator.download_manager.stop_download(download_id)
 
-    def pause_download(self, download_id: str):
+    def requesting_pause_download(self, download_id: str):
         logger.debug(f"Pausing download: id={download_id}")
         self._app_coordinator.download_manager.pause_download(download_id)
 
-    def resume_download(self, download_id: str):
+    def requesting_resume_download(self, download_id: str):
         logger.debug(f"Resuming download: id={download_id}")
         self._app_coordinator.download_manager.resume_download(download_id)
 
     @Slot(str)
-    def _handle_download_canceled(self, download_id: str):
+    def _handle_download_cancelled(self, download_id: str):
         logger.debug(f"Download canceled: id={download_id}")
         _= self._downloads.pop(download_id, None)
         self.remove_card.emit(download_id)
@@ -111,8 +110,8 @@ class DownloadViewModel(QObject):
     def _handle_download_state_changed(self, download):
         logger.debug(f"Download state changed: id={download.id}, is_downloading={download.is_downloading}")
 
-        if download.id not in self._downloads and download.is_downloading:  # Download started
+        if download.id not in self._downloads and download.is_downloading:  # Download resumed
             self.add_download(download.id, download.name)
-        else:  # Download in progress
+        else:  # Download in progress or failed, finished and canceled
             download_model = self._downloads[download.id]
             self._update_download_model(download_model, download)

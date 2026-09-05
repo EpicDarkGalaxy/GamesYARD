@@ -4,7 +4,7 @@ from uuid import uuid1
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from src.core.services.scrapers.scraper_4fnet import FourFNetScraper
+from src.core.services.scrapers import *
 
 from ..aio.workers import DownloadWorker, Worker
 from ..services.providers import ProviderFactory
@@ -36,69 +36,66 @@ class Download:
 
 class DownloadManager(QObject):
     download_started = Signal(str, str)
-    download_finished = Signal(str)
-    download_progress = Signal(str, int)
-    download_failed = Signal(str)
-    download_canceled = Signal(str)
-
+    download_cancelled = Signal(str)
     download_state_changed = Signal(Download)  # Download Model
+
     providers_found = Signal(dict)
 
     def __init__(self, task_runner: "TaskRunner"):
         super().__init__()
-        self.download_queue: dict[str, Download] = {}
-        self.is_downloading: bool = False
-        self.active_workers: dict[str, Any] = {}
-        self.task_runner = task_runner
+        self._task_runner = task_runner
+        self._active_workers: dict[str, Any] = {}
+        self._download_queue: dict[str, Download] = {}
+        self.is_downloading: bool = False # Flag to track if the download manager is currently downloading
 
     def add_download(self, save_path: str, provider_url: str, download_id: str, download_name: str="NONAME"):
         providers = ProviderFactory()
         provider = providers.get_provider(provider_url)
         if provider:
             download = Download(id=download_id, name=download_name, save_path=save_path, host_url=provider_url)
-            self.download_queue[download_id] = download
-            self.task_runner.run_task(provider.extract_dl_url, self._handle_dl_url, provider_url, return_value=download_id)
+            self._download_queue[download_id] = download
+            self._task_runner.run_task(provider.extract_dl_url, self._handle_dl_url, provider_url, return_value=download_id)
         else:
             raise Exception("Provider not found")
 
     def start_download(self, download_id: str):
-        download = self.download_queue.get(download_id, None)
+        download = self._download_queue.get(download_id, None)
         if download and download.url:
             dl_worker = DownloadWorker(download.url, download.save_path, download.id)
             dl_worker.signals.download_progress.connect(self._handle_download_progress)
             dl_worker.signals.download_finished.connect(self._handle_download_finished)
             download.is_downloading = True
 
-            self.active_workers[download_id] = dl_worker
+            self._active_workers[download_id] = dl_worker
             self.download_started.emit(download_id, download.name)
-            self.task_runner.run_worker(dl_worker)
+            self._task_runner.run_worker(dl_worker)
 
     def stop_download(self, download_id: str):
-        download = self.download_queue.pop(download_id, None)
+        download = self._download_queue.pop(download_id, None)
         if download:
             logger.debug(f"Stopped download: id={download_id}")
             download.is_downloading = False
             download.has_failed = True
-            self.download_canceled.emit(download.id)
-            self.active_workers.pop(download_id, None)
+            self.download_cancelled.emit(download.id)
+            self._active_workers.pop(download_id, None)
         else:
             logger.warning(f"Download not found: id={download_id}")
 
 
     def stop_all_downloads(self):
-        for download_id, worker in list(self.active_workers.items()):
+        for download_id, worker in list(self._active_workers.items()):
             worker.cancel()
-        self.active_workers.clear()
-        for download in self.download_queue.values():
+        self._active_workers.clear()
+        for download in self._download_queue.values():
             if download:
                 download.is_downloading = False
                 download.has_failed = True
                 self.download_state_changed.emit(download)
-                self.download_canceled.emit(download.id)
-        self.task_runner.pool.clear()
+                self.download_cancelled.emit(download.id)
+        self._task_runner.pool.clear()
 
     def pause_download(self, download_id: str):
-        worker = self.active_workers.pop(download_id, None)
+        worker = self._active_workers.pop(download_id, None)
         if worker:
             worker.pause()
 
@@ -106,21 +103,42 @@ class DownloadManager(QObject):
         self.start_download(download_id)
 
     def get_providers(self, game_title: str):
-        scraper = FourFNetScraper()
-        self.task_runner.run_task(scraper.find_game_page, self._handle_game_page, game_title)
+        scrapers = [FourFNetScraper(), GameBountyScraper()]
+        self._provider_aggregate: dict[str, dict[str, str]] = {}
+        self._pending_scraper_count = len(scrapers)
 
-    @Slot(str)
-    def _handle_game_page(self, game_page: str):
-        scraper = FourFNetScraper()
-        self.task_runner.run_task(scraper.fetch_download_links, self._handle_providers, game_page)
+        for scraper in scrapers:
+            self._task_runner.run_task(
+                scraper.find_game_url,
+                self._handle_game_page,
+                game_title,
+                return_value=scraper,
+            )
+
+    @Slot(object, object)
+    def _handle_game_page(self, game_url: str | None, scraper):
+        if not game_url:
+            self._on_scraper_done()
+            return
+        self._task_runner.run_task(
+            scraper.scrape_download_urls,
+            self._handle_providers,
+            game_url,
+        )
 
     @Slot(dict)
     def _handle_providers(self, providers: dict):
-        self.providers_found.emit(providers)
+        self._provider_aggregate.update(providers)
+        self._on_scraper_done()
+
+    def _on_scraper_done(self):
+        self._pending_scraper_count -= 1
+        if self._pending_scraper_count <= 0:
+            self.providers_found.emit(self._provider_aggregate)
 
     @Slot(dict)
     def _handle_download_progress(self, download_progress: dict):
-        download = self.download_queue.get(download_progress["download_id"])
+        download = self._download_queue.get(download_progress["download_id"])
         if download:
             download.progress = download_progress["percent"]
             download.total_size = download_progress["total_size"]
@@ -133,14 +151,21 @@ class DownloadManager(QObject):
 
     @Slot(bool, str)
     def _handle_download_finished(self, result: bool, download_id: str):
-        if result:
-            self.download_finished.emit(download_id)
-        else:
-            self.download_failed.emit(download_id)
+        download = self._download_queue.get(download_id)
+        if not download:
+            return
+        download.is_downloading = False
+        download.has_finished = result
+        download.has_failed = not result
+        self.download_state_changed.emit(download)
 
-    @Slot(str, str)
     def _handle_dl_url(self, dl_url: str, download_id: str):
-        download = self.download_queue.get(download_id)
+        download = self._download_queue.get(download_id)
         if dl_url and download:
             download.url = dl_url
             self.start_download(download_id)
+        elif download:
+            logger.error(f"Failed to resolve dl_url for download_id: {download_id}")
+            download.has_failed = True
+            self.download_state_changed.emit(download)
+            self._download_queue.pop(download_id, None)

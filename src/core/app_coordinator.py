@@ -5,6 +5,11 @@ if TYPE_CHECKING:
     from src.core.managers import *
 
 class AppCoordinator:
+    """
+    Application flow coordinator and mediator.
+    Manages navigation state and wires up inter-ViewModel communication
+    via Qt signals without allowing ViewModels to couple directly to each other.
+    """
     def __init__(
         self,
         main_vm: Any,

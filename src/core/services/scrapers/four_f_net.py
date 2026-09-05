@@ -1,20 +1,26 @@
 import requests
+from src.core.services.scrapers.base_scraper import BaseScraper
 from bs4 import BeautifulSoup
 
 from src.core.utils import decodeBase64, get_logger
 
 logger = get_logger(__name__)
 
-class FourFNetScraper:
+class FourFNetScraper(BaseScraper):
     def __init__(self):
+        super().__init__()
         self.base_url = "https://4fnet.org"
         self.session = requests.Session()
 
-    def find_game_page(self, game_title: str) -> str | None:
+    def find_game_url(self, game_title: str) -> str | None:
         """
         Takes the title from metadata, searches 4fnet,
         and returns the URL of the first (best) result.
         """
+
+        # 4FNET is does not work well with slugs, so remove any slashes from the title
+        game_title = game_title.replace("-", " ")
+
         search_url = f"{self.base_url}/?s={game_title}"
         try:
             response = self.session.get(search_url, timeout=10)
@@ -23,7 +29,7 @@ class FourFNetScraper:
 
             # Get the first search result link
             first_article = soup.select_one("#post-items li a")
-            if first_article:
+            if first_article and game_title in first_article.text:
                 href = first_article.get("href")
                 return str(href) if href else None
 
@@ -33,7 +39,7 @@ class FourFNetScraper:
             logger.error(f"Search request failed for '{game_title}' at {search_url}: {e}")
             return None
 
-    def fetch_download_links(self, game_url: str) -> dict[str, str]:
+    def scrape_download_urls(self, game_url: str) -> dict[str, dict[str, str]]:
         """Extracts all decoded download links from a specific game page."""
         try:
             response = self.session.get(game_url, timeout=10)
@@ -58,7 +64,7 @@ class FourFNetScraper:
                     decoded_links[site_name] = decoded_url
 
             logger.info(f"Successfully extracted {len(decoded_links)} download links from {game_url}")
-            return decoded_links
+            return {"FourFNet": decoded_links}
         except requests.RequestException as e:
             logger.error(f"Request failed while fetching download links from {game_url}: {e}")
             return {}

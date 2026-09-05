@@ -17,9 +17,8 @@ class SearchWorkerSignals(WorkerSignals):
     fetch_fail = Signal() # Signal to indicate the worker has failed to fetch items
 
 class DownloadWorkerSignals(WorkerSignals):
-    download_finished = Signal(str)  # Signal to indicate the download has finished
-    download_fail = Signal(str)  # Signal to indicate the download has failed
-    download_progress = Signal(dict) # Sisnal to indicate download progress for spcific id
+    download_finished = Signal(bool, str)  # Signal to indicate the download has finished (success, download_id)
+    download_progress = Signal(dict)  # Signal to indicate download progress for a specific id
     download_paused = Signal(str)  # Signal to indicate the download has been paused
 
 class UrlExtractorWorkerSignals(WorkerSignals):

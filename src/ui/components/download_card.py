@@ -17,9 +17,9 @@ from src.core.utils import format_speed, get_logger
 logger = get_logger(__name__)
 
 class DownloadCard(QFrame):
-    cancel: Signal = Signal(str)
-    pause: Signal = Signal(str)
-    resume: Signal = Signal(str)
+    cancel_requested: Signal = Signal(str)
+    pause_requested: Signal = Signal(str)
+    resume_requested: Signal = Signal(str)
 
     def __init__(
         self,
@@ -50,7 +50,7 @@ class DownloadCard(QFrame):
 			}
 		""")
         self.cancel_button.hide()
-        _ = self.cancel_button.clicked.connect(lambda: self.cancel.emit(self.id))
+        _ = self.cancel_button.clicked.connect(lambda: self.cancel_requested.emit(self.id))
 
         self.pause_button: QPushButton = QPushButton("Pause", self)
         self.pause_button.setEnabled(resume_supported)
@@ -67,7 +67,7 @@ class DownloadCard(QFrame):
         self.total_size: int = file_size
         self.thumbnail: Optional[QPixmap] = thumbnail
         self.downloaded_size: int = 0
-        self.paused: bool = False
+        self._paused: bool = False
         self.progress: int = 0
         self.uniform_size: str = "40 / 900 MB"
         self.speed: str = ""
@@ -101,9 +101,8 @@ class DownloadCard(QFrame):
         self.total_size = total_size
         self.progress = progress
         self.speed = format_speed(speed)
-        logger.info(f"Resume soport = {resume_supported}")
         if resume_supported:
-            self.set_pause(paused)
+            self.paused = paused
         self.pause_button.setEnabled(resume_supported)
 
         if self.total_size > 0:
@@ -142,7 +141,7 @@ class DownloadCard(QFrame):
             )  # Translucent Accent Blue
 
         # 4. Card Title (bottom-Left, Bold, Header-style)
-        if not self.paused:
+        if not self._paused:
             title_font = QFont("Segoe UI", 15, QFont.Weight.Bold)
             painter.setFont(title_font)
             painter.setPen(QColor(224, 224, 224))
@@ -175,7 +174,7 @@ class DownloadCard(QFrame):
             painter.drawText(15, self.padding + 5, text)
 
         # 7. Draw Pasued
-        if self.paused:
+        if self._paused:
             painter.setPen(QColor(255, 255, 255))
             paused_font = QFont("Segoe UI", 15, QFont.Weight.ExtraBold)
             painter.setFont(paused_font)
@@ -188,10 +187,15 @@ class DownloadCard(QFrame):
 
         super().paintEvent(event)
 
-    def set_pause(self, value: bool):
-        self.paused = value
+    @property
+    def paused(self) -> bool:
+        return self._paused
 
-        if self.paused:
+    @paused.setter
+    def paused(self, value: bool):
+        self._paused = value
+
+        if self._paused:
             self.pause_button.setText("Resume")
             self.progress = 0  # Reset progress to 0 when paused for paused overlay
         else:
@@ -200,12 +204,12 @@ class DownloadCard(QFrame):
         self.pause_button.setEnabled(True)
 
     def _handle_pause_button(self):
-        if not self.paused:
+        if not self._paused:
             self.pause_button.setText("Pausing..")
-            self.pause.emit(self.id)
+            self.pause_requested.emit(self.id)
         else:
             self.pause_button.setText("Resuming..")
-            self.resume.emit(self.id)
+            self.resume_requested.emit(self.id)
         self.pause_button.setEnabled(False)
 
     def enterEvent(self, event: QEnterEvent):

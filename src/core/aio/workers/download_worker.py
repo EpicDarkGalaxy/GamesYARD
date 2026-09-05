@@ -52,7 +52,7 @@ class DownloadWorker(BaseWorker):
                 headers["Range"] = f"bytes={downloaded_size}-"
                 logger.info(f"Resuming download {self.download_id} from byte {downloaded_size}")
 
-            response = r.get(self.url, stream=True, impersonate="chrome124", headers=headers)
+            response = r.get(self.url, stream=True, impersonate="chrome124", headers=headers, timeout=10)
             if response.status_code == 206:
                 logger.info(f"Download {self.download_id} supports resuming")
                 self.resume_supported = True
@@ -99,9 +99,9 @@ class DownloadWorker(BaseWorker):
                         self._emit_state(downloaded_size, total_size, speed_bytes_per_sec, is_downloading=True)
 
             response.close()
-            self.signals.download_finished.emit(self.download_id)
+            self.signals.download_finished.emit(True, self.download_id)
             self.signals.finished.emit()
 
         except Exception as e:
-            self.signals.download_fail.emit(self.download_id)
+            self.signals.download_finished.emit(False, self.download_id)
             logger.error(f"failed to download {self.url} {e}")

@@ -3,7 +3,7 @@ from src.core.utils import get_logger, download_icon
 
 if TYPE_CHECKING:
 
-	from src.core.services.metadata import RawgAPI
+	from src.core.services.metadata import BaseMetadataSource
 
 logger = get_logger(__name__)
 
@@ -21,7 +21,7 @@ ICON_MAP: dict[str, str] = {
 }
 
 class AssetManager:
-	def __init__(self, metadata_source: "RawgAPI"):
+	def __init__(self, metadata_source: "BaseMetadataSource"):
 		super().__init__()
 		self.metadata_source = metadata_source
 		self._cache: dict[str, bytes | None] = {}  # {"ID": img_data (bytes)}

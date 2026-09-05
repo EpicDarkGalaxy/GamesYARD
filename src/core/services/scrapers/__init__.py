@@ -1,2 +1,3 @@
 from .base_scraper import BaseScraper
-from .scraper_4fnet import FourFNetScraper
+from .four_f_net import FourFNetScraper
+from .game_bounty import GameBountyScraper

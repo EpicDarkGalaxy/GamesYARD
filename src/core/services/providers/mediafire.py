@@ -1,12 +1,12 @@
 from ...utils.utils import parseHtml
-from .base import BaseProvider
+from .base_provider import BaseProvider
 
 
 class MediaFireProvider(BaseProvider):
     def can_handle(self, url) -> bool:
-        return "mediafire.com" in url
+        return url.startswith("https://mediafire.com/")
 
-    def extract_dl_url(self, provider_url: str) -> str | None:
-        soup = parseHtml(provider_url)
+    def extract_dl_url(self, url: str) -> str | None:
+        soup = parseHtml(url)
         btn = soup.select_one("#downloadButton")
         return btn['href'] if btn else None

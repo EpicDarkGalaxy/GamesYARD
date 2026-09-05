@@ -1,14 +1,14 @@
 import re
 
 import requests
-
+from src.core.services.metadata.base_metadata_source import BaseMetadataSource
 from src.core.models import GameData
 from src.core.utils import get_img_data, get_logger
 
 logger = get_logger(__name__)
 
 
-class RawgAPI:
+class RawgAPI(BaseMetadataSource):
     def __init__(self, api_key: str):
         self.api_key = api_key
         if not api_key:
@@ -40,6 +40,7 @@ class RawgAPI:
         wrapper = GameData(
             id=str(data.get("id")),
             title=data.get("name"),
+            slug=data.get("slug"),
             background_image=data.get("background_image"),
             released=data.get("released"),
             rating=data.get("rating", 0.0),

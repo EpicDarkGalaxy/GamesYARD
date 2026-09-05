@@ -102,50 +102,6 @@ def get_filename_from_url(url: str) -> str:
 
     return "game_download.zip" # Fallback
 
-
-def parse_rawg_reqs(req_data: dict[str, str | dict[str, str]]) -> dict[str, dict[str, str]]:
-    """
-    Converts a raw string or dict-based req data into a dictionary of system requirements.
-    """
-
-    new_req: dict[str, dict[str, str]] = {"minimum": {}, "recommended": {}}
-    if not req_data:
-        logger.warning(f"Requirement data is empty: {req_data}")
-        return new_req
-
-    minimum_json = req_data.get("minimum")
-    recommended_json = req_data.get("recommended")
-
-    def parse(string: str) -> dict[str, str]:
-        # 1. Standardize and "break" the blob
-        # This finds keywords like "OS:", "Processor:" and puts a newline before them
-        tags = ["OS", "Processor", "Memory", "Graphics", "Storage", "DirectX", "Sound Card"]
-        pattern = r'(' + '|'.join(tags) + r')[:\s]+'
-
-        # Insert a newline before every tag found
-        blob = re.sub(pattern, r'\n\1: ', string, flags=re.IGNORECASE)
-
-        # Now that we have line breaks, the rest of your logic will work
-        results = {}
-        lines = [l.strip() for l in blob.split('\n') if ':' in l]
-
-        for line in lines:
-            key, value = line.split(':', 1)
-            key = key.strip().title()
-
-            # Filter for our allowed keys
-            for t in tags:
-                if t.lower() in key.lower():
-                    results[t] = value.strip()
-                    break
-
-        return results
-
-    new_req["minimum"] = parse(minimum_json)
-    new_req["recommended"] = parse(recommended_json)
-    logger.debug(f"New parsed req: {new_req} \nOld Data: {req_data}")
-    return new_req
-
 def download_icon(url: str) -> QIcon:
     img_data = get_img_data(url)
     if img_data:

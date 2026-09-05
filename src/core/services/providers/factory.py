@@ -1,15 +1,23 @@
 from .akirabox import AkiraBoxProvider
-from .mediafire import MediaFireProvider
+from .fastupload import FastUploadProvider
 from .filekeeper import FileKeeperProvider
-
-
+from .fileq import FileQProvider
+from .mediafire import MediaFireProvider
+from .pixeldrain import PixelDrainProvider
 
 class ProviderFactory:
-    _providers = [AkiraBoxProvider(), MediaFireProvider(), FileKeeperProvider()]
+    def __init__(self):
+        self._providers = [
+            AkiraBoxProvider(),
+            MediaFireProvider(),
+            FileKeeperProvider(),
+            FastUploadProvider(),
+            FileQProvider(),
+            PixelDrainProvider(),
+        ]
 
-    @classmethod
-    def get_provider(cls, url: str):
-        for provider in cls._providers:
+    def get_provider(self, url: str):
+        for provider in self._providers:
             if provider.can_handle(url):
                 return provider
         return None

@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 
-
-class BaseProvider(ABC): # Inherit from ABC
+class BaseProvider(ABC):
 
     @abstractmethod
     def can_handle(self, url: str) -> bool:
@@ -11,7 +10,7 @@ class BaseProvider(ABC): # Inherit from ABC
         pass
 
     @abstractmethod
-    def extract_dl_url(self, provider_url: str) -> str | None:
+    def extract_dl_url(self, url: str) -> str | None:
         """
         Resolves the provider url and returns the final direct file download URL.
         """

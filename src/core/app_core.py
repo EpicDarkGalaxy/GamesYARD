@@ -13,6 +13,11 @@ dotenv.load_dotenv()
 
 @final
 class AppCore:
+    """
+    Core service locator and state container.
+    Manages background infrastructure (TaskRunner, DownloadManager, metadata APIs)
+    independently of any UI or routing logic.
+    """
     def __init__(self):
         self.rawg_api: RawgAPI = RawgAPI(
             api_key=os.getenv("RAWG_API_KEY", "")

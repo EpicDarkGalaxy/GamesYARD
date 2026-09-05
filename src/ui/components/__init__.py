@@ -1,5 +1,5 @@
 from .game_card import GameCard
-from .btn_loadmore import LoadMoreButton
-from .btn_provider import ProviderButton
+from .load_more_button import LoadMoreButton
+from .provider_button import ProviderButton
 from .hoverable_list_view import HoverableListView
 from .download_card import DownloadCard

@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 class GameData:
     id: str = "" # Using STR becuse that's what i want (;)
     title: str = ""
+    slug: str = ""
     background_image: str = ""
     released: str = ""
     rating: float = 0.0

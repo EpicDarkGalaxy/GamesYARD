@@ -10,6 +10,11 @@ from src.ui.views.pages import *
 
 @final
 class AppContainer:
+    """
+    Dependency injection and composition root.
+    Responsible for instantiating the core services, ViewModels, and Views,
+    and wiring them into the AppCoordinator upon application startup.
+    """
     def __init__(self) -> None:
         self._APP_CORE = AppCore()
         self._NAVIGATOR = Navigator()
