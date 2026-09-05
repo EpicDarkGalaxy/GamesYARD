@@ -14,9 +14,9 @@ if TYPE_CHECKING:
 
 @dataclass
 class DownloadModel:
-    total_size: int
+    id: str
+    total_size: int = 0
     name: str = "NONAME"
-    id: str = "NOID"
     progress: int = 0
     speed: float = 0
     downloaded_size: int = 0
@@ -47,31 +47,30 @@ class DownloadViewModel(QObject):
         self._app_coordinator.download_manager.download_state_changed.connect(
             self._handle_download_state_changed
         )
+        self._app_coordinator.download_manager.download_started.connect(self.add_download)
+        self._app_coordinator.download_manager.download_canceled.connect(self._handle_download_canceled)
 
     def _update_download_model(self, download_model: DownloadModel, download) -> None:
         download_model.downloaded_size = int(download.downloaded_size)
         download_model.progress = int(download.progress)
+        DownloadModel.total_size = int(download.total_size)
         download_model.speed = float(download.speed)
         download_model.is_downloading = bool(download.is_downloading)
         download_model.has_failed = bool(download.has_failed)
         download_model.has_finished = bool(download.has_finished)
+        download_model.resume_supported = bool(download.resume_supported)
         download_model.paused = bool(download.paused)
         self.update_view.emit(download_model)
 
-    def add_download(self, download):
-        logger.debug(f"Adding download: {download}")
-        download_id = str(download.id)
-        download_model = DownloadModel( # Non-changing properties
-            id=str(download_id),
-            name=str(download.name),
-            total_size=int(download.total_size),
-            resume_supported=bool(download.resume_supported),
-            banner=self._banners.get(download_id, None),
-        )
+    @Slot(str, str)
+    def add_download(self, download_id, downlaod_name=""):
+        logger.debug(f"Adding downlaod: {download_id}")
 
-        self._update_download_model(download_model, download)
-        self._downloads[download_id] = download_model
-        self.add_card.emit(download_model)
+        dl_model = self._downloads.get(download_id, None)
+        if dl_model:
+            self.add_card.emit(dl_model)
+        else:
+            logger.warning(f"Download Model was not found: {download_id}")
 
     @Slot(str, str, str, str, object)
     def download(
@@ -85,8 +84,7 @@ class DownloadViewModel(QObject):
         logger.debug(
             f"Starting download: id={download_id}, url={url}, save_path={save_path}"
         )
-        if banner:
-            self._banners[download_id] = banner
+        self._downloads[download_id] = DownloadModel(id=str(download_id), name=download_name, banner=banner)
         self._app_coordinator.download_manager.add_download(
             save_path, url, download_id, download_name
         )
@@ -103,14 +101,18 @@ class DownloadViewModel(QObject):
         logger.debug(f"Resuming download: id={download_id}")
         self._app_coordinator.download_manager.resume_download(download_id)
 
+    @Slot(str)
+    def _handle_download_canceled(self, download_id: str):
+        logger.debug(f"Download canceled: id={download_id}")
+        _= self._downloads.pop(download_id, None)
+        self.remove_card.emit(download_id)
+
     @Slot(object)
     def _handle_download_state_changed(self, download):
         logger.debug(f"Download state changed: id={download.id}, is_downloading={download.is_downloading}")
 
         if download.id not in self._downloads and download.is_downloading:  # Download started
-            self.add_download(download)
-        elif download.id in self._downloads and not download.is_downloading and not download.paused:  # Download finished or cancelled
-            self.remove_card.emit(download.id)
+            self.add_download(download.id, download.name)
         else:  # Download in progress
             download_model = self._downloads[download.id]
             self._update_download_model(download_model, download)

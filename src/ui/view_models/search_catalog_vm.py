@@ -28,5 +28,9 @@ class SearchCatalogViewModel(QObject):
 
 	def _handle_card_click(self, card):
 		logger.debug(f"Card clicked: {card}")
-		self.card_clicked.emit(card)
 		self.coordinator.navigate("details")
+		self.card_clicked.emit(card)
+
+	def _handle_search_catalog_hide(self):
+		logger.debug("Search catalog hidden")
+		self.coordinator.task_runner.pool.clear()

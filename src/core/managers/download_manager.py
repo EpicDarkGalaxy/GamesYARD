@@ -35,7 +35,7 @@ class Download:
     metadata: dict[str, Any] = field(default_factory=dict)
 
 class DownloadManager(QObject):
-    download_started = Signal(str)
+    download_started = Signal(str, str)
     download_finished = Signal(str)
     download_progress = Signal(str, int)
     download_failed = Signal(str)
@@ -62,7 +62,7 @@ class DownloadManager(QObject):
             raise Exception("Provider not found")
 
     def start_download(self, download_id: str):
-        download = self.download_queue.get(download_id)
+        download = self.download_queue.get(download_id, None)
         if download and download.url:
             dl_worker = DownloadWorker(download.url, download.save_path, download.id)
             dl_worker.signals.download_progress.connect(self._handle_download_progress)
@@ -70,15 +70,15 @@ class DownloadManager(QObject):
             download.is_downloading = True
 
             self.active_workers[download_id] = dl_worker
+            self.download_started.emit(download_id, download.name)
             self.task_runner.run_worker(dl_worker)
 
     def stop_download(self, download_id: str):
-        download = self.download_queue.pop(download_id)
+        download = self.download_queue.pop(download_id, None)
         if download:
             logger.debug(f"Stopped download: id={download_id}")
             download.is_downloading = False
             download.has_failed = True
-            self.download_state_changed.emit(download)
             self.download_canceled.emit(download.id)
             self.active_workers.pop(download_id, None)
         else:
@@ -98,10 +98,9 @@ class DownloadManager(QObject):
         self.task_runner.pool.clear()
 
     def pause_download(self, download_id: str):
-        worker = self.active_workers.get(download_id)
+        worker = self.active_workers.pop(download_id, None)
         if worker:
             worker.pause()
-            self.active_workers.pop(download_id, None)
 
     def resume_download(self, download_id: str):
         self.start_download(download_id)

@@ -55,3 +55,6 @@ class SearchCatalogView(QWidget):
 
         # Pass the data to the view model
         self.view_model._handle_card_click(game_data)
+
+    def hideEvent(self, event):
+        self.view_model._handle_search_catalog_hide()

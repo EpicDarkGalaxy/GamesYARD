@@ -18,7 +18,7 @@ class DownloadView(QWidget):
         self.ui: Ui_downloads_page = Ui_downloads_page()
         self.ui.setupUi(self)
         self.view_model: DownloadViewModel = view_model
-        self.cards: dict[str, DownloadCard] = {}
+        self._cards: dict[str, DownloadCard] = {}
         self.no_downloads_label: QLabel
 
     def initialize(self):
@@ -44,6 +44,10 @@ class DownloadView(QWidget):
 
     @Slot(object)
     def handle_add_card(self, download_model):
+        if self._cards.get(download_model.id, None):
+            logger.info(f"Download Card for id {download_model.id} already exists, skipped adding.")
+            return # Prevent from creating duplicate card
+
         card = DownloadCard(
             download_model.id,
             download_model.name,
@@ -54,7 +58,7 @@ class DownloadView(QWidget):
         _ = card.cancel.connect(self.view_model.cancel_download)
         _ = card.pause.connect(self.view_model.pause_download)
         _ = card.resume.connect(self.view_model.resume_download)
-        self.cards[download_model.id] = card
+        self._cards[download_model.id] = card
         self.ui.downloads_layout_2.addWidget(card)
         logger.info(f"Added card for download {download_model.id}")
 
@@ -65,7 +69,7 @@ class DownloadView(QWidget):
             logger.error("Download model has no id")
             return
 
-        card = self.cards.get(card_id, None)
+        card = self._cards.get(card_id, None)
         if card:
             card.update_data(
                 download_model.downloaded_size,
@@ -73,12 +77,13 @@ class DownloadView(QWidget):
                 download_model.progress,
                 download_model.speed,
                 download_model.paused,
+                download_model.resume_supported
             )
 
     @Slot(str)
     def handle_remove_card(self, card_id: str):
-        card = self.cards.get(card_id, None)
+        card = self._cards.get(card_id, None)
         if card:
             self.ui.downloads_layout_2.removeWidget(card)
             card.deleteLater()
-            del self.cards[card_id]
+            del self._cards[card_id]
