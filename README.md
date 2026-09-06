@@ -1,56 +1,69 @@
-# GamesYARD (Alpha)
+# GamesYARD
 
-<img width="810" height="634" alt="GamesYARD_1" src="https://github.com/user-attachments/assets/972341a2-f1c8-4127-94e2-a3e5cb25a99c" />
+GamseYARD is a front-end and a scraper for downloading games from the Internet.
 
-<img width="588" height="483" alt="GamesYARD_3" src="https://github.com/user-attachments/assets/1c9b02c0-7daf-417d-ba12-d11c03c8a2d4" />
-
-GamesYARD is a desktop application built with PySide6 that lets users search, browse, and download classic/archived games from sources such as the Internet Archive and supported file hosts (e.g., MediaFire, Filekeeper).
+This repository contains a Python-based scraper and a lightweight front-end to browse and download retro and abandonware games for personal archival and educational purposes.
 
 ## Features
-- **Game Search**: Search for games directly from the application.
-- **Game Details**: View system requirements and metadata for selected games.
-- **Download**: Resolve provider landing pages to direct links and download in the background.
+
+- Web scraper to discover and download game files from supported sources
+- Simple front-end for browsing and initiating downloads
+- Configuration-driven scraping targets and rules
 
 ## Requirements
+
 - Python 3.10+
-- PySide6
-- curl_cffi
-- beautifulsoup4 (bs4)
-- pyinstaller (optional, for building standalone binaries)
+- pip
 
 ## Installation
+
 1. Clone the repository:
-```bash
-git clone https://github.com/EpicDarkGalaxy/GamesYARD.git
-cd GamesYARD
-```
-2. Create a virtual environment and install dependencies:
-```bash
-python -m venv venv
-# macOS / Linux
-source venv/bin/activate
-# Windows (PowerShell)
-# .\venv\Scripts\Activate.ps1
-# Windows (cmd)
-# venv\Scripts\activate
-pip install -r requirements.txt
-```
+
+   git clone https://github.com/EpicDarkGalaxy/GamesYARD.git
+   cd GamesYARD
+
+2. (Optional) Create a virtual environment and install dependencies:
+
+   python -m venv .venv
+   source .venv/bin/activate   # On Windows use `.venv\\Scripts\\activate`
+   pip install -r requirements.txt
+
+## Configuration
+
+- Copy any example configuration file and edit it for your environment (e.g., `config.example.yml` -> `config.yml`).
+
+  cp config.example.yml config.yml
+
+- Configure scraping targets, output paths, and any API keys in `config.yml`.
 
 ## Usage
-Run the application with:
-```bash
-python app.py
-```
 
-## Project structure (top-level)
-- `app.py` — application entrypoint; creates QApplication and wires Manager, presenters, and windows
-- `requirements.txt` — Python dependencies
-- `src/core/` — business logic, downloaders, fetchers, worker/threads
-- `src/ui/` — generated Qt UI files, presenters, controllers, style.qss
-- `ui_design/` — design assets and layouts
+- Run the scraper from the command line:
 
-## Notes / Known issues
-- The repository contains a few internal names and directories (e.g., `src/core/asynchronus`) whose spelling may look inconsistent; this does not affect how to run the app.
+  python -m gamesyard.scraper
+
+- Start the front-end (if provided):
+
+  python -m gamesyard.frontend
+
+Adjust these commands if your project uses a different entrypoint or CLI tool.
+
+## Project structure (example)
+
+- src/ - core Python package
+- src/scraper/ - scraper implementation and rules
+- src/frontend/ - front-end code
+- config.example.yml - example configuration
+- requirements.txt - Python dependencies
+
+## Documentation
+
+See DOCUMENTATION.md for detailed developer and user documentation.
 
 ## Contributing
-Feel free to open issues or pull requests for bug fixes, new provider implementations in `src/core/downloaders/`, or UI improvements.
+
+Contributions are welcome! Please read CONTRIBUTING.md for guidelines about issues, pull requests, and the development workflow.
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0). See the LICENSE file for details.
