@@ -6,6 +6,8 @@ from .mediafire import MediaFireProvider
 from .pixeldrain import PixelDrainProvider
 from .gofile import GoFileProvider
 from .datavaults import DataVaultsProvider
+from .zero_eight_zero_seven import Provider0807
+from .internet_archive import InternetArchiveProvider
 
 
 class ProviderFactory:
@@ -18,7 +20,9 @@ class ProviderFactory:
             FileQProvider(),
             PixelDrainProvider(),
             GoFileProvider(),
-            DataVaultsProvider()
+            DataVaultsProvider(),
+            Provider0807(),
+            InternetArchiveProvider()
         ]
 
     def get_provider(self, url: str):

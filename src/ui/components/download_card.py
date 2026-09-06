@@ -155,20 +155,15 @@ class DownloadCard(QFrame):
             title_font = QFont("Segoe UI", 15, QFont.Weight.Bold)
             painter.setFont(title_font)
             painter.setPen(QColor(224, 224, 224))
-            painter.drawText(15, self.height() - self.padding, self.title)
+            # Elide title if it exceeds available width (Card width - left padding 15 - right padding 15)
+            available_width = self.width() - 30
+            font_metrics = painter.fontMetrics()
+            elided_title = font_metrics.elidedText(self.title, Qt.TextElideMode.ElideRight, available_width)
 
-            # 5. File Size (bottom-Right, DemiBold, Subtle)
-            size_font = QFont("Segoe UI", 10, QFont.Weight.DemiBold)
-            painter.setFont(size_font)
-            painter.setPen(QColor(224, 224, 224))
-            text = f"{self.uniform_size}"
-            text_width = painter.fontMetrics().horizontalAdvance(text)
-            painter.drawText(
-                self.width() - text_width - 15, self.height() - self.padding, text
-            )
+            painter.drawText(15, self.height() - self.padding, elided_title)
 
             # 6. Card Speed (top-left, Normal, Subtle, outlined) and ETA (top-right, Normal, Subtle, outlined)
-            speed_font = QFont("Segoe UI", 10, QFont.Weight.Normal)
+            speed_font = QFont("Segoe UI", 11, QFont.Weight.DemiBold)
             painter.setFont(speed_font)
             text = f"{self.speed} / {self.eta}"
 
@@ -182,6 +177,15 @@ class DownloadCard(QFrame):
             # Draw main text
             painter.setPen(QColor(30, 144, 255))  # Accent Blue
             painter.drawText(15, self.padding + 5, text)
+
+            # 5. File Size (just below speed, DemiBold, Subtle)
+            size_font = QFont("Segoe UI", 10, QFont.Weight.DemiBold)
+            painter.setFont(size_font)
+            painter.setPen(QColor(224, 224, 224))
+            text = f"{self.uniform_size}"
+            painter.drawText(
+                15, self.padding + 25, text
+            )
 
         # 7. Draw State Text
         if self._paused or self._finished:

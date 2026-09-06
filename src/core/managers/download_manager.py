@@ -108,7 +108,7 @@ class DownloadManager(QObject):
         self.start_download(download_id)
 
     def get_providers(self, game_title: str):
-        scrapers = [FourFNetScraper(), GameBountyScraper()]
+        scrapers = [FourFNetScraper(), GameBountyScraper(), InternetArchiveScraper()]
         self._provider_aggregate: dict[str, dict[str, str]] = {}
         self._pending_scraper_count = len(scrapers)
 
