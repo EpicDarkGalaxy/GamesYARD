@@ -12,7 +12,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QPushButton, QSizePolicy
 
-from src.core.utils import format_speed, get_logger
+from src.core.utils import format_speed, get_logger, format_eta
 
 logger = get_logger(__name__)
 
@@ -68,9 +68,11 @@ class DownloadCard(QFrame):
         self.thumbnail: Optional[QPixmap] = thumbnail
         self.downloaded_size: int = 0
         self._paused: bool = False
+        self._finished: bool = False
         self.progress: int = 0
         self.uniform_size: str = "40 / 900 MB"
         self.speed: str = ""
+        self.eta: str = ""
 
         self.anim_offset: float = 0.0
 
@@ -94,13 +96,16 @@ class DownloadCard(QFrame):
         total_size: int,
         progress: int,
         speed: float = 0.0,
+        eta: int = 0,
         paused: bool = False,
+        has_finished: bool = False,
         resume_supported: bool = False,
     ):
         self.downloaded_size = downloaded_size
         self.total_size = total_size
         self.progress = progress
         self.speed = format_speed(speed)
+        self._finished = has_finished
         if resume_supported:
             self.paused = paused
         self.pause_button.setEnabled(resume_supported)
@@ -113,6 +118,11 @@ class DownloadCard(QFrame):
             dl_mb = self.downloaded_size / (1024 * 1024)
             self.uniform_size = f"{dl_mb:.1f} MB"
 
+        if self._finished:
+            self.finished()
+
+        # Convert ETA from seconds to a human-readable format
+        self.eta = format_eta(eta)
         self.update()
 
     def paintEvent(self, event: QPaintEvent):
@@ -157,10 +167,10 @@ class DownloadCard(QFrame):
                 self.width() - text_width - 15, self.height() - self.padding, text
             )
 
-            # 6. Card Speed (top-left, Normal, Subtle, outlined)
+            # 6. Card Speed (top-left, Normal, Subtle, outlined) and ETA (top-right, Normal, Subtle, outlined)
             speed_font = QFont("Segoe UI", 10, QFont.Weight.Normal)
             painter.setFont(speed_font)
-            text = f"{self.speed}"
+            text = f"{self.speed} / {self.eta}"
 
             # Draw outline
             painter.setPen(QPen(QColor(0, 0, 0), 2))
@@ -173,19 +183,26 @@ class DownloadCard(QFrame):
             painter.setPen(QColor(30, 144, 255))  # Accent Blue
             painter.drawText(15, self.padding + 5, text)
 
-        # 7. Draw Pasued
-        if self._paused:
+        # 7. Draw State Text
+        if self._paused or self._finished:
             painter.setPen(QColor(255, 255, 255))
-            paused_font = QFont("Segoe UI", 15, QFont.Weight.ExtraBold)
-            painter.setFont(paused_font)
+            state_font = QFont("Segoe UI", 15, QFont.Weight.ExtraBold)
+            painter.setFont(state_font)
 
-            _= painter.drawText(
+            _ = painter.drawText(
                 self.rect(),  # the full card area
                 Qt.AlignmentFlag.AlignCenter,
-                "Paused",
+                "Paused" if self._paused and not self._finished else "Finished",
             )
 
         super().paintEvent(event)
+
+    def finished(self):
+        self.pause_button.setEnabled(False)
+        self.pause_button.setText("Finished")
+        self._finished = True
+        self._paused = True  # When finished, the card is  paused (:)
+        self.update()
 
     @property
     def paused(self) -> bool:

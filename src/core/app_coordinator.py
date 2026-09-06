@@ -45,7 +45,7 @@ class AppCoordinator:
         self.main_vm.search_finished.connect(self.search_vm.add_to_grid)
 
         # Connects to download_vm
-        self.game_details_vm.download_requested.connect(self.download_vm.download)
+        self.game_details_vm.download_requested.connect(self.download_vm.requesting_download)
 
     def navigate(self, key: str) -> None:
         self._nav.go_to(key)

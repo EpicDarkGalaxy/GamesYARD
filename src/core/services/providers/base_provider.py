@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 class BaseProvider(ABC):
 
@@ -7,11 +8,11 @@ class BaseProvider(ABC):
         """
         Returns True if this provider can handle the given URL.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def extract_dl_url(self, url: str) -> str | None:
+    def extract_dl_url(self, url: str) -> tuple[str, dict] | None:
         """
         Resolves the provider url and returns the final direct file download URL.
         """
-        pass
+        raise NotImplementedError

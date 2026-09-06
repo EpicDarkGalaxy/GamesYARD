@@ -80,6 +80,7 @@ class ProviderButton(QWidget):
             "\n--- ProviderButton Event ---\n"
             f"ID:           {self._id}\n"
             f"Name:         {self.provider_name}\n"
+            f"URL:          {self.provider_url}\n"
             f"Downloading:  {self._is_downloading}\n"
             f"Downloaded:   {self._is_downloaded}\n"
             f"Failed:       {self._has_failed}\n"

@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QLabel, QPushButton, QWidget
 from src.core.utils.log import get_logger
 from src.ui.components.download_card import DownloadCard
 from src.ui.generated import Ui_downloads_page
+from src.ui.components.captcha_dialog import CaptchaBrowserDialog
 
 logger = get_logger(__name__)
 
@@ -41,32 +42,34 @@ class DownloadView(QWidget):
         _ = self.view_model.update_view.connect(self.handle_update_card)
         _ = self.view_model.add_card.connect(self.handle_add_card)
         _ = self.view_model.remove_card.connect(self.handle_remove_card)
+        _ = self.view_model.open_captcha.connect(self._handle_open_captcha)
+
 
     @Slot(object)
-    def handle_add_card(self, download_model):
+    def handle_add_card(self, download_view_state):
         self.no_downloads_label.setVisible(False)
 
-        if self._cards.get(download_model.id, None):
-            logger.info(f"Download Card for id {download_model.id} already exists, skipped adding.")
+        if self._cards.get(download_view_state.id, None):
+            logger.info(f"Download Card for id {download_view_state.id} already exists, skipped adding.")
             return # Prevent from creating duplicate card
 
         card = DownloadCard(
-            download_model.id,
-            download_model.name,
+            download_view_state.id,
+            download_view_state.name,
             file_size=0,
-            resume_supported=download_model.resume_supported,
-            thumbnail=download_model.banner,
+            resume_supported=download_view_state.resume_supported,
+            thumbnail=download_view_state.banner,
         )
-        _ = card.cancel_requested.connect(self.view_model.cancel_download)
-        _ = card.pause_requested.connect(self.view_model.pause_download)
-        _ = card.resume_requested.connect(self.view_model.resume_download)
-        self._cards[download_model.id] = card
+        _ = card.cancel_requested.connect(self.view_model.requesting_cancel_download)
+        _ = card.pause_requested.connect(self.view_model.requesting_pause_download)
+        _ = card.resume_requested.connect(self.view_model.requesting_resume_download)
+        self._cards[download_view_state.id] = card
         self.ui.downloads_layout_2.addWidget(card)
-        logger.info(f"Added card for download {download_model.id}")
+        logger.info(f"Added card for download {download_view_state.id}")
 
     @Slot(object)
-    def handle_update_card(self, download_model):
-        card_id = download_model.id
+    def handle_update_card(self, download_view_state):
+        card_id = download_view_state.id
         if not card_id:
             logger.error("Download model has no id")
             return
@@ -74,12 +77,14 @@ class DownloadView(QWidget):
         card = self._cards.get(card_id, None)
         if card:
             card.update_data(
-                downloaded_size=download_model.downloaded_size,
-                total_size=download_model.total_size,
-                progress=download_model.progress,
-                speed=download_model.speed,
-                paused=download_model.paused,
-                resume_supported=download_model.resume_supported
+                downloaded_size=download_view_state.downloaded_size,
+                total_size=download_view_state.total_size,
+                progress=download_view_state.progress,
+                speed=download_view_state.speed,
+                eta=download_view_state.eta,
+                paused=download_view_state.paused,
+                has_finished=download_view_state.has_finished,
+                resume_supported=download_view_state.resume_supported
             )
 
     @Slot(str)
@@ -93,3 +98,24 @@ class DownloadView(QWidget):
             self.ui.downloads_layout_2.removeWidget(card)
             card.deleteLater()
             del self._cards[card_id]
+
+    @Slot(str)
+    def _handle_open_captcha(self, url: str):
+        logger.debug(f"Captcha required: url={url}")
+
+        if url:
+            dialog = CaptchaBrowserDialog(url, parent=self)
+            dialog.show()
+            intercepted_link = None
+            def on_url_intercepted(url: str):
+                nonlocal intercepted_link
+                intercepted_link = url
+            dialog.download_url_intercepted.connect(on_url_intercepted)
+            dialog.accepted.connect(lambda: self._handle_captcha_resolved(intercepted_link))
+            dialog.rejected.connect(lambda: self._handle_captcha_resolved(None))
+            dialog.finished.connect(lambda: self._handle_captcha_resolved(None))
+            self._captcha_dialog = dialog
+
+    @Slot()
+    def _handle_captcha_resolved(self, url: str | None):
+        logger.debug(f"Captcha resolved: url={url}")

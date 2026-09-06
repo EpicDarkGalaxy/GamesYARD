@@ -2,10 +2,18 @@ from typing import TYPE_CHECKING, Any, Final
 
 from PySide6.QtCore import Qt, QTimer, Slot
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QFileDialog, QGridLayout, QLabel, QLayout, QTabWidget, QWidget, QVBoxLayout, QSizePolicy
+from PySide6.QtWidgets import (
+    QFileDialog,
+    QGridLayout,
+    QLabel,
+    QLayout,
+    QSizePolicy,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from src.core.utils import (
-    get_filename_from_url,
     get_logger,
 )
 from src.ui.components.provider_button import ProviderButton
@@ -89,13 +97,22 @@ class GameDetailsView(QWidget):
             for provider_name, provider_data in scraper_providers.items():
                 btn = ProviderButton(provider_name, provider_data)
                 btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-                _ = btn.download_requested.connect(self.prompt_for_save_path)
+                _ = btn.download_requested.connect(self._handle_download_request)
                 _ = btn.cancel_requested.connect(self.view_model.cancel_download)
                 self.providers[btn.id] = btn
                 scraper_layout.addWidget(btn)
         self.ui.tabWidget.setCurrentIndex(0)
         self.ui.tabWidget.show()
 
+    @Slot(str, str)
+    def _handle_download_request(self, provider_url: str, provider_id: str):
+        game_title_widget = getattr(self.ui, "game_title", None)
+        download_name: str = game_title_widget.text() if game_title_widget and hasattr(game_title_widget, "text") and game_title_widget.text() else "NONAME"
+
+        game_poster_widget = getattr(self.ui, "game_poster", None)
+        download_banner = game_poster_widget.pixmap() if game_poster_widget and hasattr(game_poster_widget, "pixmap") and game_poster_widget.pixmap() else None
+
+        self.view_model.request_download(provider_url, provider_id, download_name, download_banner)
 
     @Slot(dict)
     def update_provider_state(self, state: dict[str, Any]):
@@ -110,17 +127,6 @@ class GameDetailsView(QWidget):
             logger.debug(f"Updated provider {state.get('id', 'Unknown')}")
         else:
             logger.warning(f"Provider with ID {state.get('id', 'Unknown')} not found in providers dictionary.")
-
-    @Slot(str, str)
-    def prompt_for_save_path(self, url: str, provider_id: str) -> str:
-        game_title = getattr(self.ui, "game_title", None)
-        suggested_name = f"{game_title.text()}.zip" if game_title else "game.zip"
-        file_path = QFileDialog.getSaveFileName(self, "Save Game", suggested_name)
-        if file_path[0] != "":
-            game_title_text = game_title.text() if game_title else ""
-            self.view_model.request_download(file_path[0], url, provider_id, game_title_text, self.ui.game_poster.pixmap())
-            return file_path[0]
-        return ""
 
     @Slot(dict)
     def set_metadata(self, metadata: dict):

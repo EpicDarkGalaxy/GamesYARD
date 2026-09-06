@@ -5,7 +5,8 @@ from PySide6.QtCore import QObject, Signal
 class WorkerSignals(QObject):
     fail = Signal()  # Signal to emit error messages
     finished = Signal()  # Signal to indicate the worker has finished
-    cancelled = Signal()  # Signal to indicate the worker has been cancelled
+    cancelled = Signal(str)  # Signal to indicate the worker has been cancelled
+    paused = Signal(str)  # Signal to indicate the worker has been paused
     progress = Signal(float)  # Signal to emit progress updates
     result_ready = Signal(object, object)
 
@@ -19,7 +20,6 @@ class SearchWorkerSignals(WorkerSignals):
 class DownloadWorkerSignals(WorkerSignals):
     download_finished = Signal(bool, str)  # Signal to indicate the download has finished (success, download_id)
     download_progress = Signal(dict)  # Signal to indicate download progress for a specific id
-    download_paused = Signal(str)  # Signal to indicate the download has been paused
 
 class UrlExtractorWorkerSignals(WorkerSignals):
     link_extracted = Signal(str, str)  # Signal to emit the extracted link and the URL

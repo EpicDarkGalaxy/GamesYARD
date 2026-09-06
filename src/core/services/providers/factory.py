@@ -4,6 +4,9 @@ from .filekeeper import FileKeeperProvider
 from .fileq import FileQProvider
 from .mediafire import MediaFireProvider
 from .pixeldrain import PixelDrainProvider
+from .gofile import GoFileProvider
+from .datavaults import DataVaultsProvider
+
 
 class ProviderFactory:
     def __init__(self):
@@ -14,6 +17,8 @@ class ProviderFactory:
             FastUploadProvider(),
             FileQProvider(),
             PixelDrainProvider(),
+            GoFileProvider(),
+            DataVaultsProvider()
         ]
 
     def get_provider(self, url: str):

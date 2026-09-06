@@ -20,8 +20,8 @@ class GameDetailsViewModel(QObject):
     show_providers = Signal(dict)
     get_providers_failed = Signal(str)  # MSG or Status
     download_requested = Signal(
-        str, str, str, str, object
-    )  # save_path, url, id, name, banner
+        str, str, str, object
+    )  # url, id, name, banner
     download_cancelled = Signal(str)
     provider_state_changed = Signal(dict)
 
@@ -90,14 +90,13 @@ class GameDetailsViewModel(QObject):
 
     def request_download(
         self,
-        save_path: str,
         provider_url: str,
         download_id: str,
         download_name: str = "NONAME",
         banner: QPixmap | None = None,
     ):
         self.download_requested.emit(
-            save_path, provider_url, download_id, download_name, banner
+            provider_url, download_id, download_name, banner
         )
 
     def cancel_download(self, download_id: str):

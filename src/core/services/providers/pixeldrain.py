@@ -1,5 +1,5 @@
 from urllib.parse import urlparse
-from typing import override
+from typing import Any, override
 
 from src.core.services.providers.base_provider import BaseProvider
 
@@ -13,11 +13,12 @@ class PixelDrainProvider(BaseProvider):
         return url.startswith("https://pixeldrain.com/")
 
     @override
-    def extract_dl_url(self, url: str) -> str | None:
+    def extract_dl_url(self, url: str) -> tuple[str, dict[str, Any] | str | None] | None:
         file_id = self._extract_file_id(url)
         if not file_id:
             return None
-        return f"https://pixeldrain.com/api/file/{file_id}?download"
+        dl_url = f"https://pixeldrain.com/api/file/{file_id}?download"
+        return dl_url, {"filename": file_id}
 
     @staticmethod
     def _extract_file_id(url: str) -> str | None:

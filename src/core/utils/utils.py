@@ -4,7 +4,7 @@ from base64 import b64decode
 from socket import TCP_ULP
 from urllib.parse import urlparse
 
-import requests
+from curl_cffi import requests
 from bs4 import BeautifulSoup
 from PySide6.QtGui import QColor, QIcon, QPixmap
 
@@ -81,27 +81,6 @@ def clean_filename(filename: str):
     # Remove characters that are illegal in file names
     return re.sub(r'[\\/*?:"<>|]', "", filename)
 
-def get_filename_from_url(url: str) -> str:
-    try:
-        # 1. Try to get filename from Content-Disposition header
-        # Using a HEAD request avoids downloading the whole file
-        response = requests.head(url, allow_redirects=True, timeout=5)
-        disposition = response.headers.get('Content-Disposition')
-        if disposition and 'filename=' in disposition:
-            # Extract filename from header
-            return disposition.split('filename=')[-1].strip('"').strip("'")
-
-        # 2. Fallback: Parse from URL path
-        path = urlparse(url).path
-        filename = path.split('/')[-1]
-        if filename:
-            return filename
-
-    except Exception as e:
-        print(f"Error fetching filename: {e}")
-
-    return "game_download.zip" # Fallback
-
 def download_icon(url: str) -> QIcon:
     img_data = get_img_data(url)
     if img_data:
@@ -117,3 +96,55 @@ def format_speed(bytes_per_sec: float) -> str:
         return f"{bytes_per_sec / 1024:.1f} KB/s"
     else:
         return f"{bytes_per_sec / (1024 * 1024):.1f} MB/s"
+
+def format_eta(seconds: float) -> str:
+    if seconds < 60:
+        return f"{seconds:.1f} seconds"
+    elif seconds < 3600:
+        return f"{seconds / 60:.1f} minutes"
+    elif seconds < 86400:
+        return f"{seconds / 3600:.1f} hours"
+    else:
+        return f"{seconds / 86400:.1f} days"
+
+def get_filename_for_url(direct_url: str, headers: dict = None) -> str:
+    """
+    Retrieves the real filename from Content-Disposition header of the direct URL,
+    falling back to the URL path.
+    """
+    if headers is None:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        }
+
+    try:
+        # 1. Try HEAD request to inspect Content-Disposition header
+        resp = requests.head(direct_url, headers=headers, impersonate="chrome124", allow_redirects=True, timeout=5)
+        disposition = resp.headers.get('Content-Disposition')
+        if disposition and 'filename=' in disposition:
+            # Extract filename from header
+            raw_filename = disposition.split('filename=')[-1].strip('"').strip("'")
+            if raw_filename:
+                return clean_filename(raw_filename)
+    except Exception as e:
+        print(f"Could not fetch filename via HEAD: {e}")
+
+    # 2. Fallback: Parse from URL path if it looks like a filename
+    parsed_path = urlparse(direct_url).path
+    basename = os.path.basename(parsed_path)
+    if basename and '.' in basename and not basename.startswith('d/'):
+        return clean_filename(basename)
+
+    # 3. Final Fallback
+    return "game_download.zip"
+
+
+def get_default_download_dir() -> str:
+    # Option 1: System Downloads folder
+    download_dir = os.path.join(os.path.expanduser("~"), "Downloads", "GamesYARD")
+
+    # Option 2: Project cache/downloads folder
+    # download_dir = os.path.abspath(os.path.join("cache", "downloads"))
+
+    os.makedirs(download_dir, exist_ok=True)
+    return download_dir
