@@ -30,11 +30,7 @@ This repository contains a Python-based scraper and a lightweight front-end to b
 
 ## Configuration
 
-- Copy any example configuration file and edit it for your environment (e.g., `config.example.yml` -> `config.yml`).
-
-  cp config.example.yml config.yml
-
-- Configure scraping targets, output paths, and any API keys in `config.yml`.
+Store Api keys in the env file (inside root folder)
 
 ## Usage
 
