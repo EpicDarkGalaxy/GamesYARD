@@ -22,7 +22,7 @@ This repository contains a Python-based scraper and a lightweight front-end to b
    git clone https://github.com/EpicDarkGalaxy/GamesYARD.git
    cd GamesYARD
 
-2. (Optional) Create a virtual environment and install dependencies:
+2. Create a virtual environment and install dependencies:
 
    python -m venv .venv
    source .venv/bin/activate   # On Windows use `.venv\\Scripts\\activate`
