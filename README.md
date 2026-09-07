@@ -32,24 +32,12 @@ This repository contains a Python-based scraper and a lightweight front-end to b
 
 Store Api keys in the env file (inside root folder)
 
-## Usage
-
-- Run the scraper from the command line:
-
-  python -m gamesyard.scraper
-
-- Start the front-end (if provided):
-
-  python -m gamesyard.frontend
-
-Adjust these commands if your project uses a different entrypoint or CLI tool.
 
 ## Project structure (example)
 
 - src/ - core Python package
-- src/scraper/ - scraper implementation and rules
-- src/frontend/ - front-end code
-- config.example.yml - example configuration
+- src/services/ - scrapers
+- src/ui/ - All UI Code
 - requirements.txt - Python dependencies
 
 ## Documentation
