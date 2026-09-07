@@ -3,9 +3,20 @@ from typing_extensions import final
 from src.core.app_coordinator import AppCoordinator
 from src.core.app_core import AppCore
 from src.ui.navigator import Navigator
-from src.ui.view_models import *
-from src.ui.views import *
-from src.ui.views.pages import *
+from src.ui.view_models import (
+    SearchCatalogViewModel,
+    GameDetailsViewModel,
+    MainViewModel,
+    HomeCatalogViewModel,
+    DownloadViewModel,
+)
+from src.ui.views import MainView
+from src.ui.views.pages import (
+    SearchCatalogView,
+    GameDetailsView,
+    HomeCatalogView,
+    DownloadView,
+)
 
 
 @final
@@ -54,3 +65,8 @@ class AppContainer:
 
         for view in self._views.values():
             view.initialize()
+
+    @property
+    def main_view(self):
+        """Public accessor for the main view (avoid using private _main_view)."""
+        return self._main_view

@@ -28,5 +28,5 @@ if __name__ == "__main__":
     load_stylesheet(app)
     # reloader = qss_reloader.QSSReloader(app, qss_paths=[resource_path("src/ui/styles/style.qss")], debounce_ms=100)
     app_container = AppContainer()
-    app_container._main_view.show()
+    app_container.main_view.show()
     sys.exit(app.exec())

@@ -30,12 +30,23 @@ class AppCore:
     def cleanup(self, event=None):
         logger.info("AppCore cleanup starting...")
 
-        self.download_manager.stop_all_downloads()
-        self.task_runner.pool.clear()
+        # Stop downloads and clear worker pool
+        try:
+            self.download_manager.stop_all_downloads()
+        except Exception as e:
+            logger.warning(f"Error stopping downloads during cleanup: {e}")
+
+        # Attempt to wait briefly for the thread pool to finish
+        try:
+            # QThreadPool.waitForDone expects milliseconds
+            self.task_runner.pool.waitForDone(3000)  # wait up to 3s
+        except Exception:
+            logger.debug("task_runner.pool.waitForDone not available/failed")
 
         if event:
-            event.accept()
+            try:
+                event.accept()
+            except Exception:
+                logger.debug("event.accept() failed during cleanup")
 
-        import os
-
-        os._exit(0)
+        logger.info("AppCore cleanup finished; returning to caller for process exit.")
