@@ -4,15 +4,10 @@ from uuid import uuid1
 import os
 from PySide6.QtCore import QObject, Signal, Slot
 
-from src.core.services.scrapers import (
-    FourFNetScraper,
-    GameBountyScraper,
-    InternetArchiveScraper,
-)
-
 from ..aio.workers import DownloadWorker, Worker
 from ..services.providers import ProviderFactory
 from src.core.utils import get_logger, get_filename_for_url, get_default_download_dir
+from src.core.managers.provider_discovery import discover
 
 if TYPE_CHECKING:
     from ..aio import TaskRunner
@@ -113,38 +108,12 @@ class DownloadManager(QObject):
         self.start_download(download_id)
 
     def get_providers(self, game_title: str):
-        scrapers = [FourFNetScraper(), GameBountyScraper(), InternetArchiveScraper()]
-        self._provider_aggregate: dict[str, dict[str, str]] = {}
-        self._pending_scraper_count = len(scrapers)
+        # Delegate discovery to the provider_discovery module to reduce responsibilities
+        discover(self._task_runner, game_title, self._on_providers_discovered)
 
-        for scraper in scrapers:
-            self._task_runner.run_task(
-                scraper.find_game_url,
-                self._handle_game_page,
-                game_title,
-                return_value=scraper,
-            )
-
-    @Slot(object, object)
-    def _handle_game_page(self, game_url: str | None, scraper):
-        if not game_url:
-            self._on_scraper_done()
-            return
-        self._task_runner.run_task(
-            scraper.scrape_download_urls,
-            self._handle_providers,
-            game_url,
-        )
-
-    @Slot(dict)
-    def _handle_providers(self, providers: dict):
-        self._provider_aggregate.update(providers)
-        self._on_scraper_done()
-
-    def _on_scraper_done(self):
-        self._pending_scraper_count -= 1
-        if self._pending_scraper_count <= 0:
-            self.providers_found.emit(self._provider_aggregate)
+    def _on_providers_discovered(self, providers: dict):
+        # Emit the aggregated providers when discovery completes
+        self.providers_found.emit(providers)
 
     @Slot(dict)
     def _handle_download_progress(self, download_progress: dict):
