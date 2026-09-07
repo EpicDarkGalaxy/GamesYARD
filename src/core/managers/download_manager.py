@@ -4,7 +4,11 @@ from uuid import uuid1
 import os
 from PySide6.QtCore import QObject, Signal, Slot
 
-from src.core.services.scrapers import *
+from src.core.services.scrapers import (
+    FourFNetScraper,
+    GameBountyScraper,
+    InternetArchiveScraper,
+)
 
 from ..aio.workers import DownloadWorker, Worker
 from ..services.providers import ProviderFactory
@@ -35,6 +39,7 @@ class DownloadState:
     eta: int = 0
     headers: dict = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+
 
 class DownloadManager(QObject):
     download_started = Signal(str, str)
