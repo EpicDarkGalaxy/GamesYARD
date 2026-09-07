@@ -11,6 +11,7 @@ from .utils import (
     format_eta,
     get_default_download_dir,
     get_filename_for_url,
+    resource_path,
 )
 
 __all__ = [
@@ -27,4 +28,5 @@ __all__ = [
     "decodeBase64",
     "get_default_download_dir",
     "get_filename_for_url",
+    "resource_path",
 ]

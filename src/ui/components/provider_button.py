@@ -9,8 +9,8 @@ logger = get_logger(__name__)
 
 
 class ProviderButton(QWidget):
-    download_requested = Signal(str, str) # URL, Widget reference
-    cancel_requested = Signal(str) # self, provider_id
+    download_clicked = Signal(str, str) # URL, Widget reference
+    download_cancel_clicked = Signal(str) # self, provider_id
 
     _is_downloading = False
     _is_downloaded = False
@@ -41,11 +41,11 @@ class ProviderButton(QWidget):
         if (self._is_downloading):
             logger.info(f"Requesting cancellation: {self.provider_url}")
             self.set_state(is_downloading=False)
-            self.cancel_requested.emit(self._id)
+            self.download_cancel_clicked.emit(self._id)
         else:
             logger.info(f"Requesting download: {self.provider_url}")
             # self.set_downloading_state(True)
-            self.download_requested.emit(self.provider_url, self._id)
+            self.download_clicked.emit(self.provider_url, self._id)
 
     def update_progress(self, value: int):
         self.progress_bar.setValue(value)

@@ -97,15 +97,15 @@ class GameDetailsView(QWidget):
             for provider_name, provider_data in scraper_providers.items():
                 btn = ProviderButton(provider_name, provider_data)
                 btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-                _ = btn.download_requested.connect(self._handle_download_request)
-                _ = btn.cancel_requested.connect(self.view_model.cancel_download)
+                _ = btn.download_clicked.connect(self._handle_download_clicked)
+                _ = btn.download_cancel_clicked.connect(self.view_model.cancel_download)
                 self.providers[btn.id] = btn
                 scraper_layout.addWidget(btn)
         self.ui.tabWidget.setCurrentIndex(0)
         self.ui.tabWidget.show()
 
     @Slot(str, str)
-    def _handle_download_request(self, provider_url: str, provider_id: str):
+    def _handle_download_clicked(self, provider_url: str, provider_id: str):
         game_title_widget = getattr(self.ui, "game_title", None)
         download_name: str = game_title_widget.text() if game_title_widget and hasattr(game_title_widget, "text") and game_title_widget.text() else "NONAME"
 
